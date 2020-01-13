@@ -18,6 +18,9 @@ Project timeline
 - Week of 3/02
 - Week of 3/09
 
+### Requirements:
+* Install [Poetry](https://python-poetry.org/docs/#installation)
+
 ### Project Brainstorm
 1. Start with `f(direct_sound, agent_loc, sound_loc, room_config) => convolved_sound` using Pyroom
 2. Extend to a RL environment (Gym)
