@@ -16,3 +16,8 @@ Project timeline
 - Week of 2/24
 - Week of 3/02
 - Week of 3/09
+
+### Resources: 
+#### Environments
+* Gym mini world: https://github.com/maximecb/gym-miniworld
+* Gym mini grid: https://github.com/maximecb/gym-minigrid
