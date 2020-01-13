@@ -19,7 +19,8 @@ Project timeline
 - Week of 3/09
 
 ### Project Brainstorm
-Want `f(direct_sound, agent_loc, sound_loc, room_config) => convolved_sound`
+1. Start with `f(direct_sound, agent_loc, sound_loc, room_config) => convolved_sound` using Pyroom
+2. Extend to a RL environment (Gym)
 
 ### Resources: 
 #### Environments
