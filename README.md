@@ -6,7 +6,8 @@ Applying reinforcement learning to perform source separation.
 
 Project timeline
 - Week of 1/13
-  - Learn
+  - Learn: RL, Double Leep Q-Learning, SOTA (vision-related tasks)
+  - Code: Existing implementations (Gym), Pyroom acoustics, 
 - Week of 1/20
 - Week of 1/27
 - Week of 2/03
