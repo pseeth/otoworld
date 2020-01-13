@@ -6,7 +6,7 @@ Applying reinforcement learning to perform source separation.
 
 Project timeline
 - Week of 1/13/2020
-  -
+  - test
 - Week of 1/20/2020
 - Week of 1/27/2020
 - Week of 2/03
