@@ -1,6 +1,6 @@
 # Reinforcement learning for computer audition
 
-Authors: [add your name], Omkar Ranadive, Grant Gasser, Prem Seetharaman
+Authors: Grant Gasser, David Terpay, Omkar Ranadive, Prem Seetharaman
 
 Applying reinforcement learning to perform source separation.
 
