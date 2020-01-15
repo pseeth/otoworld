@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import wavfile
 from scipy.signal import fftconvolve
-import pyroomacoustics as pra
+from pyroomacoustics import MicrophoneArray, ShoeBox
 
 
 def init_env(direct_sound, agent_loc, sound_loc, room_config):
@@ -18,14 +18,17 @@ def init_env(direct_sound, agent_loc, sound_loc, room_config):
     # Load the audio file
     rate, audio = wavfile.read(direct_sound)
     print(audio.shape)
+
     # As the test signal is recorded on stereo microphone, it is 2d
     # Choose one of the sides
     audio = audio[:, 0]
+
     # Create a room using shoe box function
-    room = pra.ShoeBox(room_config)
+    room = ShoeBox(room_config)
     room.add_source(sound_loc, signal=audio)
+
     # Create the microphone array
-    mic = pra.MicrophoneArray(agent_loc, room.fs)
+    mic = MicrophoneArray(agent_loc, room.fs)
     room.add_microphone_array(mic)
 
     # Impulse responses
