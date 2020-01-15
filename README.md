@@ -19,7 +19,8 @@ Project timeline
 - Week of 3/09
 
 ### Requirements:
-* Install [Poetry](https://python-poetry.org/docs/#installation) - Python Packaging and Dependency Manager
+* Install [Poetry](https://python-poetry.org/docs/#installation) - we use Poetry for package and dependency management
+* Run `poetry install` to install dependencies for the project (listed in `pyproject.toml`)
 
 ### Project Brainstorm
 1. Start with `f(direct_sound, agent_loc, sound_loc, room_config) => convolved_sound` using Pyroom
