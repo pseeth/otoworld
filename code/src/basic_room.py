@@ -45,7 +45,7 @@ def init_env(direct_sound, agent_loc, sound_loc, room_config):
     scaled = np.int16(data / np.max(np.abs(data)) * 32767)
 
     # Save the convolved sound
-    wavfile.write('../sounds/ConvolvedSounds/convolved_sound.wav', rate, data=scaled)
+    wavfile.write('../sounds/convolved_sounds/convolved_sound.wav', rate, data=scaled)
 
     # plot signal at microphone 0
     plt.plot(room.mic_array.signals[0, :])
