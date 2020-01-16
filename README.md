@@ -6,7 +6,7 @@ Applying reinforcement learning to perform source separation.
 
 Project timeline
 - Week of 1/13
-  - Learn: RL, Double Leep Q-Learning, SOTA (vision-related tasks), acoustics (how sound travels)
+  - Learn: RL, Double Deep Q-Learning (DDQN), SOTA (vision-related tasks), acoustics (how sound travels)
   - Code: Existing implementations (Gym), Pyroom acoustics
   - Deliverable: Want `f(direct_sound, agent_loc, sound_loc, room_config) => convolved_sound`
 - Week of 1/20
