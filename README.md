@@ -26,6 +26,10 @@ Project timeline
 1. Start with `f(direct_sound, agent_loc, sound_loc, room_config) => convolved_sound` using Pyroom
 2. Extend to a RL environment (Gym)
 
+### Ideas for Games
+* Agent should find source and "turn it off" (agent reaches same grid location)
+    - Reward structure:
+
 ### Resources: 
 #### Environments
 * Gym mini world: https://github.com/maximecb/gym-miniworld
