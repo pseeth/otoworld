@@ -24,10 +24,10 @@ Project timeline
 
 ### Tentative Plan
 - [X] Start with `f(direct_sound, agent_loc, sound_loc, room_config) => convolved_sound` using Pyroom
-2. Extend to a RL environment (Gym)
+- [ ] Extend to a RL environment (Gym)
 
 ### To-do (High Level)
-* Orient mic array in different directions
+- [ ] Orient mic array in different directions
 
 ### Ideas for Games
 * Agent should find source and "turn it off" (agent reaches same grid location)
