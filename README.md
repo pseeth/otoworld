@@ -22,8 +22,8 @@ Project timeline
 * Install [Poetry](https://python-poetry.org/docs/#installation) - we use Poetry for package and dependency management
 * Run `poetry install` to install dependencies for the project (listed in `pyproject.toml`)
 
-### Project Brainstorm
-- [ - ] Start with `f(direct_sound, agent_loc, sound_loc, room_config) => convolved_sound` using Pyroom
+### Tentative Plan
+- [X] Start with `f(direct_sound, agent_loc, sound_loc, room_config) => convolved_sound` using Pyroom
 2. Extend to a RL environment (Gym)
 
 ### To-do (High Level)
