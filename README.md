@@ -31,7 +31,7 @@ Project timeline
 
 ### Ideas for Games
 * Agent should find source and "turn it off" (agent reaches same grid location)
-    - Reward structure:
+    - Reward structure: continuous reward based on how loud the environment is, reward for turning off source
 
 ### Resources: 
 #### Environments
