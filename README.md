@@ -10,6 +10,8 @@ Project timeline
   - Code: Existing implementations (Gym), Pyroom acoustics
   - Deliverable: Want `f(direct_sound, agent_loc, sound_loc, room_config) => convolved_sound`
 - Week of 1/20
+  - RL review 
+  - Deliverable: Want environment setup and be onbservable; `file = env.render()`, save audio file with librosa
 - Week of 1/27
 - Week of 2/03
 - Week of 2/10
@@ -26,12 +28,22 @@ Project timeline
 - [X] Start with `f(direct_sound, agent_loc, sound_loc, room_config) => convolved_sound` using Pyroom
 - [ ] Extend to a RL environment (Gym)
 
+## Directions
+- Keep < 8K Hz sample rate (8,000 samples/time intervals per second)
+
 ### To-do (High Level)
-- [ ] Orient mic array in different directions
+- [ ] Split up Pyroom initiliazation and convolution calculation (in `basic_room.py`)
+- [ ] If stereo file, take mean of 2 channels (in `basic_room.py`)
+- [ ] Orient mic array in different directions (for rotation) (in `basic_room.py`)
+- [ ] Replace `wavfile.read` with `librosa` (add with poetry)
+- [ ] Figure out how to poetry `export` to a `requirements.txt` so users don't have to use `poetry`
 
 ### Ideas for Games
 * Agent should find source and "turn it off" (agent reaches same grid location)
+    - Maybe record impulse responses to see change as agent gets closer
     - Reward structure: continuous reward based on how loud the environment is, reward for turning off source
+    - Action space: rotate_left (x degrees), rotate_right (x degrees); then step (however far)
+    - State space: tbd
 
 ### Resources: 
 #### Environments
