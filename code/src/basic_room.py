@@ -23,6 +23,7 @@ def init_env(direct_sound, agent_loc, sound_loc, room_config):
     rates = []
     for idx, audio_file in enumerate(direct_sound):
         r, a = wavfile.read(audio_file)
+        print("Rate: ", r)
 
         # store
         rates.append(r)
