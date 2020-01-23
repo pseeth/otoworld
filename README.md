@@ -33,9 +33,9 @@ Project timeline
 
 ### To-do (High Level)
 - [ ] Split up Pyroom initiliazation and convolution calculation (in `basic_room.py`)
-- [ ] If stereo file, take mean of 2 channels (in `basic_room.py`)
+- [X] If stereo file, take mean of 2 channels (in `basic_room.py`)
 - [ ] Orient mic array in different directions (for rotation) (in `basic_room.py`)
-- [ ] Replace `wavfile.read` with `librosa` (add with poetry)
+- [X] Replace `wavfile.read` with `librosa` (add with poetry)
 - [ ] Figure out how to poetry `export` to a `requirements.txt` so users don't have to use `poetry`
 
 ### Ideas for Games
