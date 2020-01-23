@@ -36,7 +36,7 @@ Project timeline
 - [X] If stereo file, take mean of 2 channels (in `basic_room.py`)
 - [ ] Orient mic array in different directions (for rotation) (in `basic_room.py`)
 - [X] Replace `wavfile.read` with `librosa` (add with poetry)
-- [ ] Figure out how to poetry `export` to a `requirements.txt` so users don't have to use `poetry`
+- [X] Figure out how to poetry `export` to a `requirements.txt` so users don't have to use `poetry`
 
 ### Ideas for Games
 * Agent should find source and "turn it off" (agent reaches same grid location)
