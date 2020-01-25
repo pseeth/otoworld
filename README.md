@@ -11,7 +11,7 @@ Project timeline
   - Deliverable: Want `f(direct_sound, agent_loc, sound_loc, room_config) => convolved_sound`
 - Week of 1/20
   - RL review 
-  - Deliverable: Want environment setup and be onbservable; `file = env.render()`, save audio file with librosa
+  - Deliverable: Want environment setup and be observable; `file = env.render()`, save audio file with librosa
 - Week of 1/27
 - Week of 2/03
 - Week of 2/10
