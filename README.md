@@ -60,7 +60,7 @@ Project timeline
 - [ ] Need 1 more microphone (2 total)
 - [ ] Orient mic array in different directions (for rotation) (in `basic_room.py`)
 - [ ] Randomize sound source files
-- [ ] Extend configuration to make different rooms (multiple shoeboxes)
+- [ ] Extend configuration (`room_config`) to make different rooms (multiple shoeboxes)
     - Each create 3 (unique) rooms and have oracle agent go to sources
 
 ### Ideas for Games
