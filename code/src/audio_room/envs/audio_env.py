@@ -115,7 +115,7 @@ class AudioEnv(gym.Env):
 			# Calculate the impulse response
 			self.room.compute_rir()
 			self.room.simulate()
-			data = self.room.mic_array.signals[0, :]
+			data = self.room.mic_array.signals
 
 			if play_audio:
 				self.render(data)

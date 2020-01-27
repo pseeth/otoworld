@@ -33,7 +33,7 @@ def run_perfect_agent():
 			 '../sounds/dry_recordings/dev/051_subset/051a050b.wav']
 
 	# dimensions of room
-	room_config = [15, 15]
+	room_config = [30, 30]
 
 	# locations of audio sources (direct correspondence with paths list, e.g. [5,5] is the location of 050a050a.wav)
 	source_loc = [[0, 0], [14, 14]]  # Keep the sources far away for easy testing
@@ -54,6 +54,7 @@ def run_perfect_agent():
 
 if __name__ == '__main__':
 	# Run the random agent
-	# run_random_agent()
+	#run_random_agent()
 	# Run perfect agent
 	run_perfect_agent()
+ 
