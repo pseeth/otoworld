@@ -23,10 +23,11 @@ Project timeline
 - Week of 3/09
 
 ### Requirements:
-* Install [Poetry](https://python-poetry.org/docs/#installation) - we use Poetry for package and dependency management
-* Run `poetry install` to install dependencies for the project (listed in `pyproject.toml`)
+- Create a conda environment: `conda create -n [your-env-name] python=3.7`
+- Install [Poetry](https://python-poetry.org/docs/#installation) - we use Poetry for package and dependency management
+- Run `poetry install` to install dependencies for the project (listed in `pyproject.toml`)
 
-### Run 
+### Run (Recommended)
 `poetry run python basic_room2.py `
 
 ### Tentative Plan
