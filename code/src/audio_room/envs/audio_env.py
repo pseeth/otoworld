@@ -2,6 +2,7 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 from pyroomacoustics import MicrophoneArray, ShoeBox
+import pyroomacoustics as pra
 import librosa
 import numpy as np
 import matplotlib.pyplot as plt
@@ -68,8 +69,9 @@ class AudioEnv(gym.Env):
 		self.agent_loc = agent_loc
 		# Delete the array at previous time step
 		self.room.mic_array = None
-		# Create the array at current time step
-		mic = MicrophoneArray(agent_loc.reshape(-1, 1), self.room.fs)
+		# Create an array with 2 microphones, 0 degrees, 20 com mic dist
+		mic = pra.linear_2D_array(agent_loc, 2, 0, 20)
+		mic = MicrophoneArray(mic, self.room.fs)
 		self.room.add_microphone_array(mic)
 
 	def step(self, action, play_audio=True):
@@ -125,7 +127,7 @@ class AudioEnv(gym.Env):
 			reward = -np.linalg.norm(self.agent_loc - self.target)
 
 			# Return the room rir and convolved signals as the new state
-			return [self.room.rir, data], reward, done
+			return [data], reward, done
 
 	def reset(self):
 		# Reset agent's location

@@ -7,7 +7,6 @@ import os
 DIR_MALE = '../sounds/dry_recordings/dev/051_subset/'
 DIR_FEMALE = '../sounds/dry_recordings/dev/050_subset/'
 
-
 def run_random_agent():
 	# paths of audio files
 	paths = choose_random_files()
