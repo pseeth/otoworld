@@ -1,22 +1,20 @@
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
-from pyroomacoustics import MicrophoneArray, ShoeBox
 import pyroomacoustics as pra
+from pyroomacoustics import MicrophoneArray, ShoeBox
 import librosa
 import numpy as np
 import matplotlib.pyplot as plt
 import simpleaudio as sa
 from gym import spaces
 from random import randint
+import time
 
 
 class AudioEnv(gym.Env):
-	def __init__(self, room_config, agent_loc=None, resample_rate=8000, num_channels=1, bytes_per_sample=2):
+	def __init__(self, room_config, agent_loc=None, resample_rate=8000, num_channels=1, bytes_per_sample=2, corners=False):
 		self.resample_rate = resample_rate
-		self.room = ShoeBox(room_config)
-		self.x_max = room_config[0]
-		self.y_max = room_config[1]
 		self.audio = []
 		self.num_channels = num_channels
 		self.bytes_per_sample = bytes_per_sample
@@ -24,14 +22,29 @@ class AudioEnv(gym.Env):
 		self.action_space = spaces.Discrete(self.num_actions)
 		self.target = None
 		self.action_to_string = {0: 'Left', 1: 'Right', 2: 'Up', 3: 'Down'}
+		self.corners = corners
 
-		if agent_loc is not None:
+		if self.corners:
+			self.room = pra.Room.from_corners(room_config, fs=resample_rate)
 			self.agent_loc = agent_loc
+
+			# these maxes don't make sense but the rest of the code was written to need them
+			self.x_max = max(room_config[0])
+			self.y_max = max(room_config[1])
+
+		# NOTE: this code assumes ShoeBox config and that default arg: agent_loc=None
+		# more params to Shoebox: fs (sample freq. in Hz), absorption (absorption of walls between 0-1)
 		else:
-			# Generate initial agent location randomly if nothing is specified
-			x = randint(0, self.x_max-1)
-			y = randint(0, self.y_max-1)
-			self.agent_loc = [x, y]
+			self.room = ShoeBox(room_config)
+			self.x_max = room_config[0]
+			self.y_max = room_config[1]
+			if agent_loc is not None:
+				self.agent_loc = agent_loc
+			else:
+				# Generate initial agent location randomly if nothing is specified
+				x = randint(0, self.x_max-1)
+				y = randint(0, self.y_max-1)
+				self.agent_loc = [x, y]
 
 		print("Initial agent location: ", self.agent_loc)
 
@@ -54,12 +67,16 @@ class AudioEnv(gym.Env):
 			self.audio.append(a)
 			self.room.add_source(sound_loc[idx], signal=a)
 
-		# One of the sources would be the target source; i.e the one which agent will move to
-		if target is not None:
-			self.target = sound_loc[target]
+		# if not Shoebox config
+		if self.corners:
+			self.target = target
 		else:
-			# Set a random target otherwise
-			self.target = sound_loc[randint(0, len(sound_loc)-1)]
+			# One of the sources would be the target source; i.e the one which agent will move to
+			if target is not None:
+				self.target = sound_loc[target]
+			else:
+				# Set a random target otherwise
+				self.target = sound_loc[randint(0, len(sound_loc)-1)]
 
 		print("The target source is set as: ", self.target)
 		self.target = np.array(self.target)
@@ -69,10 +86,11 @@ class AudioEnv(gym.Env):
 		self.agent_loc = agent_loc
 		# Delete the array at previous time step
 		self.room.mic_array = None
-		# Create an array with 2 microphones, 0 degrees, 20 com mic dist
-		mic = pra.linear_2D_array(agent_loc, 2, 0, 20)
-		mic = MicrophoneArray(mic, self.room.fs)
-		self.room.add_microphone_array(mic)
+		# Create the array at current time step (2 mics, angle 0, 2m apart)
+		mic = pra.linear_2D_array(agent_loc, 2, 0, .5)
+		self.room.add_microphone_array(MicrophoneArray(mic, self.room.fs))
+		self.room.plot()
+		plt.show()
 
 	def step(self, action, play_audio=True):
 		'''
@@ -119,6 +137,12 @@ class AudioEnv(gym.Env):
 			self.room.simulate()
 			data = self.room.mic_array.signals
 
+			# print RIR
+			self.room.plot_rir()
+			fig = plt.gcf()
+			fig.set_size_inches(16, 8)
+			plt.show()
+
 			if play_audio:
 				self.render(data)
 
@@ -140,9 +164,12 @@ class AudioEnv(gym.Env):
 
 	def render(self, data):
 		# Play the audio using Simple Audio
-		# Scaling of data is important, otherwise audio won't play
+
+		# Scaling of data is important, otherwise audio won't play, for now, play data from mic 0
+		#data = data.reshape(-1, 2)
 		scaled = np.int16(data / np.max(np.abs(data)) * 32767)
-		play_obj = sa.play_buffer(scaled, num_channels=self.num_channels, bytes_per_sample=self.bytes_per_sample,
+		play_obj = sa.play_buffer(scaled, num_channels=self.num_channels,
+								  bytes_per_sample=self.bytes_per_sample,
 								  sample_rate=self.resample_rate)
 		play_obj.wait_done()
 
