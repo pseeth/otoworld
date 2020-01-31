@@ -112,7 +112,8 @@ class PerfectAgentHorseshoeRoom(object):
 
 	def fit(self, env):
 		"""
-		Hardcoded to reach the target. Go down to [2,3], right to [9, 3], up to [9,8] to get from [2,8] to [9,8]
+		Hardcoded to reach the target. Start at [3, 8].
+		Go down to [3,3], right to [9, 3], up to [9,8] to get from [2,8] to [9,8]
 
 		Also, remember
 		0 = Left
@@ -126,8 +127,8 @@ class PerfectAgentHorseshoeRoom(object):
 		for episode in range(self.episodes):
 			for step in range(self.max_steps):
 				while (self.agent_loc[0] != self.target_loc[0]) or (self.agent_loc[1] != self.target_loc[1]):
-					# need to go down to [2,3]
-					if self.agent_loc[0] == 2:
+					# need to go down to [3,3]
+					if self.agent_loc[0] == 3:
 						action = 3
 						self.agent_loc[1] -= 1
 

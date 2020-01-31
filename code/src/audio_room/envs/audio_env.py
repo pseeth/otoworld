@@ -82,7 +82,7 @@ class AudioEnv(gym.Env):
 
 		# if not Shoebox config
 		if self.corners:
-			self.target = target
+			self.target = sound_loc[target]
 		else:
 			# One of the sources would be the target source; i.e the one which agent will move to
 			if target is not None:

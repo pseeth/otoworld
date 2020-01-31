@@ -72,15 +72,15 @@ def run_perfect_horseshoe_room_agent():
 	# dimensions of room (Horseshoe room, see class for visualization); order matters!
 	room_config = np.array([[2, 2], [2, 10], [5, 10], [5, 5], [8, 5], [8, 10], [10, 10], [10, 2]]).T
 
-	# locations of audio sources (direct correspondence with paths list, e.g. [5,5] is the location of 050a050a.wav)
+	# locations of audio sources (direct correspondence with paths list)
 	source_loc = [[6, 4.5], [9, 8]]
 
 	# this agent will go get 9,8
-	agent_loc = np.array([2, 8])
+	agent_loc = np.array([3, 8])
 
 	# Set up the gym environment
 	env = gym.make('audio-room-v0', room_config=room_config, agent_loc=agent_loc, corners=True)
-	env.add_sources(direct_sound=paths, sound_loc=source_loc, target=[9, 8])
+	env.add_sources(direct_sound=paths, sound_loc=source_loc, target=1)  # target is the 2nd source
 
 	# Load the agent class
 	target_loc = env.target
@@ -121,7 +121,7 @@ if __name__ == '__main__':
 	# Run the random agent
 	#run_random_agent()
 	# Run perfect agent
-	run_perfect_agent()
+	#run_perfect_agent()
 	# Run the horseshoe agent
-	#run_perfect_horseshoe_room_agent()
+	run_perfect_horseshoe_room_agent()
  
