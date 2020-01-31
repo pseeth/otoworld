@@ -14,6 +14,18 @@ import time
 
 class AudioEnv(gym.Env):
 	def __init__(self, room_config, agent_loc=None, resample_rate=8000, num_channels=1, bytes_per_sample=2, corners=False):
+		"""
+		This class inherits from OpenAI Gym Env and is used to simulate the agent moving in PyRoom.
+
+		Args:
+			room_config (List or np.array): dimensions of the room. For Shoebox, in the form of [10,10]. Otherwise,
+				in the form of [[1,1], [1, 4], [4, 4], [4, 1]] specifying the corners of the room
+			agent_loc (List or np.array): initial location of the agent (mic array).
+			resample_rate (int): sample rate in Hz
+			num_channels (int): number of channels (used in playing what the mic hears)
+			bytes_per_sample (int): used in playing what the mic hears
+			corners (bool): False if using Shoebox config, otherwise True
+		"""
 		self.resample_rate = resample_rate
 		self.audio = []
 		self.num_channels = num_channels
@@ -28,12 +40,11 @@ class AudioEnv(gym.Env):
 			self.room = pra.Room.from_corners(room_config, fs=resample_rate)
 			self.agent_loc = agent_loc
 
-			# these maxes don't make sense but the rest of the code was written to need them
+			# these maxes don't really make sense but the rest of the code was written to need them
 			self.x_max = max(room_config[0])
 			self.y_max = max(room_config[1])
 
-		# NOTE: this code assumes ShoeBox config and that default arg: agent_loc=None
-		# more params to Shoebox: fs (sample freq. in Hz), absorption (absorption of walls between 0-1)
+		# NOTE: this code assumes ShoeBox config and that default arg
 		else:
 			self.room = ShoeBox(room_config)
 			self.x_max = room_config[0]
@@ -49,14 +60,16 @@ class AudioEnv(gym.Env):
 		print("Initial agent location: ", self.agent_loc)
 
 	def add_sources(self, direct_sound, sound_loc, target=None):
-		'''
-		:param direct_sound: The path to sound files
-		:param sound_loc: A list consisting of [x, y] co-ordinates of source location
-		:param target: The index value of sound_loc list which is to be set as target
-		:return:
-		'''
+		"""
+		This function adds the sources to PyRoom
+
+		Args:
+			direct_sound (str): The path to sound files
+			sound_loc (List[int]): A list consisting of [x, y] coordinates of source location
+			target (int): The index value of sound_loc list which is to be set as target
+		"""
 		for idx, audio_file in enumerate(direct_sound):
-			# Audio will be automatically resampled to the given rate (default sr=8000).
+			# Audio will be automatically re-sampled to the given rate (default sr=8000).
 			a, _ = librosa.load(audio_file, sr=self.resample_rate)
 
 			# If sound is recorded on stereo microphone, it is 2d
@@ -82,23 +95,43 @@ class AudioEnv(gym.Env):
 		self.target = np.array(self.target)
 
 	def _move_agent(self, agent_loc):
+		"""
+		This function moves the agent to a new location (given by agent_loc). It effectively removes the
+		agent (mic array) from the room and then adds it back in the new location.
+
+		Args:
+			agent_loc (List[int] or np.array): [x,y] coordinates of the agent's new location
+		"""
 		# Set the new agent location
 		self.agent_loc = agent_loc
+
 		# Delete the array at previous time step
 		self.room.mic_array = None
+
 		# Create the array at current time step (2 mics, angle 0, 2m apart)
 		mic = pra.linear_2D_array(agent_loc, 2, 0, .5)
 		self.room.add_microphone_array(MicrophoneArray(mic, self.room.fs))
+
+		# Plot the room
 		self.room.plot()
 		plt.show()
 
 	def step(self, action, play_audio=True):
-		'''
-		0 = Left
-		1 = Right
-		2 = Up
-		3 = Down
-		'''
+		"""
+		This function simulates the agent taking one step in the environment (and room) given an action:
+			0 = Left
+			1 = Right
+			2 = Up
+			3 = Down
+		It calls _move_agent, checks to see if the agent has reached a target, and if not, computes the RIR.
+
+		Args:
+			action (int): direction agent is to move - 0 (L), 1 (R), 2 (U), 3 (D)
+			play_audio (bool): whether to play the the mic audio (stored in "data")
+
+		Returns:
+			Tuple of the format List (empty if done, else [data]), reward, done
+		"""
 		x, y = self.agent_loc[0], self.agent_loc[1]
 		done = False
 		if action == 0:
@@ -154,6 +187,10 @@ class AudioEnv(gym.Env):
 			return [data], reward, done
 
 	def reset(self):
+		"""
+		This function resets the agent to a random location within the room. To be used after each episode. NOTE: this
+		code assumes ShoeBox config.
+		"""
 		# Reset agent's location
 		# Generate initial agent location randomly if nothing is specified
 		x = randint(0, self.x_max - 1)
@@ -163,13 +200,16 @@ class AudioEnv(gym.Env):
 		print("Agent location reset to: ", self.agent_loc)
 
 	def render(self, data):
-		# Play the audio using Simple Audio
+		"""
+		Play the convolved sound using SimpleAudio.
 
-		# Scaling of data is important, otherwise audio won't play, for now, play data from mic 0
+		Args:
+			data (np.array): if 2 mics, should be of shape (2, x)
+		"""
+		# Scaling of data is important, otherwise audio won't play
 		#data = data.reshape(-1, 2)
 		scaled = np.int16(data / np.max(np.abs(data)) * 32767)
-		play_obj = sa.play_buffer(scaled, num_channels=self.num_channels,
-								  bytes_per_sample=self.bytes_per_sample,
+		play_obj = sa.play_buffer(scaled, num_channels=self.num_channels, bytes_per_sample=self.bytes_per_sample,
 								  sample_rate=self.resample_rate)
 		play_obj.wait_done()
 
