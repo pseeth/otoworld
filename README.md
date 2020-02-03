@@ -54,13 +54,13 @@ Project timeline
 - Keep < 8K Hz sample rate (8,000 samples/time intervals per second)
 
 ### To-do (High Level)
-- [ ] Split up Pyroom initiliazation and convolution calculation (in `basic_room.py`)
+- [X] Split up Pyroom initiliazation and convolution calculation (in `basic_room.py`)
 - [X] If stereo file, take mean of 2 channels (in `basic_room.py`)
 - [X] Replace `wavfile.read` with `librosa` (add with poetry)
 - [X] Figure out how to poetry `export` to a `requirements.txt` so users don't have to use `poetry`
-- [ ] Need 1 more microphone (2 total)
+- [X] Need 1 more microphone (2 total)
 - [ ] Orient mic array in different directions (for rotation) (in `basic_room.py`)
-- [ ] Randomize sound source files
+- [X] Randomize sound source files
 - [ ] Extend configuration (`room_config`) to make different rooms (multiple shoeboxes)
     - Each create 3 (unique) rooms and have oracle agent go to sources
 

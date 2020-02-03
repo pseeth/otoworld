@@ -13,7 +13,7 @@ import time
 
 
 class AudioEnv(gym.Env):
-	def __init__(self, room_config, agent_loc=None, resample_rate=8000, num_channels=1, bytes_per_sample=2, corners=False):
+	def __init__(self, room_config, agent_loc=None, resample_rate=8000, num_channels=2, bytes_per_sample=2, corners=False, absorption=0.0, max_order=2):
 		"""
 		This class inherits from OpenAI Gym Env and is used to simulate the agent moving in PyRoom.
 
@@ -37,25 +37,28 @@ class AudioEnv(gym.Env):
 		self.corners = corners
 
 		if self.corners:
-			self.room = pra.Room.from_corners(room_config, fs=resample_rate)
+			self.room = pra.Room.from_corners(room_config, fs=resample_rate, absorption=absorption, max_order=max_order)
 			self.agent_loc = agent_loc
+			print(room_config[0])
+			print(room_config[1])
 
-			# these maxes don't really make sense but the rest of the code was written to need them
-			self.x_max = max(room_config[0])
-			self.y_max = max(room_config[1])
+			# The x_max and y_max in this case would be used to generate agent's location randomly
+			self.x_max = min(room_config[0])  # The minimum is important
+			self.y_max = min(room_config[1])
 
 		# NOTE: this code assumes ShoeBox config and that default arg
 		else:
-			self.room = ShoeBox(room_config)
-			self.x_max = room_config[0]
-			self.y_max = room_config[1]
-			if agent_loc is not None:
-				self.agent_loc = agent_loc
-			else:
-				# Generate initial agent location randomly if nothing is specified
-				x = randint(0, self.x_max-1)
-				y = randint(0, self.y_max-1)
-				self.agent_loc = [x, y]
+			self.room = ShoeBox(room_config, absorption=absorption)
+			self.x_max = room_config[0]-1
+			self.y_max = room_config[1]-1
+
+		if agent_loc is not None:
+			self.agent_loc = agent_loc
+		else:
+			# Generate initial agent location randomly if nothing is specified
+			x = randint(0, self.x_max)
+			y = randint(0, self.y_max)
+			self.agent_loc = [x, y]
 
 		print("Initial agent location: ", self.agent_loc)
 
@@ -108,15 +111,18 @@ class AudioEnv(gym.Env):
 		# Delete the array at previous time step
 		self.room.mic_array = None
 
-		# Create the array at current time step (2 mics, angle 0, 2m apart)
-		mic = pra.linear_2D_array(agent_loc, 2, 0, .5)
-		self.room.add_microphone_array(MicrophoneArray(mic, self.room.fs))
+		if self.num_channels == 2:
+			# Create the array at current time step (2 mics, angle 0, 0.5m apart)
+			mic = MicrophoneArray(pra.linear_2D_array(agent_loc, 2, 15, 0.5), self.room.fs)
+			self.room.add_microphone_array(mic)
+		else:
+			mic = MicrophoneArray(agent_loc.reshape(-1, 1), self.room.fs)
+			self.room.add_microphone_array(mic)
 
-		# Plot the room
-		self.room.plot()
-		plt.show()
+	def check_if_inside(self, points):
+		return self.room.is_inside(points, include_borders=False)
 
-	def step(self, action, play_audio=True):
+	def step(self, action, play_audio=True, show_room=True):
 		"""
 		This function simulates the agent taking one step in the environment (and room) given an action:
 			0 = Left
@@ -128,6 +134,7 @@ class AudioEnv(gym.Env):
 		Args:
 			action (int): direction agent is to move - 0 (L), 1 (R), 2 (U), 3 (D)
 			play_audio (bool): whether to play the the mic audio (stored in "data")
+			show_room (bool): Controls whether room is visually plotted or not
 
 		Returns:
 			Tuple of the format List (empty if done, else [data]), reward, done
@@ -135,20 +142,19 @@ class AudioEnv(gym.Env):
 		x, y = self.agent_loc[0], self.agent_loc[1]
 		done = False
 		if action == 0:
-			if x != 0:
-				x -= 1
+			x -= 1
 		elif action == 1:
-			if x != self.x_max-1:
-				x += 1
+			x += 1
 		elif action == 2:
-			if y != self.y_max-1:
-				y += 1
+			y += 1
 		elif action == 3:
-			if y != 0:
-				y -= 1
-		# Move agent in the direction of action
+			y -= 1
+
+		# Check if the new points lie within the room
+		points = np.array([x, y]) if self.room.is_inside([x, y], include_borders=False) else self.agent_loc
 		print("Agent performed action: ", self.action_to_string[action])
-		self._move_agent(agent_loc=np.array([x, y]))
+		# Move agent in the direction of action
+		self._move_agent(agent_loc=points)
 		print("New agent location: ", self.agent_loc)
 		print("Target location: ", self.target)
 		print("---------------------")
@@ -166,18 +172,30 @@ class AudioEnv(gym.Env):
 
 		if not done:
 			# Calculate the impulse response
+			# print("Mic array", self.room.mic_array.R.T.shape)
+			# print("Sources", len(self.room.sources))
+			# for m, mic in enumerate(self.room.mic_array.R.T):
+			# 	h = []
+			# 	for s, source in enumerate(self.room.sources):
+			# 		print("Source: ", source)
+			# 		print("Visibility: ", self.room.is_visible(source, self.agent_loc))
+			# 		print(self.room.visibility)
+			# 		h.append(source.get_rir(mic, self.room.visibility[s][m], self.room.fs, self.room.t0))
+			# 	self.room.rir.append(h)
+			# print("Max order: ", self.room.max_order)
 			self.room.compute_rir()
 			self.room.simulate()
 			data = self.room.mic_array.signals
+			# print(data.shape)
 
-			# print RIR
-			self.room.plot_rir()
-			fig = plt.gcf()
-			fig.set_size_inches(16, 8)
-			plt.show()
+			# # print RIR
+			# self.room.plot_rir()
+			# fig = plt.gcf()
+			# fig.set_size_inches(16, 8)
+			# plt.show()
 
-			if play_audio:
-				self.render(data)
+			if play_audio or show_room:
+				self.render(data, play_audio, show_room)
 
 			# Calculate the reward
 			# Currently, simply using negative of l2 norm as reward
@@ -193,23 +211,38 @@ class AudioEnv(gym.Env):
 		"""
 		# Reset agent's location
 		# Generate initial agent location randomly if nothing is specified
-		x = randint(0, self.x_max - 1)
-		y = randint(0, self.y_max - 1)
+		x = randint(0, self.x_max)
+		y = randint(0, self.y_max)
 		self.agent_loc = [x, y]
 
 		print("Agent location reset to: ", self.agent_loc)
 
-	def render(self, data):
+	def render(self, data, play_audio, show_room):
 		"""
 		Play the convolved sound using SimpleAudio.
 
 		Args:
-			data (np.array): if 2 mics, should be of shape (2, x)
+			data (np.array): if 2 mics, should be of shape (x, 2)
+			play_audio (bool): If true, audio will play
+			show_room (bool): If true, room will be displayed to user
 		"""
-		# Scaling of data is important, otherwise audio won't play
-		#data = data.reshape(-1, 2)
-		scaled = np.int16(data / np.max(np.abs(data)) * 32767)
-		play_obj = sa.play_buffer(scaled, num_channels=self.num_channels, bytes_per_sample=self.bytes_per_sample,
-								  sample_rate=self.resample_rate)
-		play_obj.wait_done()
+		if play_audio:
+			scaled = np.zeros((data.shape[1], data.shape[0]))
+
+			# Scale each microphone separately -> Important
+			scaled[:, 0] = data[0] / np.max(np.abs(data[0])) * 32767
+			scaled[:, 1] = data[1] / np.max(np.abs(data[1])) * 32767
+			# Int16 is required to play the audio correctly
+			scaled = scaled.astype(np.int16)
+			# print("Scaled", scaled.shape)pe)
+			play_obj = sa.play_buffer(scaled, num_channels=self.num_channels, bytes_per_sample=self.bytes_per_sample,
+									  sample_rate=self.resample_rate)
+
+			# Show the room while the audio is playing
+			if show_room:
+				fig, ax = self.room.plot(img_order=0)
+				plt.pause(0.001)
+
+			play_obj.wait_done()
+			plt.close()
 

@@ -22,6 +22,8 @@ room.add_microphone_array(Beamformer(R, room.fs))
 # Now compute the delay and sum weights for the beamformer
 room.mic_array.rake_delay_and_sum_weights(room.sources[0][:1])
 
-# plot the room and resulting beamformer
-room.plot(freq=[1000, 2000, 4000, 8000], img_order=0)
-plt.show()
+# # plot the room and resulting beamformer
+# room.plot(freq=[1000, 2000, 4000, 8000], img_order=0)
+# plt.show()
+
+print(room.is_inside([4, 6]))
