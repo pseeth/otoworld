@@ -136,5 +136,5 @@ if __name__ == '__main__':
 	# Run the random agent
 	#run_random_agent()
 	# Run perfect agent
-	# run_perfect_agent()
-	run_room_agent_oroom1()
+	run_perfect_agent()
+	#run_room_agent_oroom1()

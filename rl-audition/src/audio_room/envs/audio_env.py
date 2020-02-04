@@ -243,4 +243,3 @@ class AudioEnv(gym.Env):
 
 			play_obj.wait_done()
 			plt.close()
-
