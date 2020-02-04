@@ -70,37 +70,11 @@ def run_perfect_agent():
 	agent.fit(env)
 
 
-def run_perfect_horseshoe_room_agent():
-	"""
-	This function runs the Perfect Horseshoe Room Agent in the Horseshoe Room audio environment. The Horseshoe room
-	is created by just passing the corners of the room as the room_config. For now, PyRoom seems unable to compute
-	the RIR.
-	"""
-	# paths of audio files
-	paths = choose_random_files()
-
-	# dimensions of room (Horseshoe room, see class for visualization); order matters!
-	room_config = np.array([[2, 2], [2, 10], [5, 10], [5, 5], [8, 5], [8, 10], [10, 10], [10, 2]]).T
-
-	# locations of audio sources (direct correspondence with paths list)
-	source_loc = [[6, 4.5], [9, 8]]
-
-	# this agent will go get 9,8
-	agent_loc = np.array([3, 8])
-	# agent_loc = np.array([3, 3])
-
-	# Set up the gym environment
-	env = gym.make('audio-room-v0', room_config=room_config, agent_loc=agent_loc, corners=True, num_channels=2)
-	env.add_sources(direct_sound=paths, sound_loc=source_loc, target=1)  # target is the 2nd source
-	env.room.plot()
-	plt.show()
-	# Load the agent class
-	target_loc = env.target
-	agent = rl_agent.PerfectAgentHorseshoeRoom(target_loc=target_loc, agent_loc=agent_loc)
-	agent.fit(env)
-
-
 def run_room_agent_oroom1():
+	"""
+	This function runs the ORoom Agent in the ORoom audio environment. The point of this class
+	is to create an environment different than the ShoeBox room.
+	"""
 	# paths of audio files
 	paths = choose_random_files()
 

@@ -92,80 +92,10 @@ class PerfectAgent(object):
 					break
 
 
-class PerfectAgentHorseshoeRoom(object):
-	def __init__(self, target_loc, agent_loc, episodes=1, steps=50, play_audio=True, show_room=True):
-		"""
-		Room shape:
-			|A|		|T|
-			| |_____| |
-			|_________|
-
-		Args:
-			target_loc (List[int] or np.array): the location of the target in the room
-			agent_loc (List[int] or np.array): the initial location of the agent in the room
-			episodes (int): # of episodes to simulate
-			steps (int): # of steps the agent can take before stopping an episode
-		"""
-		self.episodes = episodes
-		self.max_steps = steps
-		self.target_loc = target_loc.copy()
-		self.agent_loc = agent_loc.copy()
-		self.play_audio = play_audio
-		self.show_room = show_room
-
-	def fit(self, env):
-		"""
-		Hardcoded to reach the target. Start at [3, 8].
-		Go down to [3,3], right to [9, 3], up to [9,8] to get from [2,8] to [9,8]
-
-		Also, remember
-		0 = Left
-		1 = Right
-		2 = Up
-		3 = Down
-
-		Args:
-			env (Gym env obj): the environment used to take the action
-		"""
-		for episode in range(self.episodes):
-			for step in range(self.max_steps):
-				while (self.agent_loc[0] != self.target_loc[0]) or (self.agent_loc[1] != self.target_loc[1]):
-					# need to go down to [3,3]
-					if self.agent_loc[0] == 3:
-						action = 3
-						self.agent_loc[1] -= 1
-
-						# if we reach 3, stop going down
-						if self.agent_loc[1] == 3:
-							break
-
-					# go right to [9,3]
-					elif self.agent_loc[1] == 3:
-						action = 1
-						self.agent_loc[0] += 1
-
-						if self.agent_loc[0] == 9:
-							break
-
-					# go up to [9,8]
-					else:
-						action = 2
-						self.agent_loc[1] += 1
-
-						if self.agent_loc[1] == 8:
-							break
-
-				new_state, reward, done = env.step(action, self.play_audio, self.show_room)
-				print("Reward gained: ", reward)
-
-				if done:
-					break
-
-
 class PerfectAgentORoom:
 	def __init__(self, target_loc, agent_loc, episodes=1, steps=50, play_audio=True, show_room=True):
 		"""
-		This class represents a perfect agent that will randomly choose a target,
+		This class represents a perfect agent in a non-ShoeBox environment that will randomly choose a target,
 		then move throughout the room to the correct x value, then move to the correct y value and stop
 		once the target is reached.
 

@@ -1,8 +1,5 @@
 import gym
-from gym import error, spaces, utils
-from gym.utils import seeding
-import pyroomacoustics as pra
-from pyroomacoustics import MicrophoneArray, ShoeBox
+from pyroomacoustics import MicrophoneArray, ShoeBox, Room, linear_2D_array
 import librosa
 import numpy as np
 import matplotlib.pyplot as plt
@@ -37,7 +34,7 @@ class AudioEnv(gym.Env):
 		self.corners = corners
 
 		if self.corners:
-			self.room = pra.Room.from_corners(room_config, fs=resample_rate, absorption=absorption, max_order=max_order)
+			self.room = Room.from_corners(room_config, fs=resample_rate, absorption=absorption, max_order=max_order)
 			self.agent_loc = agent_loc
 			print(room_config[0])
 			print(room_config[1])
@@ -46,7 +43,7 @@ class AudioEnv(gym.Env):
 			self.x_max = min(room_config[0])  # The minimum is important
 			self.y_max = min(room_config[1])
 
-		# NOTE: this code assumes ShoeBox config and that default arg
+		# NOTE: this rl-audition assumes ShoeBox config and that default arg
 		else:
 			self.room = ShoeBox(room_config, absorption=absorption)
 			self.x_max = room_config[0]-1
@@ -113,7 +110,7 @@ class AudioEnv(gym.Env):
 
 		if self.num_channels == 2:
 			# Create the array at current time step (2 mics, angle 0, 0.5m apart)
-			mic = MicrophoneArray(pra.linear_2D_array(agent_loc, 2, 15, 0.5), self.room.fs)
+			mic = MicrophoneArray(linear_2D_array(agent_loc, 2, 15, 0.5), self.room.fs)
 			self.room.add_microphone_array(mic)
 		else:
 			mic = MicrophoneArray(agent_loc.reshape(-1, 1), self.room.fs)
@@ -207,7 +204,7 @@ class AudioEnv(gym.Env):
 	def reset(self):
 		"""
 		This function resets the agent to a random location within the room. To be used after each episode. NOTE: this
-		code assumes ShoeBox config.
+		rl-audition assumes ShoeBox config.
 		"""
 		# Reset agent's location
 		# Generate initial agent location randomly if nothing is specified
