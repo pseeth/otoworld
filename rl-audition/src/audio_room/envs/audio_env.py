@@ -110,8 +110,8 @@ class AudioEnv(gym.Env):
 		self.room.mic_array = None
 
 		if self.num_channels == 2:
-			# Create the array at current time step (2 mics, angle 0, 0.5m apart)
-			mic = MicrophoneArray(linear_2D_array(agent_loc, 2, 15, 0.5), self.room.fs)
+			# Create the array at current time step (2 mics, angle 0 IN RADIANS, 0.5m apart)
+			mic = MicrophoneArray(linear_2D_array(agent_loc, 2, np.pi, 0.1), self.room.fs)
 			self.room.add_microphone_array(mic)
 		else:
 			mic = MicrophoneArray(agent_loc.reshape(-1, 1), self.room.fs)
