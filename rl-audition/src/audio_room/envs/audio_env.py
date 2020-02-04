@@ -76,6 +76,7 @@ class AudioEnv(gym.Env):
 			# Take the mean of the two stereos
 			if len(a.shape) > 1:
 				a = np.mean(a, axis=0)
+			a /= np.abs(a).max()
 
 			self.audio.append(a)
 			self.room.add_source(sound_loc[idx], signal=a)
@@ -227,8 +228,8 @@ class AudioEnv(gym.Env):
 			scaled = np.zeros((data.shape[1], data.shape[0]))
 
 			# Scale each microphone separately -> Important
-			scaled[:, 0] = data[0] / np.max(np.abs(data[0])) * 32767
-			scaled[:, 1] = data[1] / np.max(np.abs(data[1])) * 32767
+			scaled[:, 0] = data[0] * 32767
+			scaled[:, 1] = data[1] * 32767
 			# Int16 is required to play the audio correctly
 			scaled = scaled.astype(np.int16)
 			# print("Scaled", scaled.shape)pe)

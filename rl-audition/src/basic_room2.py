@@ -79,7 +79,8 @@ def run_room_agent_oroom1():
 	paths = choose_random_files()
 
 	# dimensions of room (Horseshoe room, see class for visualization); order matters!
-	room_config = np.array([[2, 2], [2, 10], [5, 10], [5, 5], [8, 5], [8, 10], [10, 10], [10, 2]]).T
+	room_config = np.array(
+		[[2, 2], [2, 10], [5, 10], [5, 5], [8, 5], [8, 10], [10, 10], [10, 2]]).T
 
 	# locations of audio sources (direct correspondence with paths list)
 	source_loc = [[6, 4.5], [9, 8]]
