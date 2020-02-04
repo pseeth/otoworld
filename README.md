@@ -23,11 +23,16 @@ Project timeline
 - Week of 3/09
 
 ### Requirements:
-- Create a conda environment: `conda create -n [your-env-name] python=3.7`
+#### Using Poetry
+- For development, we are using Poetry for package and dependency management
 - Install [Poetry](https://python-poetry.org/docs/#installation) - we use Poetry for package and dependency management
 - Run `poetry install` to install dependencies for the project (listed in `pyproject.toml`)
+- Run `poetry export -f requirements.txt` to create/update requirements based on `pyproject.toml`
 
-### Run (Recommended)
+#### Otherwise
+Assuming `requirements.txt` is up do date, run `pip install -r requirements.txt` for the correct packages
+
+### Run
 `poetry run python basic_room2.py `
 
 ### Tentative Plan
@@ -62,16 +67,17 @@ Project timeline
 - [ ] Orient mic array in different directions (for rotation) (in `basic_room.py`)
 - [X] Randomize sound source files
 - [ ] Extend configuration (`room_config`) to make different rooms (multiple shoeboxes)
-    - Each create 3 (unique) rooms and have oracle agent go to sources
 
 ### Ideas for Games
 * Agent should find source and "turn it off" (agent reaches same grid location)
-    - Maybe record impulse responses to see change as agent gets closer
+    - Record impulse responses to see change as agent gets closer (or plot room and visualize physical progress)
     - Reward structure: continuous reward based on how loud the environment is, reward for turning off source
-    - Action space: rotate_left (x degrees), rotate_right (x degrees); then step (however far)
-    - State space: tbd
+    - Action space: rotate_left (x degrees), rotate_right (x degrees), step (however many units in grid)
+    - State space: 
 
 ### Resources: 
 #### Environments
-* Gym mini world: https://github.com/maximecb/gym-miniworld
-* Gym mini grid: https://github.com/maximecb/gym-minigrid
+* [PyRoom Acoustics](https://github.com/LCAV/pyroomacoustics)
+* [Gym mini world](https://github.com/maximecb/gym-miniworld)
+* [Gym mini grid](https://github.com/maximecb/gym-minigrid)
+
