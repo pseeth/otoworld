@@ -67,6 +67,11 @@ Assuming `requirements.txt` is up do date, run `pip install -r requirements.txt`
 - [ ] Orient mic array in different directions (for rotation) (in `basic_room.py`)
 - [X] Randomize sound source files
 - [ ] Extend configuration (`room_config`) to make different rooms (multiple shoeboxes)
+- [ ] Put sources randomly in the environment 
+- [ ] Place the agent roughly equidistant to the sources 
+- [ ] Keep the distance between mics 20 cm 
+- [ ] Add the orientation action to set of actions 
+- [ ] More rooms (randomly generated if possible)  - simple rooms like hexagon, octagon 
 
 ### Ideas for Games
 * Agent should find source and "turn it off" (agent reaches same grid location)

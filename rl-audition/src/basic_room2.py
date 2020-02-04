@@ -90,7 +90,7 @@ def run_room_agent_oroom1():
 	agent_loc = np.array([3, 8])
 
 	# Set up the gym environment
-	env = gym.make('audio-room-v0', room_config=room_config, agent_loc=agent_loc, corners=True, max_order=4)
+	env = gym.make('audio-room-v0', room_config=room_config, agent_loc=agent_loc, corners=True, max_order=10)
 	env.add_sources(direct_sound=paths, sound_loc=source_loc, target=1)  # target is the 2nd source
 	# env.room.plot()
 	# plt.show()
