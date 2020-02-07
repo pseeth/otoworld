@@ -1,6 +1,7 @@
 # Reinforcement learning for computer audition
 
-Authors: Grant Gasser, David Terpay, Omkar Ranadive, Prem Seetharaman
+Authors: Grant Gasser, David Terpay, Omkar Ranadive
+Advisor: Prem Seetharaman
 
 Applying reinforcement learning to perform source separation.
 
@@ -66,11 +67,12 @@ Assuming `requirements.txt` is up do date, run `pip install -r requirements.txt`
 - [X] Figure out how to poetry `export` to a `requirements.txt` so users don't have to use `poetry`
 - [X] Need 1 more microphone (2 total)
 - [X] Randomize sound source files
-- [ ] Put sources randomly in the environment 
+- [X] Put sources randomly in the environment 
 - [ ] Place the agent roughly equidistant to the sources 
 - [ ] Keep the distance between mics 20 cm 
 - [ ] Add the orientation actions (left x degrees, right x degrees) to set of actions 
-- [ ] More rooms (randomly generated if possible)  - simple rooms like hexagon, octagon 
+    - (NOTE: angle is determined in radians using the `linear_2D_array` function, use `np.pi`) 
+- [ ] More rooms (randomly generated if possible), simple rooms like hexagon, octagon 
 
 ### Ideas for Games
 * Agent should find source and "turn it off" (agent reaches same grid location)
