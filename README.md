@@ -16,6 +16,7 @@ Project timeline
   - Presentation on Thursday (RL overview + Project Explanation)
   - Deliverable: See To-do
 - Week of 2/03
+  - See To-do
 - Week of 2/10
 - Week of 2/17
 - Week of 2/24
@@ -64,21 +65,19 @@ Assuming `requirements.txt` is up do date, run `pip install -r requirements.txt`
 - [X] Replace `wavfile.read` with `librosa` (add with poetry)
 - [X] Figure out how to poetry `export` to a `requirements.txt` so users don't have to use `poetry`
 - [X] Need 1 more microphone (2 total)
-- [ ] Orient mic array in different directions (for rotation) (in `basic_room.py`)
 - [X] Randomize sound source files
-- [ ] Extend configuration (`room_config`) to make different rooms (multiple shoeboxes)
 - [ ] Put sources randomly in the environment 
 - [ ] Place the agent roughly equidistant to the sources 
 - [ ] Keep the distance between mics 20 cm 
-- [ ] Add the orientation action to set of actions 
+- [ ] Add the orientation actions (left x degrees, right x degrees) to set of actions 
 - [ ] More rooms (randomly generated if possible)  - simple rooms like hexagon, octagon 
 
 ### Ideas for Games
 * Agent should find source and "turn it off" (agent reaches same grid location)
     - Record impulse responses to see change as agent gets closer (or plot room and visualize physical progress)
     - Reward structure: continuous reward based on how loud the environment is, reward for turning off source
-    - Action space: rotate_left (x degrees), rotate_right (x degrees), step (however many units in grid)
-    - State space: 
+    - Action space: rotate_left (x degrees), rotate_right (x degrees), step (L, R, U, D)
+    - State space:  
 
 ### Resources: 
 #### Environments
