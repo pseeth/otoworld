@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 DIR_MALE = '../sounds/dry_recordings/dev/051_subset/'
 DIR_FEMALE = '../sounds/dry_recordings/dev/050_subset/'
 
-
 def run_random_agent():
 	"""
 	This function runs the Random Agent in the ShoeBox audio environment. The agent randomly moves around until it lands
@@ -21,14 +20,14 @@ def run_random_agent():
 	room_config = [10, 10]
 
 	# locations of audio sources (direct correspondence with paths list, e.g. [5,5] is the location of 050a050a.wav)
-	source_loc = [[0, 0], [9, 9]]  # Keep the sources far away for easy testing
+	#source_loc = [[0, 0], [9, 9]]  # Keep the sources far away for easy testing
 
 	# location of agent (or microphone in this case)
 	agent_loc = np.array([5, 5])
 
 	# Set up the gym environment
 	env = gym.make('audio-room-v0', room_config=room_config, agent_loc=agent_loc)
-	env.add_sources(direct_sound=paths, sound_loc=source_loc)
+	env.add_sources(direct_sources=paths)
 
 	# Load the agent class
 	agent = rl_agent.RandomAgent()
@@ -46,15 +45,16 @@ def run_perfect_agent():
 	# dimensions of room
 	room_config = [15, 15]
 
+	# NOTE: now going to randomly place source in room
 	# locations of audio sources (direct correspondence with paths list)
-	source_loc = [[2, 2], [14, 14]]  # Keep the sources far away for easy testing
+	#source_loc = [[2, 2], [14, 14]]  # Keep the sources far away for easy testing
 
 	# location of agent (or microphone in this case)
 	agent_loc = np.array([11, 11])
 
 	# Set up the gym environment
 	env = gym.make('audio-room-v0', room_config=room_config, agent_loc=agent_loc, num_channels=2, bytes_per_sample=2)
-	env.add_sources(direct_sound=paths, sound_loc=source_loc)
+	env.add_sources(direct_sources=paths)
 
 	# ---- Only for debuggin ---
 	# # env.room.plot()
@@ -74,6 +74,9 @@ def run_room_agent_oroom1():
 	"""
 	This function runs the ORoom Agent in the ORoom audio environment. The point of this class
 	is to create an environment different than the ShoeBox room.
+
+	NOTE: this can no longer be run with random source placement
+		- may not need this since staying with simpler rooms
 	"""
 	# paths of audio files
 	paths = choose_random_files()
@@ -91,7 +94,7 @@ def run_room_agent_oroom1():
 
 	# Set up the gym environment
 	env = gym.make('audio-room-v0', room_config=room_config, agent_loc=agent_loc, corners=True, max_order=10)
-	env.add_sources(direct_sound=paths, sound_loc=source_loc, target=1)  # target is the 2nd source
+	env.add_sources(direct_sound=paths, target=1)  # target is the 2nd source
 	# env.room.plot()
 	# plt.show()
 	# env.step(3)

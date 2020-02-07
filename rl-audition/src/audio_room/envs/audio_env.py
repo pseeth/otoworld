@@ -32,7 +32,9 @@ class AudioEnv(gym.Env):
 		self.target = None
 		self.action_to_string = {0: 'Left', 1: 'Right', 2: 'Up', 3: 'Down'}
 		self.corners = corners
+		self.room_config = room_config
 
+		# non-Shoebox config (corners of room are given)
 		if self.corners:
 			self.room = Room.from_corners(room_config, fs=resample_rate, absorption=absorption, max_order=max_order)
 			self.agent_loc = agent_loc
@@ -43,7 +45,7 @@ class AudioEnv(gym.Env):
 			self.x_max = min(room_config[0])  # The minimum is important
 			self.y_max = min(room_config[1])
 
-		# NOTE: this rl-audition assumes ShoeBox config and that default arg
+		# ShoeBox config
 		else:
 			self.room = ShoeBox(room_config, absorption=absorption)
 			self.x_max = room_config[0]-1
@@ -57,18 +59,30 @@ class AudioEnv(gym.Env):
 			y = randint(0, self.y_max)
 			self.agent_loc = [x, y]
 
+		print('X max:', self.x_max)
+		print('Y max:', self.y_max)
 		print("Initial agent location: ", self.agent_loc)
 
-	def add_sources(self, direct_sound, sound_loc, target=None):
+	def add_sources(self, direct_sources, target=None):
 		"""
-		This function adds the sources to PyRoom
+		This function adds the sources to PyRoom. Assumes 2 sources.
 
 		Args:
-			direct_sound (str): The path to sound files
-			sound_loc (List[int]): A list consisting of [x, y] coordinates of source location
-			target (int): The index value of sound_loc list which is to be set as target
+			direct_sound (List[str]): The paths to sound files
+			source_loc (List[int]): A list consisting of [x, y] coordinates of source location
+			target (int): The index value of source_loc list which is to be set as target
 		"""
-		for idx, audio_file in enumerate(direct_sound):
+		#source_loc = [[2, 2], [14, 14]]
+
+		# randomly place sources in room
+		while True:
+			source_loc = np.array([[np.random.randint(0, self.room_config[0]), \
+									np.random.randint(0, self.room_config[1])] for _ in direct_sources])
+			if self.check_if_inside(source_loc[0]) and self.check_if_inside(source_loc[1]):
+				break
+
+
+		for idx, audio_file in enumerate(direct_sources):
 			# Audio will be automatically re-sampled to the given rate (default sr=8000).
 			a, _ = librosa.load(audio_file, sr=self.resample_rate)
 
@@ -76,21 +90,23 @@ class AudioEnv(gym.Env):
 			# Take the mean of the two stereos
 			if len(a.shape) > 1:
 				a = np.mean(a, axis=0)
+
+			# normalize audio so both sources have similar volume at beginning before mixed
 			a /= np.abs(a).max()
 
 			self.audio.append(a)
-			self.room.add_source(sound_loc[idx], signal=a)
+			self.room.add_source(source_loc[idx], signal=a)
 
 		# if not Shoebox config
 		if self.corners:
-			self.target = sound_loc[target]
+			self.target = source_loc[target]
 		else:
 			# One of the sources would be the target source; i.e the one which agent will move to
 			if target is not None:
-				self.target = sound_loc[target]
+				self.target = source_loc[target]
 			else:
 				# Set a random target otherwise
-				self.target = sound_loc[randint(0, len(sound_loc)-1)]
+				self.target = source_loc[randint(0, len(source_loc)-1)]
 
 		print("The target source is set as: ", self.target)
 		self.target = np.array(self.target)
@@ -111,7 +127,7 @@ class AudioEnv(gym.Env):
 
 		if self.num_channels == 2:
 			# Create the array at current time step (2 mics, angle 0 IN RADIANS, 0.5m apart)
-			mic = MicrophoneArray(linear_2D_array(agent_loc, 2, np.pi, 0.1), self.room.fs)
+			mic = MicrophoneArray(linear_2D_array(agent_loc, 2, 0, 0.1), self.room.fs)
 			self.room.add_microphone_array(mic)
 		else:
 			mic = MicrophoneArray(agent_loc.reshape(-1, 1), self.room.fs)
