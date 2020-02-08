@@ -33,11 +33,12 @@ class AudioEnv(gym.Env):
 		self.action_to_string = {0: 'Left', 1: 'Right', 2: 'Up', 3: 'Down'}
 		self.corners = corners
 		self.room_config = room_config
+		self.agent_loc = agent_loc
 
 		# non-Shoebox config (corners of room are given)
 		if self.corners:
 			self.room = Room.from_corners(room_config, fs=resample_rate, absorption=absorption, max_order=max_order)
-			self.agent_loc = agent_loc
+			# self.agent_loc = agent_loc
 			print(room_config[0])
 			print(room_config[1])
 
@@ -51,19 +52,19 @@ class AudioEnv(gym.Env):
 			self.x_max = room_config[0]-1
 			self.y_max = room_config[1]-1
 
-		if agent_loc is not None:
-			self.agent_loc = agent_loc
-		else:
-			# Generate initial agent location randomly if nothing is specified
-			x = randint(0, self.x_max)
-			y = randint(0, self.y_max)
-			self.agent_loc = [x, y]
+		# if agent_loc is not None:
+		# 	self.agent_loc = agent_loc
+		# else:
+		# 	# Generate initial agent location randomly if nothing is specified
+		# 	x = randint(0, self.x_max)
+		# 	y = randint(0, self.y_max)
+		# 	self.agent_loc = [x, y]
 
 		print('X max:', self.x_max)
 		print('Y max:', self.y_max)
 		print("Initial agent location: ", self.agent_loc)
 
-	def reset_agent_position(self, source_locs):
+	def set_agent_position(self, source_locs):
 		"""
 		Given a list of sources, this function will place the agent 
 		roughly equidistant to the sources. 
@@ -72,9 +73,9 @@ class AudioEnv(gym.Env):
 		Args:
 			source_locs (List[int]): A list consisting of [x, y] coordniates of source location
 		"""
-		self.agent_loc = np.mean(source_locs, axis = 0)
+		self.agent_loc = list(map(int, np.mean(source_locs, axis = 0)))
 	
-	def add_sources(self, direct_sources, source_loc = None, target=None, reset = True):
+	def add_sources(self, direct_sources, source_loc = None, target=None):
 		"""
 		This function adds the sources to PyRoom. Assumes 2 sources.
 
@@ -96,8 +97,8 @@ class AudioEnv(gym.Env):
 					break
 
 		# Reseting the agents position to be the mean of all sources
-		if reset:
-			self.reset_agent_position(source_loc)
+		if self.agent_loc is None:
+			self.set_agent_position(source_loc)
 
 		for idx, audio_file in enumerate(direct_sources):
 			# Audio will be automatically re-sampled to the given rate (default sr=8000).
@@ -144,7 +145,7 @@ class AudioEnv(gym.Env):
 
 		if self.num_channels == 2:
 			# Create the array at current time step (2 mics, angle 0 IN RADIANS, 0.2m apart)
-			mic = MicrophoneArray(linear_2D_array(agent_loc, 2, 0, 0.04), self.room.fs)
+			mic = MicrophoneArray(linear_2D_array(agent_loc, 2, 0, 0.2), self.room.fs)
 			self.room.add_microphone_array(mic)
 		else:
 			mic = MicrophoneArray(agent_loc.reshape(-1, 1), self.room.fs)

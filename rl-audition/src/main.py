@@ -50,10 +50,10 @@ def run_perfect_agent():
 	#source_loc = [[2, 2], [14, 14]]  # Keep the sources far away for easy testing
 
 	# location of agent (or microphone in this case)
-	agent_loc = np.array([11, 11])
+	# agent_loc = np.array([11, 11])
 
 	# Set up the gym environment
-	env = gym.make('audio-room-v0', room_config=room_config, agent_loc=agent_loc, num_channels=2, bytes_per_sample=2)
+	env = gym.make('audio-room-v0', room_config=room_config, num_channels=2, bytes_per_sample=2)
 	env.add_sources(direct_sources=paths)
 
 	# ---- Only for debuggin ---
@@ -66,7 +66,8 @@ def run_perfect_agent():
 
 	# Load the agent class
 	target_loc = env.target
-	agent = rl_agent.PerfectAgent(target_loc=target_loc, agent_loc=agent_loc, play_audio=True, show_room=True)
+	agent = rl_agent.PerfectAgent(
+		target_loc=target_loc, agent_loc=env.agent_loc, play_audio=True, show_room=True)
 	agent.fit(env)
 
 
