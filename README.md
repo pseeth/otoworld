@@ -73,6 +73,7 @@ Assuming `requirements.txt` is up do date, run `pip install -r requirements.txt`
 - [ ] Add the orientation actions (left x degrees, right x degrees) to set of actions 
     - (NOTE: angle is determined in radians using the `linear_2D_array` function, use `np.pi`) 
 - [ ] More rooms (randomly generated if possible), simple rooms like hexagon, octagon 
+- [ ] Cut the lengths of the sources based on length of shortest source.
 
 ### Ideas for Games
 * Agent should find source and "turn it off" (agent reaches same grid location)
