@@ -63,7 +63,18 @@ class AudioEnv(gym.Env):
 		print('Y max:', self.y_max)
 		print("Initial agent location: ", self.agent_loc)
 
-	def add_sources(self, direct_sources, target=None):
+	def reset_agent_position(self, source_locs):
+		"""
+		Given a list of sources, this function will place the agent 
+		roughly equidistant to the sources. 
+		ex. [[0,0], [10,10]] --> agents new position [5,5]
+
+		Args:
+			source_locs (List[int]): A list consisting of [x, y] coordniates of source location
+		"""
+		self.agent_loc = np.mean(source_locs, axis = 0)
+	
+	def add_sources(self, direct_sources, source_loc = None, target=None, reset = True):
 		"""
 		This function adds the sources to PyRoom. Assumes 2 sources.
 
@@ -71,16 +82,22 @@ class AudioEnv(gym.Env):
 			direct_sound (List[str]): The paths to sound files
 			source_loc (List[int]): A list consisting of [x, y] coordinates of source location
 			target (int): The index value of source_loc list which is to be set as target
+			reset (bool): Bool indicating whether we reset the agents position to be the mean
+				of all the sources
 		"""
 		#source_loc = [[2, 2], [14, 14]]
 
 		# randomly place sources in room
-		while True:
-			source_loc = np.array([[np.random.randint(0, self.room_config[0]), \
-									np.random.randint(0, self.room_config[1])] for _ in direct_sources])
-			if self.check_if_inside(source_loc[0]) and self.check_if_inside(source_loc[1]):
-				break
+		if not source_loc:
+			while True:
+				source_loc = np.array([[np.random.randint(0, self.room_config[0]), \
+										np.random.randint(0, self.room_config[1])] for _ in direct_sources])
+				if self.check_if_inside(source_loc[0]) and self.check_if_inside(source_loc[1]):
+					break
 
+		# Reseting the agents position to be the mean of all sources
+		if reset:
+			self.reset_agent_position(source_loc)
 
 		for idx, audio_file in enumerate(direct_sources):
 			# Audio will be automatically re-sampled to the given rate (default sr=8000).
@@ -126,8 +143,8 @@ class AudioEnv(gym.Env):
 		self.room.mic_array = None
 
 		if self.num_channels == 2:
-			# Create the array at current time step (2 mics, angle 0 IN RADIANS, 0.5m apart)
-			mic = MicrophoneArray(linear_2D_array(agent_loc, 2, 0, 0.1), self.room.fs)
+			# Create the array at current time step (2 mics, angle 0 IN RADIANS, 0.2m apart)
+			mic = MicrophoneArray(linear_2D_array(agent_loc, 2, 0, 0.04), self.room.fs)
 			self.room.add_microphone_array(mic)
 		else:
 			mic = MicrophoneArray(agent_loc.reshape(-1, 1), self.room.fs)
