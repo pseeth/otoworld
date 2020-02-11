@@ -10,7 +10,7 @@ import time
 
 
 class AudioEnv(gym.Env):
-	def __init__(self, room_config, agent_loc=None, resample_rate=8000, num_channels=2, bytes_per_sample=2, corners=False, absorption=0.0, max_order=2):
+	def __init__(self, room_config, agent_loc=None, resample_rate=8000, num_channels=2, bytes_per_sample=2, corners=False, absorption=0.0, max_order=2, converge_steps=10, step_size=None, acceptable_radius=1):
 		"""
 		This class inherits from OpenAI Gym Env and is used to simulate the agent moving in PyRoom.
 
@@ -22,6 +22,9 @@ class AudioEnv(gym.Env):
 			num_channels (int): number of channels (used in playing what the mic hears)
 			bytes_per_sample (int): used in playing what the mic hears
 			corners (bool): False if using Shoebox config, otherwise True
+			converge_steps (int): # of steps the perfect agent should make before rewards
+			acceptable_radius (float): radius of acceptable range the agent can be in to be considered done
+			step_size (float): specificed step size else we programmatically assign it
 		"""
 		self.resample_rate = resample_rate
 		self.audio = []
@@ -34,6 +37,9 @@ class AudioEnv(gym.Env):
 		self.corners = corners
 		self.room_config = room_config
 		self.agent_loc = agent_loc
+		self.acceptable_radius = acceptable_radius
+		self.converge_steps = converge_steps
+		self.step_size = step_size
 
 		# non-Shoebox config (corners of room are given)
 		if self.corners:
@@ -52,30 +58,11 @@ class AudioEnv(gym.Env):
 			self.x_max = room_config[0]-1
 			self.y_max = room_config[1]-1
 
-		# if agent_loc is not None:
-		# 	self.agent_loc = agent_loc
-		# else:
-		# 	# Generate initial agent location randomly if nothing is specified
-		# 	x = randint(0, self.x_max)
-		# 	y = randint(0, self.y_max)
-		# 	self.agent_loc = [x, y]
-
 		print('X max:', self.x_max)
 		print('Y max:', self.y_max)
 		print("Initial agent location: ", self.agent_loc)
-
-	def set_agent_position(self, source_locs):
-		"""
-		Given a list of sources, this function will place the agent 
-		roughly equidistant to the sources. 
-		ex. [[0,0], [10,10]] --> agents new position [5,5]
-
-		Args:
-			source_locs (List[int]): A list consisting of [x, y] coordniates of source location
-		"""
-		self.agent_loc = list(map(int, np.mean(source_locs, axis = 0)))
 	
-	def add_sources(self, direct_sources, source_loc = None, target=None):
+	def add_sources(self, direct_sources, source_loc=None, target=None):
 		"""
 		This function adds the sources to PyRoom. Assumes 2 sources.
 
@@ -86,10 +73,8 @@ class AudioEnv(gym.Env):
 			reset (bool): Bool indicating whether we reset the agents position to be the mean
 				of all the sources
 		"""
-		#source_loc = [[2, 2], [14, 14]]
-
 		# randomly place sources in room
-		if not source_loc:
+		if source_loc is None:
 			while True:
 				source_loc = np.array([[np.random.randint(0, self.room_config[0]), \
 										np.random.randint(0, self.room_config[1])] for _ in direct_sources])
@@ -98,8 +83,10 @@ class AudioEnv(gym.Env):
 
 		# Reseting the agents position to be the mean of all sources
 		if self.agent_loc is None:
-			self.set_agent_position(source_loc)
-
+			self.agent_loc = np.mean(source_loc, axis=0)
+		
+		# Finding the minimum size source to make sure there is something playing at all times
+		min_size_audio = np.inf
 		for idx, audio_file in enumerate(direct_sources):
 			# Audio will be automatically re-sampled to the given rate (default sr=8000).
 			a, _ = librosa.load(audio_file, sr=self.resample_rate)
@@ -111,9 +98,12 @@ class AudioEnv(gym.Env):
 
 			# normalize audio so both sources have similar volume at beginning before mixed
 			a /= np.abs(a).max()
-
+			if len(a) < min_size_audio:
+				min_size_audio = len(a)
 			self.audio.append(a)
-			self.room.add_source(source_loc[idx], signal=a)
+		
+		for idx, audio in enumerate(self.audio):
+			self.room.add_source(source_loc[idx], signal=audio[:min_size_audio])
 
 		# if not Shoebox config
 		if self.corners:
@@ -125,9 +115,17 @@ class AudioEnv(gym.Env):
 			else:
 				# Set a random target otherwise
 				self.target = source_loc[randint(0, len(source_loc)-1)]
-
-		print("The target source is set as: ", self.target)
+		
 		self.target = np.array(self.target)
+		print("The target source is set as: ", self.target)
+
+		# Setting step size
+		x_dis = abs(self.agent_loc[0] - self.target[0])
+		y_dis = abs(self.agent_loc[1] - self.target[1])
+		total_dis = x_dis + y_dis
+		if self.step_size is None:
+			self.step_size = (total_dis) / self.converge_steps
+
 
 	def _move_agent(self, agent_loc):
 		"""
@@ -174,13 +172,13 @@ class AudioEnv(gym.Env):
 		x, y = self.agent_loc[0], self.agent_loc[1]
 		done = False
 		if action == 0:
-			x -= 1
+			x -= self.step_size
 		elif action == 1:
-			x += 1
+			x += self.step_size
 		elif action == 2:
-			y += 1
+			y += self.step_size
 		elif action == 3:
-			y -= 1
+			y -= self.step_size
 
 		# Check if the new points lie within the room
 		points = np.array([x, y]) if self.room.is_inside([x, y], include_borders=False) else self.agent_loc
@@ -195,7 +193,8 @@ class AudioEnv(gym.Env):
 		If agent loc exactly matches target location then pyroomacoustics isn't able to 
 		calculate the convolved signal. Hence, check the location before calculating everything   
 		'''
-		if self.agent_loc[0] == self.target[0] and self.agent_loc[1] == self.target[1]:
+		# Agent has reach the goal if the agent is with the circle around the target
+		if pow((self.agent_loc[0] - self.target[0]), 2) + pow((self.agent_loc[1] - self.target[1]), 2) <= pow(self.acceptable_radius, 2):
 			print("Goal state reached!")
 			done = True
 			reward = 100
@@ -219,7 +218,6 @@ class AudioEnv(gym.Env):
 			self.room.simulate()
 			data = self.room.mic_array.signals
 			# print(data.shape)
-
 			# # print RIR
 			# self.room.plot_rir()
 			# fig = plt.gcf()
@@ -232,7 +230,6 @@ class AudioEnv(gym.Env):
 			# Calculate the reward
 			# Currently, simply using negative of l2 norm as reward
 			reward = -np.linalg.norm(self.agent_loc - self.target)
-
 			# Return the room rir and convolved signals as the new state
 			return [data], reward, done
 

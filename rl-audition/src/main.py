@@ -63,11 +63,11 @@ def run_perfect_agent():
 	# env.room.plot(img_order=0)
 	# plt.show()
 	# -------------------------
-
 	# Load the agent class
 	target_loc = env.target
 	agent = rl_agent.PerfectAgent(
 		target_loc=target_loc, agent_loc=env.agent_loc, play_audio=True, show_room=True)
+	print("about to fit")
 	agent.fit(env)
 
 
@@ -95,7 +95,7 @@ def run_room_agent_oroom1():
 
 	# Set up the gym environment
 	env = gym.make('audio-room-v0', room_config=room_config, agent_loc=agent_loc, corners=True, max_order=10)
-	env.add_sources(direct_sound=paths, target=1)  # target is the 2nd source
+	env.add_sources(direct_sources=paths, target=1)  # target is the 2nd source
 	# env.room.plot()
 	# plt.show()
 	# env.step(3)
@@ -141,4 +141,4 @@ if __name__ == '__main__':
 	#run_random_agent()
 	# Run perfect agent
 	run_perfect_agent()
-	#run_room_agent_oroom1()
+	# run_room_agent_oroom1()
