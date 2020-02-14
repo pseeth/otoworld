@@ -49,19 +49,41 @@ class AudioEnv(gym.Env):
 			print(room_config[1])
 
 			# The x_max and y_max in this case would be used to generate agent's location randomly
-			self.x_max = min(room_config[0])  # The minimum is important
-			self.y_max = min(room_config[1])
+			self.x_min = min(room_config[0])
+			self.y_min = min(room_config[1])
+			self.x_max = max(room_config[0])
+			self.y_max = max(room_config[1])
 
 		# ShoeBox config
 		else:
 			self.room = ShoeBox(room_config, absorption=absorption)
-			self.x_max = room_config[0]-1
-			self.y_max = room_config[1]-1
+			self.x_max = room_config[0]
+			self.y_max = room_config[1]
+			self.x_min, self.y_min = 0, 0
 
 		print('X max:', self.x_max)
 		print('Y max:', self.y_max)
 		print("Initial agent location: ", self.agent_loc)
-	
+
+	def _sample_points(self, num_sources):
+		'''
+		This method would generate random sample points using rejection sampling method
+		Args:
+			num_sources: Number of (x, y) random points generated will be equal to number of sources
+
+		Returns:
+			A list of generated random points
+		'''
+
+		sampled_points = []
+
+		while len(sampled_points) < num_sources:
+			random_point = [np.random.randint(self.x_min, self.x_max), np.random.randint(self.y_min, self.y_max)]
+			if self.room.is_inside(random_point, include_borders=False):
+				sampled_points.append(random_point)
+
+		return sampled_points
+
 	def add_sources(self, direct_sources, source_loc=None, target=None):
 		"""
 		This function adds the sources to PyRoom. Assumes 2 sources.
@@ -73,17 +95,16 @@ class AudioEnv(gym.Env):
 			reset (bool): Bool indicating whether we reset the agents position to be the mean
 				of all the sources
 		"""
-		# randomly place sources in room
+		# Randomly place sources in room
 		if source_loc is None:
-			while True:
-				source_loc = np.array([[np.random.randint(0, self.room_config[0]), \
-										np.random.randint(0, self.room_config[1])] for _ in direct_sources])
-				if self.check_if_inside(source_loc[0]) and self.check_if_inside(source_loc[1]):
-					break
+			# Generate random points using rejection sampling method
+			source_loc = self._sample_points(num_sources=len(direct_sources))
+			print("Source locations randomly set to", source_loc)
 
-		# Reseting the agents position to be the mean of all sources
+		# Resetting the agents position to be the mean of all sources
 		if self.agent_loc is None:
 			self.agent_loc = np.mean(source_loc, axis=0)
+			print("Agent location randomly set to: ", self.agent_loc)
 		
 		# Finding the minimum size source to make sure there is something playing at all times
 		min_size_audio = np.inf
@@ -126,8 +147,7 @@ class AudioEnv(gym.Env):
 		if self.step_size is None:
 			self.step_size = (total_dis) / self.converge_steps
 
-
-	def _move_agent(self, agent_loc):
+	def _move_agent(self, agent_loc, angle=0):
 		"""
 		This function moves the agent to a new location (given by agent_loc). It effectively removes the
 		agent (mic array) from the room and then adds it back in the new location.
@@ -142,8 +162,15 @@ class AudioEnv(gym.Env):
 		self.room.mic_array = None
 
 		if self.num_channels == 2:
+			# 0.2618 radians = 15 degrees
+			if angle == 0:
+				orientation = 0
+			elif angle == 1:
+				orientation = 0.2618
+			else:
+				orientation = -0.2618
 			# Create the array at current time step (2 mics, angle 0 IN RADIANS, 0.2m apart)
-			mic = MicrophoneArray(linear_2D_array(agent_loc, 2, 0, 0.2), self.room.fs)
+			mic = MicrophoneArray(linear_2D_array(agent_loc, 2, orientation, 0.2), self.room.fs)
 			self.room.add_microphone_array(mic)
 		else:
 			mic = MicrophoneArray(agent_loc.reshape(-1, 1), self.room.fs)
@@ -152,13 +179,19 @@ class AudioEnv(gym.Env):
 	def check_if_inside(self, points):
 		return self.room.is_inside(points, include_borders=False)
 
-	def step(self, action, play_audio=True, show_room=True):
+	def step(self, actions, play_audio=True, show_room=True):
 		"""
 		This function simulates the agent taking one step in the environment (and room) given an action:
 			0 = Left
 			1 = Right
 			2 = Up
 			3 = Down
+
+		Agent can also simultaneously orient itself 15 degrees left or 15 degrees right
+			0 = Don't orient
+			1 = Orient 15 degrees left
+			2 = Orient 15 degrees right
+
 		It calls _move_agent, checks to see if the agent has reached a target, and if not, computes the RIR.
 
 		Args:
@@ -170,6 +203,8 @@ class AudioEnv(gym.Env):
 			Tuple of the format List (empty if done, else [data]), reward, done
 		"""
 		x, y = self.agent_loc[0], self.agent_loc[1]
+		# Separate out the action and orientation
+		action, angle = actions[0], actions[1]
 		done = False
 		if action == 0:
 			x -= self.step_size
@@ -184,7 +219,7 @@ class AudioEnv(gym.Env):
 		points = np.array([x, y]) if self.room.is_inside([x, y], include_borders=False) else self.agent_loc
 		print("Agent performed action: ", self.action_to_string[action])
 		# Move agent in the direction of action
-		self._move_agent(agent_loc=points)
+		self._move_agent(agent_loc=points, angle=angle)
 		print("New agent location: ", self.agent_loc)
 		print("Target location: ", self.target)
 		print("---------------------")

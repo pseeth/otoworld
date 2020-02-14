@@ -70,9 +70,9 @@ Assuming `requirements.txt` is up do date, run `pip install -r requirements.txt`
 - [X] Put sources randomly in the environment 
 - [X] Place the agent roughly equidistant to the sources 
 - [X] Keep the distance between mics 20 cm 
-- [ ] Add the orientation actions (left x degrees, right x degrees) to set of actions 
+- [X] Add the orientation actions (left x degrees, right x degrees) to set of actions 
     - (NOTE: angle is determined in radians using the `linear_2D_array` function, use `np.pi`) 
-- [ ] More rooms (randomly generated if possible), simple rooms like hexagon, octagon 
+- [X] More rooms (randomly generated if possible), simple rooms like hexagon, octagon 
 - [X] Cut the lengths of the sources based on length of shortest source.
 - [X] Make step size tunable
 - [X] Updated movements to be able to deal with floats

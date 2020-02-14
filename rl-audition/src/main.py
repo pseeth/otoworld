@@ -4,9 +4,11 @@ import numpy as np
 import rl_agent
 import os
 import matplotlib.pyplot as plt
+import room_types
 
 DIR_MALE = '../sounds/dry_recordings/dev/051_subset/'
 DIR_FEMALE = '../sounds/dry_recordings/dev/050_subset/'
+
 
 def run_random_agent():
 	"""
@@ -94,8 +96,8 @@ def run_room_agent_oroom1():
 	agent_loc = np.array([3, 8])
 
 	# Set up the gym environment
-	env = gym.make('audio-room-v0', room_config=room_config, agent_loc=agent_loc, corners=True, max_order=10)
-	env.add_sources(direct_sources=paths, target=1)  # target is the 2nd source
+	env = gym.make('audio-room-v0', room_config=room_config,  agent_loc=agent_loc, corners=True, max_order=10, step_size=1)
+	env.add_sources(direct_sources=paths, source_loc=source_loc, target=1)  # target is the 2nd source
 	# env.room.plot()
 	# plt.show()
 	# env.step(3)
@@ -104,6 +106,105 @@ def run_room_agent_oroom1():
 	# Load the agent class
 	target_loc = env.target
 	agent = rl_agent.PerfectAgentORoom(target_loc=target_loc, agent_loc=agent_loc)
+	agent.fit(env)
+
+
+def run_room_agent_oroom2():
+	# paths of audio files
+	paths = choose_random_files()
+
+	# dimensions of room (Horseshoe room, see class for visualization); order matters!
+	room_config = np.array(
+		[[2, 2], [2, 10], [5, 10], [5, 5], [8, 5], [8, 10], [10, 10], [10, 2]]).T
+
+	# locations of audio sources (direct correspondence with paths list)
+	source_loc = [[6, 4.5], [9, 8]]
+
+	# this agent will go get 9,8
+	# agent_loc = np.array([3, 8])
+	agent_loc = np.array([3, 8])
+
+	# Set up the gym environment
+	env = gym.make('audio-room-v0', room_config=room_config,  agent_loc=agent_loc, corners=True, max_order=10, step_size=1)
+	env.add_sources(direct_sources=paths, target=1)  # target is the 2nd source
+	# env.room.plot()
+	# plt.show()
+	# env.step(3)
+	# env.room.plot()
+	# plt.show()
+	# Load the agent class
+	target_loc = env.target
+	agent = rl_agent.PerfectAgentORoom2(target_loc=target_loc, agent_loc=agent_loc)
+	agent.fit(env)
+
+
+def run_polygon_room():
+	# paths of audio files
+	paths = choose_random_files()
+
+	# dimensions of room (Horseshoe room, see class for visualization); order matters!
+	# Generate room using polygon generator
+	hex_room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
+	x_points, y_points = hex_room.generate()
+	print(x_points)
+	print(y_points)
+	room_config = np.array([x_points, y_points])
+
+	# locations of audio sources (direct correspondence with paths list)
+	source_loc = [[6, 4.5], [9, 8]]
+
+	# this agent will go get 9,8
+	# agent_loc = np.array([3, 8])
+	agent_loc = np.array([3, 8])
+
+	# Set up the gym environment
+	env = gym.make('audio-room-v0', room_config=room_config, agent_loc=agent_loc, corners=True, max_order=10,
+				   step_size=1)
+	env.add_sources(direct_sources=paths, target=1)  # target is the 2nd source
+	# env.room.plot()
+	# plt.show()
+	# env.step(3)
+	# env.room.plot()
+	# plt.show()
+	# Load the agent class
+	target_loc = env.target
+	agent = rl_agent.PerfectAgentORoom2(target_loc=target_loc, agent_loc=agent_loc)
+	# agent = rl_agent.HumanAgent(target_loc=target_loc, agent_loc=agent_loc)
+	agent.fit(env)
+
+
+def run_human_agent():
+	# paths of audio files
+	paths = choose_random_files()
+
+	# dimensions of room (Horseshoe room, see class for visualization); order matters!
+	# Generate room using polygon generator
+	hex_room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
+	x_points, y_points = hex_room.generate()
+	print(x_points)
+	print(y_points)
+	room_config = np.array([x_points, y_points])
+
+	# locations of audio sources (direct correspondence with paths list)
+	source_loc = [[6, 4.5], [9, 8]]
+
+	# this agent will go get 9,8
+	# agent_loc = np.array([3, 8])
+	agent_loc = np.array([3, 8])
+
+	# Set up the gym environment
+	env = gym.make('audio-room-v0', room_config=room_config, agent_loc=agent_loc, corners=True, max_order=10,
+				   step_size=1)
+	env.add_sources(direct_sources=paths, target=1)  # target is the 2nd source
+	# env.room.plot()
+	# plt.show()
+	# env.step(3)
+	env.room.plot()
+	plt.pause(3)
+	# Load the agent class
+	target_loc = env.target
+	# agent = rl_agent.PerfectAgentORoom2(target_loc=target_loc, agent_loc=agent_loc)
+	agent = rl_agent.HumanAgent(target_loc=target_loc, agent_loc=agent_loc)
 	agent.fit(env)
 
 
@@ -140,5 +241,7 @@ if __name__ == '__main__':
 	# Run the random agent
 	#run_random_agent()
 	# Run perfect agent
-	run_perfect_agent()
-	# run_room_agent_oroom1()
+	# run_perfect_agent()
+	# run_room_agent_oroom2()
+	run_polygon_room()
+	# run_human_agent()
