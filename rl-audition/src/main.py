@@ -159,7 +159,7 @@ def run_polygon_room():
 
 	# Set up the gym environment
 	env = gym.make('audio-room-v0', room_config=room_config, agent_loc=agent_loc, corners=True, max_order=10,
-				   step_size=1)
+				   step_size=1.0)
 	env.add_sources(direct_sources=paths, target=1)  # target is the 2nd source
 	# env.room.plot()
 	# plt.show()

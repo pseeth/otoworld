@@ -7,10 +7,11 @@ import simpleaudio as sa
 from gym import spaces
 from random import randint
 import time
+from scipy.spatial.distance import euclidean
 
 
 class AudioEnv(gym.Env):
-	def __init__(self, room_config, agent_loc=None, resample_rate=8000, num_channels=2, bytes_per_sample=2, corners=False, absorption=0.0, max_order=2, converge_steps=10, step_size=None, acceptable_radius=1):
+	def __init__(self, room_config, agent_loc=None, resample_rate=8000, num_channels=2, bytes_per_sample=2, corners=False, absorption=0.0, max_order=2, converge_steps=10, step_size=None, acceptable_radius=.1):
 		"""
 		This class inherits from OpenAI Gym Env and is used to simulate the agent moving in PyRoom.
 
@@ -220,21 +221,25 @@ class AudioEnv(gym.Env):
 		print("Agent performed action: ", self.action_to_string[action])
 		# Move agent in the direction of action
 		self._move_agent(agent_loc=points, angle=angle)
+		dist = euclidean(self.agent_loc, self.target)
 		print("New agent location: ", self.agent_loc)
 		print("Target location: ", self.target)
+		print("Distance: ", dist)
 		print("---------------------")
 		# Check if goal state is reached
 		'''
 		If agent loc exactly matches target location then pyroomacoustics isn't able to 
 		calculate the convolved signal. Hence, check the location before calculating everything   
 		'''
+
 		# Agent has reach the goal if the agent is with the circle around the target
-		if pow((self.agent_loc[0] - self.target[0]), 2) + pow((self.agent_loc[1] - self.target[1]), 2) <= pow(self.acceptable_radius, 2):
+		if euclidean(self.agent_loc, self.target) < self.acceptable_radius:
 			print("Goal state reached!")
 			done = True
 			reward = 100
 
 			return [], reward, done
+
 
 		if not done:
 			# Calculate the impulse response
@@ -267,7 +272,7 @@ class AudioEnv(gym.Env):
 			reward = -np.linalg.norm(self.agent_loc - self.target)
 			# Return the room rir and convolved signals as the new state
 			return [data], reward, done
-
+		
 	def reset(self):
 		"""
 		This function resets the agent to a random location within the room. To be used after each episode. NOTE: this
