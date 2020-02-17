@@ -77,11 +77,13 @@ class AudioEnv(gym.Env):
 		'''
 
 		sampled_points = []
+		generated_points = {}  # To avoid placing multiple sources in the same location
 
 		while len(sampled_points) < num_sources:
 			random_point = [np.random.randint(self.x_min, self.x_max), np.random.randint(self.y_min, self.y_max)]
-			if self.room.is_inside(random_point, include_borders=False):
+			if self.room.is_inside(random_point, include_borders=False) and tuple(random_point) not in generated_points:
 				sampled_points.append(random_point)
+				generated_points[tuple(random_point)] = 1
 
 		return sampled_points
 

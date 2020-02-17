@@ -242,6 +242,6 @@ if __name__ == '__main__':
 	#run_random_agent()
 	# Run perfect agent
 	# run_perfect_agent()
-	# run_room_agent_oroom2()
-	run_polygon_room()
+	run_room_agent_oroom2()
+	# run_polygon_room()
 	# run_human_agent()
