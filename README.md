@@ -76,13 +76,20 @@ Assuming `requirements.txt` is up do date, run `pip install -r requirements.txt`
 - [X] Cut the lengths of the sources based on length of shortest source.
 - [X] Make step size tunable
 - [X] Updated movements to be able to deal with floats
+- [ ] Get running on gpubox
+- [ ] One Action structure: rotate left, rotate right, step forward
+- [ ] Second Action structure: U, D, L, R, rotate left, rotate right (similar to current)
+- [ ] Have agent turn off both sources (move randomly in small environment)
+- [ ] Measure throughput (how many steps we can run per second without plotting with random agent)
+- [ ] Store in buffer (S, A, S', R) which is (prev audio, action, current audio, reward), refer to [DQN code](https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html)
 
-### Ideas for Games
+### RL Setup
 * Agent should find source and "turn it off" (agent reaches same grid location)
-    - Record impulse responses to see change as agent gets closer (or plot room and visualize physical progress)
-    - Reward structure: continuous reward based on how loud the environment is, reward for turning off source
-    - Action space: rotate_left (x degrees), rotate_right (x degrees), step (L, R, U, D)
-    - State space:  
+    - State: convolved sound
+    - Action space 1: rotate_left (x degrees), rotate_right (x degrees), 
+    - Action space 2: rotate_left (x degrees), rotate_right (x degrees), step (L, R, U, D)
+    - Small negative reward for each action, large reward for turning off source
+    - Store replay buffer SAR
 
 ### Resources: 
 #### Environments
