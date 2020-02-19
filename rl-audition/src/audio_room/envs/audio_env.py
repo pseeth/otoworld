@@ -91,7 +91,7 @@ class AudioEnv(gym.Env):
 
 		return sampled_points
 
-	def add_sources(self, source_loc=None):
+	def add_sources(self, source_loc=None, reset=False):
 		"""
 		This function adds the sources to PyRoom. Assumes 2 sources.
 
@@ -106,36 +106,38 @@ class AudioEnv(gym.Env):
 		if source_loc is None:
 			# Generate random points using rejection sampling method
 			source_loc = self._sample_points(num_sources=len(self.direct_sources))
-			print("Source locations randomly set to", source_loc)
+			#print("Source locations randomly set to", source_loc)
 
 		# Resetting the agents position to be the mean of all sources
 		if self.agent_loc is None:
 			self.agent_loc = np.mean(source_loc, axis=0)
-			print("Agent location set to mean of all sources: ", self.agent_loc)
+			#print("Agent location set to mean of all sources: ", self.agent_loc)
 		
 		# Finding the minimum size source to make sure there is something playing at all times
-		self.min_size_audio = np.inf
-		for idx, audio_file in enumerate(self.direct_sources):
-			# Audio will be automatically re-sampled to the given rate (default sr=8000).
-			a, _ = librosa.load(audio_file, sr=self.resample_rate)
+		if not reset:
+			self.min_size_audio = np.inf
+			for idx, audio_file in enumerate(self.direct_sources):
+				# Audio will be automatically re-sampled to the given rate (default sr=8000).
+				a, _ = librosa.load(audio_file, sr=self.resample_rate)
 
-			# If sound is recorded on stereo microphone, it is 2d
-			# Take the mean of the two stereos
-			if len(a.shape) > 1:
-				a = np.mean(a, axis=0)
+				# If sound is recorded on stereo microphone, it is 2d
+				# Take the mean of the two stereos
+				if len(a.shape) > 1:
+					a = np.mean(a, axis=0)
 
-			# normalize audio so both sources have similar volume at beginning before mixed
-			a /= np.abs(a).max()
-			if len(a) < self.min_size_audio:
-				self.min_size_audio = len(a)
-			self.audio.append(a)
+				# normalize audio so both sources have similar volume at beginning before mixed
+				a /= np.abs(a).max()
+				if len(a) < self.min_size_audio:
+					self.min_size_audio = len(a)
+				self.audio.append(a)
 		
 		# add sources using audio data
-		print('AUDIO:', self.audio)
-		print('INIT SOURCES ARR BEFORE:', self.room.sources)
+		# print('AUDIO:', self.audio)
+		# print('INIT SOURCES ARR BEFORE:', self.room.sources)
+		# print('MIN_SIZE_AUDIO:', self.min_size_audio)
 		for idx, audio in enumerate(self.audio):
 			self.room.add_source(source_loc[idx], signal=audio[:self.min_size_audio])
-		print('INIT SOURCES ARR AFTER:', self.room.sources)
+		# print('INIT SOURCES ARR AFTER:', self.room.sources)
 
 		# if not Shoebox config
 		if self.corners:
@@ -235,7 +237,7 @@ class AudioEnv(gym.Env):
 		self._move_agent(agent_loc=points, angle=angle)
 		dist = euclidean(self.agent_loc, self.target_source)
 		# print("New agent location: ", self.agent_loc)
-		# print("Target location: ", self.target)
+		# print("Target location: ", self.target_source)
 		# print("Distance: ", dist)
 		# print("---------------------")
 		# Check if goal state is reached
@@ -266,7 +268,6 @@ class AudioEnv(gym.Env):
 			# 		print(self.room.visibility)
 			# 		h.append(source.get_rir(mic, self.room.visibility[s][m], self.room.fs, self.room.t0))
 			# 	self.room.rir.append(h)
-			# print("Max order: ", self.room.max_order)
 			self.room.compute_rir()
 			self.room.simulate()
 			data = self.room.mic_array.signals
@@ -295,22 +296,33 @@ class AudioEnv(gym.Env):
 		# Reset agent's location
 		# Generate initial agent location randomly in the future
 
-		print('In Reset. Resetting agent loc!')
-		self.agent_loc = self.initial_agent_loc
+		# non-Shoebox config (corners of room are given)
+		#print('\n\n IN RESET\n')
+		#print('Re-initializing room.')
+		if self.corners:
+			self.room = Room.from_corners(self.room_config, fs=self.resample_rate, absorption=self.absorption, max_order=self.max_order)
+
+			# The x_max and y_max in this case would be used to generate agent's location randomly
+			self.x_min = min(self.room_config[0])
+			self.y_min = min(self.room_config[1])
+			self.x_max = max(self.room_config[0])
+			self.y_max = max(self.room_config[1])
+
+		# ShoeBox config
+		else:
+			self.room = ShoeBox(self.room_config, absorption=self.absorption)
+			self.x_max = self.room_config[0]
+			self.y_max = self.room_config[1]
+			self.x_min, self.y_min = 0, 0
+
+		#print('Resetting agent loc!')
+		new_initial_agent_loc = self.initial_agent_loc
+		self._move_agent(agent_loc=new_initial_agent_loc)
 		#print("Agent location reset to: ", self.agent_loc)
 
-		# randomly generate source locations
-		source_loc = self._sample_points(num_sources=len(self.direct_sources))
-		print('In Reset. Adding new sources:', source_loc)
-		self.room.sources.clear()
-
-		# add sources to the room
-		print('AUDIO: ', self.audio)
-		print('LATER SOURCES ARR BEFORE:', self.room.sources)
-		for idx, audio in enumerate(self.audio):
-			self.room.add_source(source_loc[idx], signal=audio[:self.min_size_audio])
-		print('LATER SOURCES ARR AFTER:', self.room.sources)
-		self.target_source = np.array(source_loc[self.target])
+		# add randomly generated new source locations
+		#print('Adding sources')
+		self.add_sources(reset=True)
 
 	def render(self, data, play_audio, show_room):
 		"""
@@ -330,8 +342,8 @@ class AudioEnv(gym.Env):
 			# Int16 is required to play the audio correctly
 			scaled = scaled.astype(np.int16)
 			# print("Scaled", scaled.shape)pe)
-			# play_obj = sa.play_buffer(scaled, num_channels=self.num_channels, bytes_per_sample=self.bytes_per_sample,
-			# 						  sample_rate=self.resample_rate)
+			play_obj = sa.play_buffer(scaled, num_channels=self.num_channels, bytes_per_sample=self.bytes_per_sample,
+									  sample_rate=self.resample_rate)
 
 			# Show the room while the audio is playing
 			if show_room:
