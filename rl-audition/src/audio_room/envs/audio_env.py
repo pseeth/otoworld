@@ -3,7 +3,7 @@ from pyroomacoustics import MicrophoneArray, ShoeBox, Room, linear_2D_array
 import librosa
 import numpy as np
 import matplotlib.pyplot as plt
-import simpleaudio as sa
+#import simpleaudio as sa
 from gym import spaces
 from random import randint
 import time
@@ -46,8 +46,8 @@ class AudioEnv(gym.Env):
 		if self.corners:
 			self.room = Room.from_corners(room_config, fs=resample_rate, absorption=absorption, max_order=max_order)
 			# self.agent_loc = agent_loc
-			print(room_config[0])
-			print(room_config[1])
+			#print(room_config[0])
+			#print(room_config[1])
 
 			# The x_max and y_max in this case would be used to generate agent's location randomly
 			self.x_min = min(room_config[0])
@@ -62,9 +62,9 @@ class AudioEnv(gym.Env):
 			self.y_max = room_config[1]
 			self.x_min, self.y_min = 0, 0
 
-		print('X max:', self.x_max)
-		print('Y max:', self.y_max)
-		print("Initial agent location: ", self.agent_loc)
+		# print('X max:', self.x_max)
+		# print('Y max:', self.y_max)
+		# print("Initial agent location: ", self.agent_loc)
 
 	def _sample_points(self, num_sources):
 		'''
@@ -102,12 +102,12 @@ class AudioEnv(gym.Env):
 		if source_loc is None:
 			# Generate random points using rejection sampling method
 			source_loc = self._sample_points(num_sources=len(direct_sources))
-			print("Source locations randomly set to", source_loc)
+			#print("Source locations randomly set to", source_loc)
 
 		# Resetting the agents position to be the mean of all sources
 		if self.agent_loc is None:
 			self.agent_loc = np.mean(source_loc, axis=0)
-			print("Agent location randomly set to: ", self.agent_loc)
+			#print("Agent location randomly set to: ", self.agent_loc)
 		
 		# Finding the minimum size source to make sure there is something playing at all times
 		min_size_audio = np.inf
@@ -141,7 +141,7 @@ class AudioEnv(gym.Env):
 				self.target = source_loc[randint(0, len(source_loc)-1)]
 		
 		self.target = np.array(self.target)
-		print("The target source is set as: ", self.target)
+		#print("The target source is set as: ", self.target)
 
 		# Setting step size
 		x_dis = abs(self.agent_loc[0] - self.target[0])
@@ -220,14 +220,14 @@ class AudioEnv(gym.Env):
 
 		# Check if the new points lie within the room
 		points = np.array([x, y]) if self.room.is_inside([x, y], include_borders=False) else self.agent_loc
-		print("Agent performed action: ", self.action_to_string[action])
+		#print("Agent performed action: ", self.action_to_string[action])
 		# Move agent in the direction of action
 		self._move_agent(agent_loc=points, angle=angle)
 		dist = euclidean(self.agent_loc, self.target)
-		print("New agent location: ", self.agent_loc)
-		print("Target location: ", self.target)
-		print("Distance: ", dist)
-		print("---------------------")
+		# print("New agent location: ", self.agent_loc)
+		# print("Target location: ", self.target)
+		# print("Distance: ", dist)
+		# print("---------------------")
 		# Check if goal state is reached
 		'''
 		If agent loc exactly matches target location then pyroomacoustics isn't able to 
@@ -236,7 +236,7 @@ class AudioEnv(gym.Env):
 
 		# Agent has reach the goal if the agent is with the circle around the target
 		if euclidean(self.agent_loc, self.target) < self.acceptable_radius:
-			print("Goal state reached!")
+			#print("Goal state reached!")
 			done = True
 			reward = 100
 
@@ -286,7 +286,7 @@ class AudioEnv(gym.Env):
 		y = randint(0, self.y_max)
 		self.agent_loc = [x, y]
 
-		print("Agent location reset to: ", self.agent_loc)
+		#print("Agent location reset to: ", self.agent_loc)
 
 	def render(self, data, play_audio, show_room):
 		"""
@@ -306,13 +306,13 @@ class AudioEnv(gym.Env):
 			# Int16 is required to play the audio correctly
 			scaled = scaled.astype(np.int16)
 			# print("Scaled", scaled.shape)pe)
-			play_obj = sa.play_buffer(scaled, num_channels=self.num_channels, bytes_per_sample=self.bytes_per_sample,
-									  sample_rate=self.resample_rate)
+			# play_obj = sa.play_buffer(scaled, num_channels=self.num_channels, bytes_per_sample=self.bytes_per_sample,
+			# 						  sample_rate=self.resample_rate)
 
 			# Show the room while the audio is playing
 			if show_room:
 				fig, ax = self.room.plot(img_order=0)
 				plt.pause(0.001)
 
-			play_obj.wait_done()
+			#play_obj.wait_done()
 			plt.close()

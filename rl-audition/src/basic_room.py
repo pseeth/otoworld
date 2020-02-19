@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import librosa
 from scipy.signal import fftconvolve
 from pyroomacoustics import MicrophoneArray, ShoeBox
-import simpleaudio as sa
+#import simpleaudio as sa
 # NOTE: the resample rate is defaulted to 8Khz for computational reasons
 RESAMPLE_RATE = 8000
 
@@ -53,8 +53,8 @@ def init_env(direct_sound, agent_loc, sound_loc, room_config):
     data = room.mic_array.signals[0, :]
     scaled = np.int16(data / np.max(np.abs(data)) * 32767)
 
-    play_obj = sa.play_buffer(scaled, num_channels=1, bytes_per_sample=2, sample_rate=RESAMPLE_RATE)
-    play_obj.wait_done()
+    #play_obj = sa.play_buffer(scaled, num_channels=1, bytes_per_sample=2, sample_rate=RESAMPLE_RATE)
+    #play_obj.wait_done()
     # Save the convolved sound
     # librosa.output.write_wav(
     #     '../sounds/convolved_sounds/convolved_sound.wav', data, RESAMPLE_RATE, norm=True)

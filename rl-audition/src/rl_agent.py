@@ -1,6 +1,7 @@
 import numpy as np
 import gym
 import warnings
+import time
 
 class RandomAgent(object):
 	def __init__(self, episodes=1, steps=10):
@@ -27,7 +28,7 @@ class RandomAgent(object):
 				# Sample actions randomly
 				action = env.action_space.sample()
 				new_state, reward, done = env.step(action)
-				print("Reward gained: ", reward)
+				#print("Reward gained: ", reward)
 
 				if done:
 					break
@@ -125,7 +126,7 @@ class PerfectAgent(object):
 							self.agent_loc += self.step_size
 				
 				new_state, reward, done = env.step((action, 0), self.play_audio, self.show_room)
-				print("Reward gained: ", reward)
+				#print("Reward gained: ", reward)
 
 				if done:
 					break
@@ -295,6 +296,8 @@ class PerfectAgentORoom2:
 		Args:
 			env (Gym env obj): the environment used to take the action
 		"""
+		start = time.time()
+
 		visited = {}
 		for episode in range(self.episodes):
 			for step in range(self.max_steps):
@@ -332,10 +335,14 @@ class PerfectAgentORoom2:
 
 				angle = np.random.randint(0, 3)
 				new_state, reward, done = env.step((action, angle), self.play_audio, self.show_room)
-				print("Agent's state: ", self.agent_loc)
-				print("Reward gained: ", reward)
+				# print("Agent's state: ", self.agent_loc)
+				# print("Reward gained: ", reward)
 
 				if done:
+					end = time.time()
+					print('Done! at step ', step)
+					print('Time: ', end-start, 'seconds')
+					print('Steps/second: ', float(step)/(end-start))
 					break
 
 
@@ -378,7 +385,7 @@ class HumanAgent:
 			self.step_size = (total_dis) / self.converge_steps
 
 	def fit(self, env):
-		print("Enter action (wasd) followed by orientation: (012)")
+		#("Enter action (wasd) followed by orientation: (012)")
 		'''
 		0 = Don't orient 
 		1 = Orient left 15 degrees 
@@ -395,10 +402,10 @@ class HumanAgent:
 				warnings.warn("Invalid action!")
 				new_state, reward, done = env.step((0, 0), self.play_audio, self.show_room)
 
-		print("Agent's state: ", self.agent_loc)
-		print("Reward gained: ", reward)
+		#("Agent's state: ", self.agent_loc)
+		#print("Reward gained: ", reward)
 
 
 if __name__ == '__main__':
 	action, angle = map(str, input().split())
-	print(action, angle)
+	#print(action, angle)

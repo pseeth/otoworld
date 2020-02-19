@@ -19,7 +19,9 @@ Project timeline
 - Week of 2/03
   - See To-do
 - Week of 2/10
+  - See To-do
 - Week of 2/17
+  - See To-do
 - Week of 2/24
 - Week of 3/02
 - Week of 3/09
@@ -35,11 +37,7 @@ Project timeline
 Assuming `requirements.txt` is up do date, run `pip install -r requirements.txt` for the correct packages
 
 ### Run
-`poetry run python basic_room2.py `
-
-### Tentative Plan
-- [X] Start with `f(direct_sound, agent_loc, sound_loc, room_config) => convolved_sound` using Pyroom
-- [X] Extend to a RL environment (Gym)
+`poetry run python main.py `
 
 ### Model
 - Old way: mask in (0, 1); element-wise multiply and get the original source
@@ -76,11 +74,12 @@ Assuming `requirements.txt` is up do date, run `pip install -r requirements.txt`
 - [X] Cut the lengths of the sources based on length of shortest source.
 - [X] Make step size tunable
 - [X] Updated movements to be able to deal with floats
-- [ ] Get running on gpubox
+- [X] Get running on gpubox
 - [ ] One Action structure: rotate left, rotate right, step forward
 - [ ] Second Action structure: U, D, L, R, rotate left, rotate right (similar to current)
 - [ ] Have agent turn off both sources (move randomly in small environment)
-- [ ] Measure throughput (how many steps we can run per second without plotting with random agent)
+- [X] Measure throughput (how many steps we can run per second without plotting with random agent)
+  - ~ **20 steps/second**
 - [ ] Store in buffer (S, A, S', R) which is (prev audio, action, current audio, reward), refer to [DQN code](https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html)
 
 ### RL Setup
@@ -96,4 +95,5 @@ Assuming `requirements.txt` is up do date, run `pip install -r requirements.txt`
 * [PyRoom Acoustics](https://github.com/LCAV/pyroomacoustics)
 * [Gym mini world](https://github.com/maximecb/gym-miniworld)
 * [Gym mini grid](https://github.com/maximecb/gym-minigrid)
+* [Pytorch DQN](https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html)
 

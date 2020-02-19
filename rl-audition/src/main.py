@@ -146,8 +146,8 @@ def run_polygon_room():
 	# Generate room using polygon generator
 	hex_room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
 	x_points, y_points = hex_room.generate()
-	print(x_points)
-	print(y_points)
+	#print(x_points)
+	#print(y_points)
 	room_config = np.array([x_points, y_points])
 
 	# locations of audio sources (direct correspondence with paths list)
@@ -168,7 +168,7 @@ def run_polygon_room():
 	# plt.show()
 	# Load the agent class
 	target_loc = env.target
-	agent = rl_agent.PerfectAgentORoom2(target_loc=target_loc, agent_loc=agent_loc)
+	agent = rl_agent.PerfectAgentORoom2(target_loc=target_loc, agent_loc=agent_loc, show_room=False)
 	# agent = rl_agent.HumanAgent(target_loc=target_loc, agent_loc=agent_loc)
 	agent.fit(env)
 
@@ -242,6 +242,6 @@ if __name__ == '__main__':
 	#run_random_agent()
 	# Run perfect agent
 	# run_perfect_agent()
-	run_room_agent_oroom2()
-	# run_polygon_room()
+	#run_room_agent_oroom2()
+	run_polygon_room()
 	# run_human_agent()
