@@ -151,16 +151,15 @@ def run_polygon_room():
 	room_config = np.array([x_points, y_points])
 
 	# locations of audio sources (direct correspondence with paths list)
-	source_loc = [[6, 4.5], [9, 8]]
+	#source_loc = [[6, 4], [9, 8]]
 
 	# this agent will go get 9,8
-	# agent_loc = np.array([3, 8])
 	agent_loc = np.array([3, 8])
 
 	# Set up the gym environment
 	env = gym.make('audio-room-v0', room_config=room_config, agent_loc=agent_loc, corners=True, max_order=10,
-				   step_size=1.0)
-	env.add_sources(direct_sources=paths, target=1)  # target is the 2nd source
+				   step_size=1.0, direct_sources=paths, target=1)
+	env.add_sources()  # target is the 2nd source
 	# env.room.plot()
 	# plt.show()
 	# env.step(3)
@@ -168,7 +167,8 @@ def run_polygon_room():
 	# plt.show()
 	# Load the agent class
 	target_loc = env.target
-	agent = rl_agent.PerfectAgentORoom2(target_loc=target_loc, agent_loc=agent_loc, show_room=False)
+	agent = rl_agent.RandomAgent(episodes=5, steps=1000)  # hopefully 1000 is enough to get to target moving randomly
+	#agent = rl_agent.PerfectAgentORoom2(target_loc=target_loc, agent_loc=agent_loc, show_room=False)
 	# agent = rl_agent.HumanAgent(target_loc=target_loc, agent_loc=agent_loc)
 	agent.fit(env)
 

@@ -2,6 +2,8 @@ import numpy as np
 import gym
 import warnings
 import time
+from scipy.spatial.distance import euclidean
+
 
 class RandomAgent(object):
 	def __init__(self, episodes=1, steps=10):
@@ -22,15 +24,35 @@ class RandomAgent(object):
 		Args:
 			env (Gym env obj): the environment used to sample the action space randomly (0, 1, 2, 3)
 		"""
+		# keep track of stats
+		dist_to_target = []
+		steps_to_completion = []
+		
 		for episode in range(self.episodes):
+
+			start = time.time()
 			for step in range(self.max_steps):
 
 				# Sample actions randomly
 				action = env.action_space.sample()
-				new_state, reward, done = env.step(action)
+				angle = np.random.randint(0, 3)
+				new_state, reward, done = env.step((action, angle), play_audio=False, show_room=False)
 				#print("Reward gained: ", reward)
 
 				if done:
+					end = time.time()
+					steps_to_completion.append(step+1)
+					print('Done! at step ', step+1)
+					print('Time: ', end-start, 'seconds')
+					print('Steps/second: ', float(step+1)/(end-start))
+
+					# reset environment for new episode
+
+					env.reset()
+					print('\n-------\n NEW EPISODE:\n')
+					print('New initial agent location:', env.initial_agent_loc)
+					print('New target source location:', env.target_source)
+					print("Dist between src and agent:", euclidean(env.initial_agent_loc, env.target_source))
 					break
 
 
