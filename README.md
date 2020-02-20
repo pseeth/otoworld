@@ -75,6 +75,7 @@ Assuming `requirements.txt` is up do date, run `pip install -r requirements.txt`
 - [X] Make step size tunable
 - [X] Updated movements to be able to deal with floats
 - [X] Get running on gpubox
+- [X] Run 1000 episodes and plot initial distances to src and number of steps to reach target (see `steps_and_dist.png`)
 - [ ] One Action structure: U, D, L, R, rotate left, rotate right (similar to current)
 - [ ] Second Action structure: rotate left, rotate right, step forward
 - [ ] Have agent turn off both sources (move randomly in small environment)
