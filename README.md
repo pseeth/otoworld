@@ -75,8 +75,8 @@ Assuming `requirements.txt` is up do date, run `pip install -r requirements.txt`
 - [X] Make step size tunable
 - [X] Updated movements to be able to deal with floats
 - [X] Get running on gpubox
-- [ ] One Action structure: rotate left, rotate right, step forward
-- [ ] Second Action structure: U, D, L, R, rotate left, rotate right (similar to current)
+- [ ] One Action structure: U, D, L, R, rotate left, rotate right (similar to current)
+- [ ] Second Action structure: rotate left, rotate right, step forward
 - [ ] Have agent turn off both sources (move randomly in small environment)
 - [X] Measure throughput (how many steps we can run per second without plotting with random agent)
   - ~ **20 steps/second**
@@ -85,8 +85,8 @@ Assuming `requirements.txt` is up do date, run `pip install -r requirements.txt`
 ### RL Setup
 * Agent should find source and "turn it off" (agent reaches same grid location)
     - State: convolved sound
-    - Action space 1: rotate_left (x degrees), rotate_right (x degrees), 
-    - Action space 2: rotate_left (x degrees), rotate_right (x degrees), step (L, R, U, D)
+    - Action space 1: rotate_left (x degrees), rotate_right (x degrees), step (L, R, U, D)
+    - Action space 2: rotate_left (x degrees), rotate_right (x degrees), 
     - Small negative reward for each action, large reward for turning off source
     - Store replay buffer SAR
 
@@ -97,3 +97,21 @@ Assuming `requirements.txt` is up do date, run `pip install -r requirements.txt`
 * [Gym mini grid](https://github.com/maximecb/gym-minigrid)
 * [Pytorch DQN](https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html)
 
+
+#### Interesting error that might affect training
+**Happened once when measuring steps/second rate**
+```Traceback (most recent call last):
+  File "main.py", line 247, in <module>
+    run_polygon_room()
+  File "main.py", line 174, in run_polygon_room
+    agent.fit(env)
+  File "/home/rlaudition/rl_for_audition/rl-audition/src/rl_agent.py", line 32, in fit
+    new_state, reward, done = env.step((action, angle), play_audio=False, show_room=False)
+  File "/home/rlaudition/rl_for_audition/rl-audition/src/audio_room/envs/audio_env.py", line 222, in step
+    points = np.array([x, y]) if self.room.is_inside([x, y], include_borders=False) else self.agent_loc
+  File "/home/rlaudition/.conda/envs/rl-audition-env/lib/python3.7/site-packages/pyroomacoustics/room.py", line 1491, in is_inside
+    '''
+ValueError:  
+                Error could not determine if point is in or out in maximum number of iterations.
+                This is most likely a bug, please report it.
+```
