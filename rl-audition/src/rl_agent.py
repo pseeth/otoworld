@@ -2,6 +2,9 @@ import numpy as np
 import gym
 import warnings
 import time
+from scipy.spatial.distance import euclidean
+import store_data
+
 
 class RandomAgent(object):
 	def __init__(self, episodes=1, steps=10):
@@ -22,16 +25,47 @@ class RandomAgent(object):
 		Args:
 			env (Gym env obj): the environment used to sample the action space randomly (0, 1, 2, 3)
 		"""
+		# keep track of stats
+		init_dist_to_target = []
+		steps_to_completion = []
+		
 		for episode in range(self.episodes):
+			# measure init dist for 1st episode
+			if episode == 0:
+				init_dist_to_target.append(euclidean(env.agent_loc, env.target_source))
+
+			start = time.time()
 			for step in range(self.max_steps):
 
 				# Sample actions randomly
 				action = env.action_space.sample()
-				new_state, reward, done = env.step(action)
+				angle = np.random.randint(0, 3)
+				new_state, reward, done = env.step((action, angle), play_audio=False, show_room=False)
 				#print("Reward gained: ", reward)
 
 				if done:
+					end = time.time()
+					steps_to_completion.append(step+1)
+					print('Done! at step ', step+1)
+					print('Time: ', end-start, 'seconds')
+					print('Steps/second: ', float(step+1)/(end-start))
+
+					# reset environment for new episode
+					if episode != self.episodes - 1:
+						env.reset()
+						print('\n-------\n NEW EPISODE:', episode+1)
+						print('New initial agent location:', env.agent_loc)
+						print('New target source location:', env.target_source)
+						dist = euclidean(env.agent_loc, env.target_source)
+						print("Dist between src and agent:", dist)
+						init_dist_to_target.append(dist)
+					else:
+						pass
+						#print('Final steps to completion arr:', steps_to_completion)
+						#print('Final init dist to target', init_dist_to_target)
+
 					break
+		store_data.log_dist_and_num_steps(init_dist_to_target, steps_to_completion)
 
 
 class PerfectAgent(object):
