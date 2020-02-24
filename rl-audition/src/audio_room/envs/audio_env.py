@@ -24,9 +24,13 @@ class AudioEnv(gym.Env):
 			num_channels (int): number of channels (used in playing what the mic hears)
 			bytes_per_sample (int): used in playing what the mic hears
 			corners (bool): False if using Shoebox config, otherwise True
+			absorption (float): Absorption param of the room (how walls absorb sound)
+			max_order (int): another room parameter
 			converge_steps (int): # of steps the perfect agent should make before rewards
-			acceptable_radius (float): radius of acceptable range the agent can be in to be considered done
 			step_size (float): specificed step size else we programmatically assign it
+			acceptable_radius (float): radius of acceptable range the agent can be in to be considered done
+			direct_sources (List[str]): list of path strings to the source audio files
+			target (int): index of which source in direct_sources is to be set as the target source (remove later)
 		"""
 		self.resample_rate = resample_rate
 		self.absorption = absorption
@@ -96,9 +100,7 @@ class AudioEnv(gym.Env):
 		This function adds the sources to PyRoom. Assumes 2 sources.
 
 		Args:
-			direct_sound (List[str]): The paths to sound files
 			source_loc (List[int]): A list consisting of [x, y] coordinates of source location
-			target (int): The index value of source_loc list which is to be set as target
 			reset (bool): Bool indicating whether we reset the agents position to be the mean
 				of all the sources
 		"""
