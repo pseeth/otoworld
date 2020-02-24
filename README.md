@@ -78,6 +78,7 @@ Assuming `requirements.txt` is up do date, run `pip install -r requirements.txt`
 - [ ] Refactor loop in `audio_env.py` in `add_sources` function to support turning on and off sources
 - [ ] Move `main.py` and `store_data.py` up one directory
 - [ ] CLEAN UP: remove unecessary print statements (commented out), functions, classes, and files no longer used
+- [X] Run 1000 episodes and plot initial distances to src and number of steps to reach target (see `steps_and_dist.png`)
 - [ ] One Action structure: U, D, L, R, rotate left, rotate right (similar to current)
 - [ ] Second Action structure: rotate left, rotate right, step forward
 - [ ] Have agent turn off both sources (move randomly in small environment)

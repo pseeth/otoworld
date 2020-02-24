@@ -134,12 +134,8 @@ class AudioEnv(gym.Env):
 				self.audio.append(a)
 		
 		# add sources using audio data
-		# print('AUDIO:', self.audio)
-		# print('INIT SOURCES ARR BEFORE:', self.room.sources)
-		# print('MIN_SIZE_AUDIO:', self.min_size_audio)
 		for idx, audio in enumerate(self.audio):
 			self.room.add_source(source_loc[idx], signal=audio[:self.min_size_audio])
-		# print('INIT SOURCES ARR AFTER:', self.room.sources)
 
 		# if not Shoebox config
 		if self.corners:
@@ -170,6 +166,7 @@ class AudioEnv(gym.Env):
 
 		Args:
 			agent_loc (List[int] or np.array): [x,y] coordinates of the agent's new location
+			angle (int): discrete representation of angle to turn 
 		"""
 		# Set the new agent location
 		self.agent_loc = agent_loc
