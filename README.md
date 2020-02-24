@@ -75,6 +75,9 @@ Assuming `requirements.txt` is up do date, run `pip install -r requirements.txt`
 - [X] Make step size tunable
 - [X] Updated movements to be able to deal with floats
 - [X] Get running on gpubox
+- [ ] Refactor loop in `audio_env.py` in `add_sources` function to support turning on and off sources
+- [ ] Move `main.py` and `store_data.py` up one directory
+- [ ] CLEAN UP: remove unecessary print statements (commented out), functions, classes, and files no longer used
 - [ ] One Action structure: U, D, L, R, rotate left, rotate right (similar to current)
 - [ ] Second Action structure: rotate left, rotate right, step forward
 - [ ] Have agent turn off both sources (move randomly in small environment)
