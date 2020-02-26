@@ -75,13 +75,13 @@ Assuming `requirements.txt` is up do date, run `pip install -r requirements.txt`
 - [X] Make step size tunable
 - [X] Updated movements to be able to deal with floats
 - [X] Get running on gpubox
-- [ ] Refactor loop in `audio_env.py` in `add_sources` function to support turning on and off sources
+- [X] Refactor loop in `audio_env.py` in `add_sources` function to support turning on and off sources
 - [ ] Move `main.py` and `store_data.py` up one directory
-- [ ] CLEAN UP: remove unecessary print statements (commented out), functions, classes, and files no longer used
+- [X] CLEAN UP: remove unecessary print statements (commented out), functions, classes, and files no longer used
 - [X] Run 1000 episodes and plot initial distances to src and number of steps to reach target (see `steps_and_dist.png`)
 - [ ] One Action structure: U, D, L, R, rotate left, rotate right (similar to current)
 - [ ] Second Action structure: rotate left, rotate right, step forward
-- [ ] Have agent turn off both sources (move randomly in small environment)
+- [X] Have agent turn off both sources (move randomly in small environment)
 - [X] Measure throughput (how many steps we can run per second without plotting with random agent)
   - ~ **20 steps/second**
 - [ ] Store in buffer (S, A, S', R) which is (prev audio, action, current audio, reward), refer to [DQN code](https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html)
