@@ -1,7 +1,7 @@
 import gym
 import audio_room
 import numpy as np
-import rl_agent
+import rl_agent 
 import os
 import matplotlib.pyplot as plt
 import room_types
@@ -66,7 +66,7 @@ def run_perfect_agent():
 	# plt.show()
 	# -------------------------
 	# Load the agent class
-	target_loc = env.target
+	target_loc = env.target_source
 	agent = rl_agent.PerfectAgent(
 		target_loc=target_loc, agent_loc=env.agent_loc, play_audio=True, show_room=True)
 	print("about to fit")
@@ -104,7 +104,7 @@ def run_room_agent_oroom1():
 	# env.room.plot()
 	# plt.show()
 	# Load the agent class
-	target_loc = env.target
+	target_loc = env.target_source
 	agent = rl_agent.PerfectAgentORoom(target_loc=target_loc, agent_loc=agent_loc)
 	agent.fit(env)
 
@@ -133,7 +133,7 @@ def run_room_agent_oroom2():
 	# env.room.plot()
 	# plt.show()
 	# Load the agent class
-	target_loc = env.target
+	target_loc = env.target_source
 	agent = rl_agent.PerfectAgentORoom2(target_loc=target_loc, agent_loc=agent_loc)
 	agent.fit(env)
 
@@ -158,7 +158,7 @@ def run_polygon_room():
 
 	# Set up the gym environment
 	env = gym.make('audio-room-v0', room_config=room_config, agent_loc=agent_loc, corners=True, max_order=10,
-				   step_size=1.0, direct_sources=paths, target=1)
+                step_size=1.0, direct_sources=paths, target=1, acceptable_radius = .8)
 	env.add_sources()  # target is the 2nd source
 	# env.room.plot()
 	# plt.show()
@@ -166,9 +166,9 @@ def run_polygon_room():
 	# env.room.plot()
 	# plt.show()
 	# Load the agent class
-	target_loc = env.target
+	target_loc = env.target_source
 	agent = rl_agent.RandomAgent(episodes=10, steps=1000)  # hopefully 1000 steps enough to get to target moving randomly
-	#agent = rl_agent.PerfectAgentORoom2(target_loc=target_loc, agent_loc=agent_loc, show_room=False)
+	# agent = rl_agent.PerfectAgentORoom2(target_loc=target_loc, agent_loc=agent_loc, show_room=False)
 	# agent = rl_agent.HumanAgent(target_loc=target_loc, agent_loc=agent_loc)
 	agent.fit(env)
 
@@ -202,7 +202,7 @@ def run_human_agent():
 	env.room.plot()
 	plt.pause(3)
 	# Load the agent class
-	target_loc = env.target
+	target_loc = env.target_source
 	# agent = rl_agent.PerfectAgentORoom2(target_loc=target_loc, agent_loc=agent_loc)
 	agent = rl_agent.HumanAgent(target_loc=target_loc, agent_loc=agent_loc)
 	agent.fit(env)

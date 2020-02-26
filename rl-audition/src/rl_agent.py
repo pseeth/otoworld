@@ -40,8 +40,7 @@ class RandomAgent(object):
 				# Sample actions randomly
 				action = env.action_space.sample()
 				angle = np.random.randint(0, 3)
-				new_state, reward, done = env.step((action, angle), play_audio=False, show_room=False)
-				#print("Reward gained: ", reward)
+				new_state, target, reward, done = env.step((action, angle), play_audio=False, show_room=False)
 
 				if done:
 					end = time.time()
@@ -52,18 +51,11 @@ class RandomAgent(object):
 
 					# reset environment for new episode
 					if episode != self.episodes - 1:
-						env.reset()
 						print('\n-------\n NEW EPISODE:', episode+1)
+						env.reset()
 						print('New initial agent location:', env.agent_loc)
-						print('New target source location:', env.target_source)
 						dist = euclidean(env.agent_loc, env.target_source)
-						print("Dist between src and agent:", dist)
 						init_dist_to_target.append(dist)
-					else:
-						pass
-						#print('Final steps to completion arr:', steps_to_completion)
-						#print('Final init dist to target', init_dist_to_target)
-
 					break
 		store_data.log_dist_and_num_steps(init_dist_to_target, steps_to_completion)
 
@@ -85,8 +77,8 @@ class PerfectAgent(object):
 			step_size (float): specificed step size else we programmatically assign it
 		"""
 		self.episodes = episodes
-		self.target_loc = target_loc.copy()
-		self.agent_loc = agent_loc.copy()
+		self.target_loc = target_loc
+		self.agent_loc = agent_loc
 		self.play_audio = play_audio
 		self.show_room = show_room
 
@@ -159,7 +151,7 @@ class PerfectAgent(object):
 							action = 2
 							self.agent_loc += self.step_size
 				
-				new_state, reward, done = env.step((action, 0), self.play_audio, self.show_room)
+				new_state, self.target_loc, reward, done = env.step((action, 0), self.play_audio, self.show_room)
 				#print("Reward gained: ", reward)
 
 				if done:
@@ -184,8 +176,8 @@ class PerfectAgentORoom:
 		"""
 		self.episodes = episodes
 		self.max_steps = max_steps
-		self.target_loc = target_loc.copy()
-		self.agent_loc = agent_loc.copy()
+		self.target_loc = target_loc
+		self.agent_loc = agent_loc
 		self.play_audio = play_audio
 		self.show_room = show_room
 		self.converge_steps = converge_steps
@@ -292,7 +284,7 @@ class PerfectAgentORoom:
 							self.agent_loc += self.step_size
 				
 				visited.add((self.agent_loc[0], self.agent_loc[1]))
-				new_state, reward, done = env.step((action, 0), self.play_audio, self.show_room)
+				new_state, self.target_loc, reward, done = env.step((action, 0), self.play_audio, self.show_room)
 
 				if done:
 					break
@@ -312,8 +304,8 @@ class PerfectAgentORoom2:
 		"""
 		self.episodes = episodes
 		self.max_steps = steps
-		self.target_loc = target_loc.copy()
-		self.agent_loc = agent_loc.copy()
+		self.target_loc = target_loc
+		self.agent_loc = agent_loc
 		self.play_audio = play_audio
 		self.show_room = show_room
 
@@ -368,9 +360,7 @@ class PerfectAgentORoom2:
 						self.agent_loc[1] -= 1
 
 				angle = np.random.randint(0, 3)
-				new_state, reward, done = env.step((action, angle), self.play_audio, self.show_room)
-				# print("Agent's state: ", self.agent_loc)
-				# print("Reward gained: ", reward)
+				new_state, self.target_loc, reward, done = env.step((action, angle), self.play_audio, self.show_room)
 
 				if done:
 					end = time.time()
@@ -395,8 +385,8 @@ class HumanAgent:
 			step_size (float): specified step size else we programmatically assign it
 		"""
 		self.episodes = episodes
-		self.target_loc = target_loc.copy()
-		self.agent_loc = agent_loc.copy()
+		self.target_loc = target_loc
+		self.agent_loc = agent_loc
 		self.play_audio = play_audio
 		self.show_room = show_room
 
@@ -430,16 +420,12 @@ class HumanAgent:
 			action, angle = map(str, input().split())
 
 			if action in self.valid_actions and angle in self.valid_angles:
-				new_state, reward, done = env.step((self.key_to_action[action], int(angle)), self.play_audio, self.show_room)
+				new_state, self.target_loc, reward, done = env.step((self.key_to_action[action], int(angle)), self.play_audio, self.show_room)
 			else:
 				# Pass some dummy action
 				warnings.warn("Invalid action!")
-				new_state, reward, done = env.step((0, 0), self.play_audio, self.show_room)
-
-		#("Agent's state: ", self.agent_loc)
-		#print("Reward gained: ", reward)
+				new_state, self.target_loc, reward, done = env.step((0, 0), self.play_audio, self.show_room)
 
 
 if __name__ == '__main__':
 	action, angle = map(str, input().split())
-	#print(action, angle)
