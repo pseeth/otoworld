@@ -13,7 +13,8 @@ from copy import deepcopy
 
 class AudioEnv(gym.Env):
 	def __init__(self, room_config, agent_loc=None, resample_rate=8000, num_channels=2, bytes_per_sample=2, corners=False,
-              absorption=0.0, max_order=2, converge_steps=10, step_size=None, acceptable_radius=.1, direct_sources=None, target=None):
+              absorption=0.0, max_order=2, converge_steps=10, step_size=None,
+				 acceptable_radius=.1, direct_sources=None, target=None, degrees=0.2618):
 		"""
 		This class inherits from OpenAI Gym Env and is used to simulate the agent moving in PyRoom.
 
@@ -39,9 +40,9 @@ class AudioEnv(gym.Env):
 		self.audio = []
 		self.num_channels = num_channels
 		self.bytes_per_sample = bytes_per_sample
-		self.num_actions = 4  # For now, having 4 actions = left, right, up, down
+		self.num_actions = 6  # For now, having 6 actions = left, right, up, down, rotate left, rotate right
 		self.action_space = spaces.Discrete(self.num_actions)
-		self.action_to_string = {0: 'Left', 1: 'Right', 2: 'Up', 3: 'Down'}
+		self.action_to_string = {0: 'Left', 1: 'Right', 2: 'Up', 3: 'Down', 4: 'Rotate Left', 5: 'Rotate right'}
 		self.corners = corners
 		self.room_config = room_config
 		self.agent_loc = agent_loc
@@ -55,6 +56,8 @@ class AudioEnv(gym.Env):
 		self.target_source = None
 		self.target = target
 		self.min_size_audio = np.inf
+		self.degrees = degrees
+		self.cur_angle = 0  # The starting angle is 0
 
 		# non-Shoebox config (corners of room are given)
 		if self.corners:
@@ -182,7 +185,7 @@ class AudioEnv(gym.Env):
 		if self.step_size is None:
 			self.step_size = (total_dis) / self.converge_steps
 
-	def _move_agent(self, agent_loc, angle=0):
+	def _move_agent(self, agent_loc):
 		"""
 		This function moves the agent to a new location (given by agent_loc). It effectively removes the
 		agent (mic array) from the room and then adds it back in the new location.
@@ -198,16 +201,9 @@ class AudioEnv(gym.Env):
 		self.room.mic_array = None
 
 		if self.num_channels == 2:
-			# 0.2618 radians = 15 degrees
-			if angle == 0:
-				orientation = 0
-			elif angle == 1:
-				orientation = 0.2618
-			else:
-				orientation = -0.2618
-			# Create the array at current time step (2 mics, angle 0 IN RADIANS, 0.2m apart)
+			# Create the array at current time step (2 mics, angle IN RADIANS, 0.2m apart)
 			mic = MicrophoneArray(linear_2D_array(
-				agent_loc, 2, orientation, 0.2), self.room.fs)
+				agent_loc, 2, self.cur_angle, 0.2), self.room.fs)
 			self.room.add_microphone_array(mic)
 		else:
 			mic = MicrophoneArray(agent_loc.reshape(-1, 1), self.room.fs)
@@ -216,7 +212,7 @@ class AudioEnv(gym.Env):
 	def check_if_inside(self, points):
 		return self.room.is_inside(points, include_borders=False)
 
-	def step(self, actions, play_audio=True, show_room=True):
+	def step(self, action, play_audio=True, show_room=True):
 		"""
 		This function simulates the agent taking one step in the environment (and room) given an action:
 			0 = Left
@@ -241,7 +237,7 @@ class AudioEnv(gym.Env):
 		"""
 		x, y = self.agent_loc[0], self.agent_loc[1]
 		# Separate out the action and orientation
-		action, angle = actions[0], actions[1]
+		# action, angle = actions[0], actions[1]
 		done = False
 		if action == 0:
 			x -= self.step_size
@@ -251,13 +247,18 @@ class AudioEnv(gym.Env):
 			y += self.step_size
 		elif action == 3:
 			y -= self.step_size
-
+		elif action == 4:
+			self.cur_angle += self.degrees
+		elif action == 5:
+			self.cur_angle -= self.degrees
 		# Check if the new points lie within the room
 		points = np.array([x, y]) if self.room.is_inside(
 			[x, y], include_borders=False) else self.agent_loc
 
+
+		# print("Action taken: ", self.action_to_string[action],  " Cur angle: ", self.cur_angle, " In degrees: ", self.cur_angle*180/np.pi)
 		# Move agent in the direction of action
-		self._move_agent(agent_loc=points, angle=angle)
+		self._move_agent(agent_loc=points)
 		dist = euclidean(self.agent_loc, self.target_source)
 
 		# Check if goal state is reached
@@ -375,7 +376,7 @@ class AudioEnv(gym.Env):
 			# Show the room while the audio is playing
 			if show_room:
 				fig, ax = self.room.plot(img_order=0)
-				plt.pause(0.001)
+				plt.pause(1)
 
-			#play_obj.wait_done()
+			play_obj.wait_done()
 			plt.close()

@@ -7,6 +7,7 @@ DATA_PATH = '../data'
 DIST_URL = 'init_dist_to_target.p'
 STEPS_URL = 'steps_to_completion.p'
 
+
 def log_dist_and_num_steps(init_dist_to_target, steps_to_completion):
     """
     This function logs the initial distance between agent and target source and number of steps 
@@ -63,4 +64,4 @@ def plot_dist_and_steps():
 def main():
     plot_dist_and_steps()
 
-main()
+# main()

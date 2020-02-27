@@ -4,10 +4,11 @@ import warnings
 import time
 from scipy.spatial.distance import euclidean
 import store_data
+from collections import deque
 
 
 class RandomAgent(object):
-	def __init__(self, episodes=1, steps=10):
+	def __init__(self, episodes=1, steps=10, blen=1000):
 		"""
 		This class represents a random agent that will move throughout the room
 
@@ -17,6 +18,8 @@ class RandomAgent(object):
 		"""
 		self.episodes = episodes
 		self.max_steps = steps
+		self.blen = blen
+		self.buffer = deque(maxlen=blen)
 
 	def fit(self, env):
 		"""
@@ -28,19 +31,30 @@ class RandomAgent(object):
 		# keep track of stats
 		init_dist_to_target = []
 		steps_to_completion = []
-		
+
 		for episode in range(self.episodes):
-			# measure init dist for 1st episode
-			if episode == 0:
-				init_dist_to_target.append(euclidean(env.agent_loc, env.target_source))
+			env.reset()
+			prev_state = None
+			prev_target = env.target_source.copy()
+
+			# Measure distance with the initial target
+			init_dist_to_target.append(euclidean(env.agent_loc, env.target_source))
 
 			start = time.time()
 			for step in range(self.max_steps):
 
 				# Sample actions randomly
 				action = env.action_space.sample()
-				angle = np.random.randint(0, 3)
-				new_state, target, reward, done = env.step((action, angle), play_audio=False, show_room=False)
+				new_state, target, reward, done = env.step(action, play_audio=False, show_room=False)
+
+				if step > 0:
+					self.buffer.append((prev_state, action, new_state, reward))
+
+				prev_state = new_state
+
+				if prev_target[0] != env.target_source[0] and prev_target[1] != env.target_source[1]:
+					init_dist_to_target[-1] += euclidean(env.agent_loc, env.target_source)
+					prev_target = env.target_source.copy()
 
 				if done:
 					end = time.time()
@@ -50,14 +64,15 @@ class RandomAgent(object):
 					print('Steps/second: ', float(step+1)/(end-start))
 
 					# reset environment for new episode
-					if episode != self.episodes - 1:
-						print('\n-------\n NEW EPISODE:', episode+1)
-						env.reset()
-						print('New initial agent location:', env.agent_loc)
-						dist = euclidean(env.agent_loc, env.target_source)
-						init_dist_to_target.append(dist)
+					# if episode != self.episodes - 1:
+					# 	print('\n-------\n NEW EPISODE:', episode+1)
+					# 	env.reset()
+					# 	print('New initial agent location:', env.agent_loc)
+						# dist = euclidean(env.agent_loc, env.target_source)
+						# init_dist_to_target.append(dist)
 					break
 		store_data.log_dist_and_num_steps(init_dist_to_target, steps_to_completion)
+		store_data.plot_dist_and_steps()
 
 
 class PerfectAgent(object):
@@ -151,7 +166,7 @@ class PerfectAgent(object):
 							action = 2
 							self.agent_loc += self.step_size
 				
-				new_state, self.target_loc, reward, done = env.step((action, 0), self.play_audio, self.show_room)
+				new_state, self.target_loc, reward, done = env.step(action, self.play_audio, self.show_room)
 				#print("Reward gained: ", reward)
 
 				if done:
@@ -159,7 +174,7 @@ class PerfectAgent(object):
 
 
 class PerfectAgentORoom:
-	def __init__(self, target_loc, agent_loc, episodes=1, max_steps=50, converge_steps=10, step_size=None, acceptable_radius=1, play_audio=True, show_room=True):
+	def __init__(self, target_loc, agent_loc, episodes=1, max_steps=50, converge_steps=10, step_size=None, acceptable_radius=1, play_audio=True, show_room=True, blen=1000):
 		"""
 		This class represents a perfect agent in a non-ShoeBox environment that will randomly choose a target,
 		then move throughout the room to the correct x value, then move to the correct y value and stop
@@ -182,6 +197,8 @@ class PerfectAgentORoom:
 		self.show_room = show_room
 		self.converge_steps = converge_steps
 		self.acceptable_radius = acceptable_radius
+		self.blen = blen
+		self.buffer = deque(maxlen=blen)
 
 		# Finding the total distance to determine step size (total_dis / number of steps to converge)
 		x_dis = abs(self.agent_loc[0] - self.target_loc[0])
@@ -209,6 +226,7 @@ class PerfectAgentORoom:
 		"""
 		visited = set()
 		for episode in range(self.episodes):
+			prev_state = None
 			for step in range(self.max_steps):
 
 				# Agent is to the left and outside of acceptable radius
@@ -284,14 +302,14 @@ class PerfectAgentORoom:
 							self.agent_loc += self.step_size
 				
 				visited.add((self.agent_loc[0], self.agent_loc[1]))
-				new_state, self.target_loc, reward, done = env.step((action, 0), self.play_audio, self.show_room)
+				new_state, self.target_loc, reward, done = env.step(action, self.play_audio, self.show_room)
 
 				if done:
 					break
 
 
 class PerfectAgentORoom2:
-	def __init__(self, target_loc, agent_loc, episodes=1, steps=50, play_audio=True, show_room=True):
+	def __init__(self, target_loc, agent_loc, episodes=1, steps=50, play_audio=True, show_room=True, blen=1000):
 		"""
 		This class represents a perfect agent in a non-ShoeBox environment that will randomly choose a target,
 		then move throughout the room to the correct x value, then move to the correct y value and stop
@@ -308,6 +326,8 @@ class PerfectAgentORoom2:
 		self.agent_loc = agent_loc
 		self.play_audio = play_audio
 		self.show_room = show_room
+		self.blen = blen
+		self.buffer = deque(maxlen=blen)
 
 	def fit(self, env):
 		"""
@@ -326,41 +346,50 @@ class PerfectAgentORoom2:
 
 		visited = {}
 		for episode in range(self.episodes):
+			prev_state = None
 			for step in range(self.max_steps):
+				prob = np.random.randn(1)
+				if prob > 0.7:
+					if self.agent_loc[0] < self.target_loc[0]:
+						if env.check_if_inside([self.agent_loc[0] + 1, self.agent_loc[1]]):
+							action = 1
+							self.agent_loc[0] += 1
+						elif env.check_if_inside([self.agent_loc[0], self.agent_loc[1]-1]) and (self.agent_loc[0], self.agent_loc[1] - 1) not in visited:
+							action = 3
+							self.agent_loc[1] -= 1
+						elif env.check_if_inside([self.agent_loc[0], self.agent_loc[1] + 1]):
+							action = 2
+							self.agent_loc[1] += 1
+					elif self.agent_loc[0] > self.target_loc[0]:
+						if env.check_if_inside([self.agent_loc[0] - 1, self.agent_loc[1]]):
+							action = 0
+							self.agent_loc[0] -= 1
+						elif env.check_if_inside([self.agent_loc[0], self.agent_loc[1] - 1]) and (self.agent_loc[0], self.agent_loc[1] - 1) not in visited:
+							action = 3
+							self.agent_loc[1] -= 1
+							# Added to the visited list
+							visited[(self.agent_loc[0], self.agent_loc[1])] = 1
+						elif env.check_if_inside([self.agent_loc[0], self.agent_loc[1] + 1]):
+							action = 2
+							self.agent_loc[1] += 1
 
-				if self.agent_loc[0] < self.target_loc[0]:
-					if env.check_if_inside([self.agent_loc[0] + 1, self.agent_loc[1]]):
-						action = 1
-						self.agent_loc[0] += 1
-					elif env.check_if_inside([self.agent_loc[0], self.agent_loc[1]-1]) and (self.agent_loc[0], self.agent_loc[1] - 1) not in visited:
-						action = 3
-						self.agent_loc[1] -= 1
-					elif env.check_if_inside([self.agent_loc[0], self.agent_loc[1] + 1]):
-						action = 2
-						self.agent_loc[1] += 1
-				elif self.agent_loc[0] > self.target_loc[0]:
-					if env.check_if_inside([self.agent_loc[0] - 1, self.agent_loc[1]]):
-						action = 0
-						self.agent_loc[0] -= 1
-					elif env.check_if_inside([self.agent_loc[0], self.agent_loc[1] - 1]) and (self.agent_loc[0], self.agent_loc[1] - 1) not in visited:
-						action = 3
-						self.agent_loc[1] -= 1
-						# Added to the visited list
-						visited[(self.agent_loc[0], self.agent_loc[1])] = 1
-					elif env.check_if_inside([self.agent_loc[0], self.agent_loc[1] + 1]):
-						action = 2
-						self.agent_loc[1] += 1
+					elif self.agent_loc[0] == self.target_loc[0]:
+						if self.agent_loc[1] < self.target_loc[1]:
+							action = 2
+							self.agent_loc[1] += 1
+						else:
+							action = 3
+							self.agent_loc[1] -= 1
+				else:
+					action = np.random.randint(4, 6)
 
-				elif self.agent_loc[0] == self.target_loc[0]:
-					if self.agent_loc[1] < self.target_loc[1]:
-						action = 2
-						self.agent_loc[1] += 1
-					else:
-						action = 3
-						self.agent_loc[1] -= 1
+				# angle = np.random.randint(0, 3)
+				new_state, self.target_loc, reward, done = env.step(action, self.play_audio, self.show_room)
 
-				angle = np.random.randint(0, 3)
-				new_state, self.target_loc, reward, done = env.step((action, angle), self.play_audio, self.show_room)
+				if step > 0:
+					self.buffer.append((prev_state, action, new_state, reward))
+
+				prev_state = new_state
 
 				if done:
 					end = time.time()

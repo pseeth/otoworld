@@ -168,7 +168,7 @@ def run_polygon_room():
 	# Load the agent class
 	target_loc = env.target_source
 	agent = rl_agent.RandomAgent(episodes=10, steps=1000)  # hopefully 1000 steps enough to get to target moving randomly
-	# agent = rl_agent.PerfectAgentORoom2(target_loc=target_loc, agent_loc=agent_loc, show_room=False)
+	# agent = rl_agent.PerfectAgentORoom2(target_loc=target_loc, agent_loc=agent_loc, show_room=True)
 	# agent = rl_agent.HumanAgent(target_loc=target_loc, agent_loc=agent_loc)
 	agent.fit(env)
 
@@ -239,7 +239,7 @@ def choose_random_files():
 
 if __name__ == '__main__':
 	# Run the random agent
-	#run_random_agent()
+	# run_random_agent()
 	# Run perfect agent
 	# run_perfect_agent()
 	#run_room_agent_oroom2()
