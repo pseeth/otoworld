@@ -71,6 +71,11 @@ class RandomAgent(object):
 						# dist = euclidean(env.agent_loc, env.target_source)
 						# init_dist_to_target.append(dist)
 					break
+		# print(len(init_dist_to_target), len(steps_to_completion))
+		'''
+		Quick note about the plot: It will fail to plot if the agent fails to find all sources within the given time steps 
+		Deal with this later 
+		'''
 		store_data.log_dist_and_num_steps(init_dist_to_target, steps_to_completion)
 		store_data.plot_dist_and_steps()
 

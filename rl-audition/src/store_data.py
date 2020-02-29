@@ -32,7 +32,7 @@ def plot_dist_and_steps():
     with open(os.path.join(DATA_PATH, DIST_URL), 'rb') as f:
         dist = pickle.load(f)
         avg_dist = np.mean(dist)
-        print(dist[:20])
+        # print(dist[:20])
         #print('Avg initial dist:', )
 
     with open(os.path.join(DATA_PATH, STEPS_URL), 'rb') as f:
@@ -61,7 +61,3 @@ def plot_dist_and_steps():
     plt.show()
 
 
-def main():
-    plot_dist_and_steps()
-
-# main()

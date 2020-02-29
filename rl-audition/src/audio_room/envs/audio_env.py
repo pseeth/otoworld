@@ -308,7 +308,7 @@ class AudioEnv(gym.Env):
 			reward = -1 * np.linalg.norm(self.agent_loc - self.target_source)
 
 			# Return the room rir and convolved signals as the new state
-			return [data], self.target_source, reward, done
+			return data, self.target_source, reward, done
 
 	def reset(self, removing_source=None):
 		"""
