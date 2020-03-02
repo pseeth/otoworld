@@ -18,7 +18,7 @@ class RLAgent:
 			blen (int): # of entries which the replay buffer can store
 			gamma (float): Discount factor
 			alpha (float): Learning rate alpha
-			"""
+		"""
 		self.episodes = episodes
 		self.max_steps = steps
 		self.blen = blen

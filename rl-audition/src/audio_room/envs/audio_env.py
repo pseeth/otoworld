@@ -1,5 +1,5 @@
 import gym
-from pyroomacoustics import MicrophoneArray, ShoeBox, Room, linear_2D_array
+from pyroomacoustics import MicrophoneArray, ShoeBox, Room, linear_2D_array, Constants
 import librosa
 import numpy as np
 import matplotlib.pyplot as plt
@@ -33,6 +33,7 @@ class AudioEnv(gym.Env):
 			acceptable_radius (float): radius of acceptable range the agent can be in to be considered done
 			direct_sources (List[str]): list of path strings to the source audio files
 			target (int): index of which source in direct_sources is to be set as the target source (remove later)
+			degrees (float): value of degrees to rotate in radians (.2618 radians = 15 degrees)
 		"""
 		self.resample_rate = resample_rate
 		self.absorption = absorption
@@ -80,14 +81,14 @@ class AudioEnv(gym.Env):
 		print("Initial agent location: ", self.agent_loc)
 
 	def _sample_points(self, num_sources):
-		'''
+		"""
 		This method would generate random sample points using rejection sampling method
 		Args:
 			num_sources: Number of (x, y) random points generated will be equal to number of sources
 
 		Returns:
 			A list of generated random points
-		'''
+		"""
 
 		sampled_points = []
 		generated_points = {}  # To avoid placing multiple sources in the same location
@@ -183,7 +184,7 @@ class AudioEnv(gym.Env):
 		y_dis = abs(self.agent_loc[1] - self.target_source[1])
 		total_dis = x_dis + y_dis
 		if self.step_size is None:
-			self.step_size = (total_dis) / self.converge_steps
+			self.step_size = total_dis / self.converge_steps
 
 	def _move_agent(self, agent_loc):
 		"""

@@ -10,7 +10,6 @@ import agent_wrapper
 DIR_MALE = '../sounds/dry_recordings/dev/051_subset/'
 DIR_FEMALE = '../sounds/dry_recordings/dev/050_subset/'
 
-
 def choose_random_files():
 	"""
 	Function returns source random files using the directory constants. It chooses one file from the
