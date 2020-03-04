@@ -2,10 +2,35 @@ import pickle
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+import random
+import constants
 
-DATA_PATH = "../data"
-DIST_URL = "init_dist_to_target.p"
-STEPS_URL = "steps_to_completion.p"
+def choose_random_files(num_sources=2):
+    """
+	Function returns source random files using the directory constants. It chooses one file from the
+	female recordings and one from the male recordings
+
+	Args:
+	    num_sources (int): number of sources to place in the room
+
+	Returns:
+		paths (List[str]): the paths to two wav files
+	"""
+    paths = []
+
+    for i in range(num_sources):
+        # randomly choose male or female voice folder
+        dir = random.choice([constants.DIR_MALE, constants.DIR_FEMALE])
+        files = os.listdir(dir)
+
+        file = ''
+        while constants.AUDIO_EXTENSION not in file:
+            idx = np.random.randint(len(files), size=1)[0]
+            file = files[idx]
+
+        paths.append(os.path.join(dir, file))
+
+    return paths
 
 
 def log_dist_and_num_steps(init_dist_to_target, steps_to_completion):
@@ -19,20 +44,20 @@ def log_dist_and_num_steps(init_dist_to_target, steps_to_completion):
         steps_to_completion (List[int]): number of steps it took for agent to get to source
     """
     # create data folder
-    if not os.path.exists(DATA_PATH):
-        os.makedirs(DATA_PATH)
+    if not os.path.exists(constants.DATA_PATH):
+        os.makedirs(constants.DATA_PATH)
 
     # write objects
-    pickle.dump(init_dist_to_target, open(os.path.join(DATA_PATH, DIST_URL), "wb"))
-    pickle.dump(steps_to_completion, open(os.path.join(DATA_PATH, STEPS_URL), "wb"))
+    pickle.dump(init_dist_to_target, open(os.path.join(constants.DATA_PATH, constants.DIST_URL), "wb"))
+    pickle.dump(steps_to_completion, open(os.path.join(constants.DATA_PATH, constants.STEPS_URL), "wb"))
 
 
 def plot_dist_and_steps():
-    with open(os.path.join(DATA_PATH, DIST_URL), "rb") as f:
+    with open(os.path.join(constants.DATA_PATH, constants.DIST_URL), "rb") as f:
         dist = pickle.load(f)
         avg_dist = np.mean(dist)
 
-    with open(os.path.join(DATA_PATH, STEPS_URL), "rb") as f:
+    with open(os.path.join(constants.DATA_PATH, constants.STEPS_URL), "rb") as f:
         steps = pickle.load(f)
         avg_steps = np.mean(steps)
 

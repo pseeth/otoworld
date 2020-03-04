@@ -10,6 +10,9 @@ import time
 from scipy.spatial.distance import euclidean
 from copy import deepcopy
 
+import sys
+sys.path.append('../../constants/')
+import constants
 
 class AudioEnv(gym.Env):
     def __init__(
@@ -55,9 +58,7 @@ class AudioEnv(gym.Env):
         self.audio = []
         self.num_channels = num_channels
         self.bytes_per_sample = bytes_per_sample
-        self.num_actions = (
-            6  # For now, having 6 actions = left, right, up, down, rotate left, rotate right
-        )
+        self.num_actions = 6
         self.action_space = spaces.Discrete(self.num_actions)
         self.action_to_string = {
             0: "Left",
@@ -107,6 +108,7 @@ class AudioEnv(gym.Env):
     def _sample_points(self, num_sources):
         """
 		This method would generate random sample points using rejection sampling method
+
 		Args:
 			num_sources: Number of (x, y) random points generated will be equal to number of sources
 
@@ -122,12 +124,18 @@ class AudioEnv(gym.Env):
                 np.random.randint(self.x_min, self.x_max),
                 np.random.randint(self.y_min, self.y_max),
             ]
-            if (
-                self.room.is_inside(random_point, include_borders=False)
-                and tuple(random_point) not in generated_points
-            ):
-                sampled_points.append(random_point)
-                generated_points[tuple(random_point)] = 1
+            try:
+                if (
+                    self.room.is_inside(random_point, include_borders=False)
+                    and tuple(random_point) not in generated_points
+                ):
+                    sampled_points.append(random_point)
+                    generated_points[tuple(random_point)] = 1
+            except:
+                # in case is_inside func fails, place in the center for now
+                point = [((self.x_max - self.x_min) // 2), ((self.y_max - self.y_min) // 2)]
+                sampled_points.append(point)
+                generated_points[tuple(point)] = 1
 
         return sampled_points
 
@@ -235,9 +243,6 @@ class AudioEnv(gym.Env):
             mic = MicrophoneArray(agent_loc.reshape(-1, 1), self.room.fs)
             self.room.add_microphone_array(mic)
 
-    def check_if_inside(self, points):
-        return self.room.is_inside(points, include_borders=False)
-
     def step(self, action, play_audio=True, show_room=True):
         """
 		This function simulates the agent taking one step in the environment (and room) given an action:
@@ -278,11 +283,14 @@ class AudioEnv(gym.Env):
         elif action == 5:
             self.cur_angle -= self.degrees
         # Check if the new points lie within the room
-        points = (
-            np.array([x, y])
-            if self.room.is_inside([x, y], include_borders=False)
-            else self.agent_loc
-        )
+        try:
+            if self.room.is_inside([x, y], include_borders=False):
+                points = np.array([x, y])
+            else:
+                points = self.agent_loc
+        except:
+            # in case the is_inside func fails
+            points = self.agent_loc
 
         # print("Action taken: ", self.action_to_string[action],  " Cur angle: ", self.cur_angle, " In degrees: ", self.cur_angle*180/np.pi)
         # Move agent in the direction of action
@@ -312,14 +320,14 @@ class AudioEnv(gym.Env):
                     self.render(data, play_audio, show_room)
 
                 done = False
-                reward = 100
+                reward = constants.TURN_OFF_REWARD
                 # Return the room rir and convolved signals as the new state
                 return [data], self.target_source, reward, done
 
             # This was the last source hence we can assume we are done
             else:
                 done = True
-                reward = 100
+                reward = constants.TURN_OFF_REWARD
                 return [], None, reward, done
 
         if not done:
@@ -331,12 +339,11 @@ class AudioEnv(gym.Env):
             if play_audio or show_room:
                 self.render(data, play_audio, show_room)
 
-            # Calculate the reward
-            # Currently, simply using negative of l2 norm as reward
-            reward = -1 * np.linalg.norm(self.agent_loc - self.target_source)
+            # penalize time it takes to reach a source
+            reward = constants.STEP_PENALTY
 
             # Return the room rir and convolved signals as the new state
-            return data, self.target_source, reward, done
+            return data, self.target_source, constants.STEP_PENALTY, done
 
     def reset(self, removing_source=None):
         """

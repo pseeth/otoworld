@@ -109,12 +109,14 @@ To set the max line length to 99: `black -l 99 {source_file_or_directory}`
   - ~ **20 steps/second**
 - [X] Store in buffer (S, A, S', R) which is (prev audio, action, current audio, reward), refer to [DQN code](https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html)
 - [X] Clean up: remove DSstores from git, remove `temp.py`, remove classes from `rl_agent.py` except for random agent and oroom perfect agent, run black to fix formatting
-- [ ] Set up experiment structure: `exp/exp1.py` and `src/env`, `src/agent`, `src/room`, `src/utils` (store_data), `src/models`, `src/constants.py` and start adding `tests/`
-- [ ] Adjust source turning off code - there is no target, so loop thru all srcs and check if agent is close enough to turn off
-- [ ] Reward: -.1 for each step, 5 for turning off source (put in `constants`)
-- [ ] Make # of sources a parameter
+- [X] Set up experiment structure: `exp/exp1.py` and `src/env`, `src/agent`, `src/room`, `src/utils` (store_data), `src/models`, `src/constants.py` and start adding `tests/`
+- [X] Reward: -.1 for each step, 10 for turning off source (put in `constants`)
+- [X] Make # of sources a parameter
+- [X] Put `is_inside` in try/catch statement in case it fails
+- [ ] Remove notion of targets
+    - Loop thru all srcs and check if agent is close enough to turn off
 - [ ] Add option to choose new/different sources after resetting env for each episode
-- [ ] Put `is_inside` in try/catch statement
+- [ ] REMEMBER to clone PRA newest version on gpubox before training
 
 
 ### RL Setup
