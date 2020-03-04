@@ -89,10 +89,7 @@ class AudioEnv(gym.Env):
         # non-Shoebox config (corners of room are given)
         if self.corners:
             self.room = Room.from_corners(
-                room_config,
-                fs=resample_rate,
-                absorption=absorption,
-                max_order=max_order,
+                room_config, fs=resample_rate, absorption=absorption, max_order=max_order,
             )
 
             # The x_max and y_max in this case would be used to generate agent's location randomly
@@ -170,9 +167,7 @@ class AudioEnv(gym.Env):
         if self.source_locs is None or reset:
             if source_locs is None:
                 # Generate random points using rejection sampling method
-                self.source_locs = self._sample_points(
-                    num_sources=len(self.direct_sources)
-                )
+                self.source_locs = self._sample_points(num_sources=len(self.direct_sources))
             else:
                 self.source_locs = source_locs
 
@@ -201,9 +196,7 @@ class AudioEnv(gym.Env):
 
         # add sources using audio data
         for idx, audio in enumerate(self.audio):
-            self.room.add_source(
-                self.source_locs[idx], signal=audio[: self.min_size_audio]
-            )
+            self.room.add_source(self.source_locs[idx], signal=audio[: self.min_size_audio])
 
         # If we are removing a source, we have to choose a new target
         if removing_source is not None:
@@ -223,9 +216,7 @@ class AudioEnv(gym.Env):
 
         self.target_source = np.array(self.target_source)
         print("The target source is set as: ", self.target_source)
-        print(
-            "Dist between src and agent:", euclidean(self.agent_loc, self.target_source)
-        )
+        print("Dist between src and agent:", euclidean(self.agent_loc, self.target_source))
 
         # Setting step size
         x_dis = abs(self.agent_loc[0] - self.target_source[0])
@@ -251,9 +242,7 @@ class AudioEnv(gym.Env):
 
         if self.num_channels == 2:
             # Create the array at current time step (2 mics, angle IN RADIANS, 0.2m apart)
-            mic = MicrophoneArray(
-                linear_2D_array(agent_loc, 2, self.cur_angle, 0.2), self.room.fs
-            )
+            mic = MicrophoneArray(linear_2D_array(agent_loc, 2, self.cur_angle, 0.2), self.room.fs)
             self.room.add_microphone_array(mic)
         else:
             mic = MicrophoneArray(agent_loc.reshape(-1, 1), self.room.fs)

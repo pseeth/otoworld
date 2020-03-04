@@ -143,9 +143,7 @@ class RandomAgent(object):
                     prev_target[0] != env.target_source[0]
                     and prev_target[1] != env.target_source[1]
                 ):
-                    init_dist_to_target[-1] += euclidean(
-                        env.agent_loc, env.target_source
-                    )
+                    init_dist_to_target[-1] += euclidean(env.agent_loc, env.target_source)
                     prev_target = env.target_source.copy()
 
                 if done:
@@ -224,45 +222,31 @@ class PerfectAgentORoom2:
                 prob = np.random.randn(1)
                 if prob > 0.7:
                     if self.agent_loc[0] < self.target_loc[0]:
-                        if env.check_if_inside(
-                            [self.agent_loc[0] + 1, self.agent_loc[1]]
-                        ):
+                        if env.check_if_inside([self.agent_loc[0] + 1, self.agent_loc[1]]):
                             action = 1
                             self.agent_loc[0] += 1
                         elif (
-                            env.check_if_inside(
-                                [self.agent_loc[0], self.agent_loc[1] - 1]
-                            )
-                            and (self.agent_loc[0], self.agent_loc[1] - 1)
-                            not in visited
+                            env.check_if_inside([self.agent_loc[0], self.agent_loc[1] - 1])
+                            and (self.agent_loc[0], self.agent_loc[1] - 1) not in visited
                         ):
                             action = 3
                             self.agent_loc[1] -= 1
-                        elif env.check_if_inside(
-                            [self.agent_loc[0], self.agent_loc[1] + 1]
-                        ):
+                        elif env.check_if_inside([self.agent_loc[0], self.agent_loc[1] + 1]):
                             action = 2
                             self.agent_loc[1] += 1
                     elif self.agent_loc[0] > self.target_loc[0]:
-                        if env.check_if_inside(
-                            [self.agent_loc[0] - 1, self.agent_loc[1]]
-                        ):
+                        if env.check_if_inside([self.agent_loc[0] - 1, self.agent_loc[1]]):
                             action = 0
                             self.agent_loc[0] -= 1
                         elif (
-                            env.check_if_inside(
-                                [self.agent_loc[0], self.agent_loc[1] - 1]
-                            )
-                            and (self.agent_loc[0], self.agent_loc[1] - 1)
-                            not in visited
+                            env.check_if_inside([self.agent_loc[0], self.agent_loc[1] - 1])
+                            and (self.agent_loc[0], self.agent_loc[1] - 1) not in visited
                         ):
                             action = 3
                             self.agent_loc[1] -= 1
                             # Added to the visited list
                             visited[(self.agent_loc[0], self.agent_loc[1])] = 1
-                        elif env.check_if_inside(
-                            [self.agent_loc[0], self.agent_loc[1] + 1]
-                        ):
+                        elif env.check_if_inside([self.agent_loc[0], self.agent_loc[1] + 1]):
                             action = 2
                             self.agent_loc[1] += 1
 
@@ -356,9 +340,7 @@ class HumanAgent:
 
             if action in self.valid_actions and angle in self.valid_angles:
                 new_state, self.target_loc, reward, done = env.step(
-                    (self.key_to_action[action], int(angle)),
-                    self.play_audio,
-                    self.show_room,
+                    (self.key_to_action[action], int(angle)), self.play_audio, self.show_room,
                 )
             else:
                 # Pass some dummy action

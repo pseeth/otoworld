@@ -50,12 +50,10 @@ def log_dist_and_num_steps(init_dist_to_target, steps_to_completion):
 
     # write objects
     pickle.dump(
-        init_dist_to_target,
-        open(os.path.join(constants.DATA_PATH, constants.DIST_URL), "wb"),
+        init_dist_to_target, open(os.path.join(constants.DATA_PATH, constants.DIST_URL), "wb"),
     )
     pickle.dump(
-        steps_to_completion,
-        open(os.path.join(constants.DATA_PATH, constants.STEPS_URL), "wb"),
+        steps_to_completion, open(os.path.join(constants.DATA_PATH, constants.STEPS_URL), "wb"),
     )
 
 
