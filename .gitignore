@@ -130,3 +130,9 @@ dmypy.json
 
 # vscode stuff
 .vscode/
+
+# dstore
+*.DS_Store
+
+# ide stuff
+.idea/

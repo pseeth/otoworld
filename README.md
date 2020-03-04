@@ -57,6 +57,13 @@ pyroomacoustics as directed above, run `pip install -r requirements.txt`
 ### Run
 `python main.py`
 
+### Formatting
+`pip install black`
+
+`black {source_file_or_directory}`
+
+To set the max line length to 99: `black -l 99 {source_file_or_directory}`
+
 ### Model
 - Old way: mask in (0, 1); element-wise multiply and get the original source
 - Train anchor points and "red" points 
@@ -101,7 +108,7 @@ pyroomacoustics as directed above, run `pip install -r requirements.txt`
 - [X] Measure throughput (how many steps we can run per second without plotting with random agent)
   - ~ **20 steps/second**
 - [X] Store in buffer (S, A, S', R) which is (prev audio, action, current audio, reward), refer to [DQN code](https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html)
-- [ ] Clean up: remove DSstores from git, remove `temp.py`, remove classes from `rl_agent.py` except for random agent and oroom perfect agent, run black to fix formatting
+- [X] Clean up: remove DSstores from git, remove `temp.py`, remove classes from `rl_agent.py` except for random agent and oroom perfect agent, run black to fix formatting
 - [ ] Set up experiment structure: `exp/exp1.py` and `src/env`, `src/agent`, `src/room`, `src/utils` (store_data), `src/models`, `src/constants.py` and start adding `tests/`
 - [ ] Adjust source turning off code - there is no target, so loop thru all srcs and check if agent is close enough to turn off
 - [ ] Reward: -.1 for each step, 5 for turning off source (put in `constants`)
