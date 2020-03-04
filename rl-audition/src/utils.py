@@ -5,6 +5,7 @@ import numpy as np
 import random
 import constants
 
+
 def choose_random_files(num_sources=2):
     """
 	Function returns source random files using the directory constants. It chooses one file from the
@@ -23,7 +24,7 @@ def choose_random_files(num_sources=2):
         dir = random.choice([constants.DIR_MALE, constants.DIR_FEMALE])
         files = os.listdir(dir)
 
-        file = ''
+        file = ""
         while constants.AUDIO_EXTENSION not in file:
             idx = np.random.randint(len(files), size=1)[0]
             file = files[idx]
@@ -48,8 +49,14 @@ def log_dist_and_num_steps(init_dist_to_target, steps_to_completion):
         os.makedirs(constants.DATA_PATH)
 
     # write objects
-    pickle.dump(init_dist_to_target, open(os.path.join(constants.DATA_PATH, constants.DIST_URL), "wb"))
-    pickle.dump(steps_to_completion, open(os.path.join(constants.DATA_PATH, constants.STEPS_URL), "wb"))
+    pickle.dump(
+        init_dist_to_target,
+        open(os.path.join(constants.DATA_PATH, constants.DIST_URL), "wb"),
+    )
+    pickle.dump(
+        steps_to_completion,
+        open(os.path.join(constants.DATA_PATH, constants.STEPS_URL), "wb"),
+    )
 
 
 def plot_dist_and_steps():

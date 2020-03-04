@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Polygon:
     def __init__(self, n, r, x_center=0, y_center=0, theta=0):
         """
@@ -29,13 +30,16 @@ class Polygon:
         numbers = np.array([i for i in range(self.n)])
 
         x_points = (
-            self.r * (2 * np.cos((2 * np.pi * numbers) / self.n + self.theta)) + self.x_center
+            self.r * (2 * np.cos((2 * np.pi * numbers) / self.n + self.theta))
+            + self.x_center
         )
         y_points = (
-            self.r * (2 * np.sin((2 * np.pi * numbers) / self.n) + self.theta) + self.y_center
+            self.r * (2 * np.sin((2 * np.pi * numbers) / self.n) + self.theta)
+            + self.y_center
         )
 
         return [x_points, y_points]
+
 
 class ShoeBox:
     def __init__(self, x_length=10, y_length=10):
@@ -59,4 +63,3 @@ class ShoeBox:
             List[int]: x_length and y_length
         """
         return [self.x_length, self.y_length]
-

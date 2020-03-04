@@ -4,12 +4,14 @@ import matplotlib.pyplot as plt
 
 # get modules from diff folder (src folder)
 import sys
-sys.path.append('../src/')
+
+sys.path.append("../src/")
 
 import room_types
 import agent
 import audio_room
 import utils
+
 
 def run_rl_agent():
     # paths of audio files
@@ -19,7 +21,7 @@ def run_rl_agent():
     room = room_types.ShoeBox(x_length=10, y_length=10)
 
     # Uncomment for Polygon Room
-    #room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
+    # room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
 
     agent_loc = np.array([3, 8])
 
