@@ -34,13 +34,12 @@ def run_rl_agent():
         max_order=10,
         step_size=1.0,
         direct_sources=paths,
-        target=1,
         acceptable_radius=0.8,
     )
-    env.add_sources()  # target is the 2nd source
+    env.add_sources()
 
     # Load the agent class
-    a = agent.RLAgent(episodes=10, steps=1000)
+    a = agent.RandomAgent(episodes=10, steps=1000)
     a.fit(env)
 
 
