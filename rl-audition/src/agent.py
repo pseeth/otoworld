@@ -3,8 +3,93 @@ import gym
 import warnings
 import time
 from scipy.spatial.distance import euclidean
-import store_data
+import utils
+import constants
 from collections import deque
+
+
+class RLAgent:
+    def __init__(
+        self,
+        episodes=1,
+        steps=10,
+        blen=1000,
+        gamma=0.9,
+        alpha=0.001,
+        epsilon=1.0,
+        decay_rate=0.005,
+    ):
+        """
+		This class is a wrapper for the actual RL agent
+
+		Args:
+			episodes (int): # of episodes to simulate
+			steps (int): # of steps the agent can take before stopping an episode
+			blen (int): # of entries which the replay buffer can store
+			gamma (float): Discount factor
+			alpha (float): Learning rate alpha
+			epsilon (float): Exploration rate, P(taking random action)
+			decay_rate (float): decay rate for exploration rate (we want to decrease exploration as time proceeds)
+		"""
+        self.episodes = episodes
+        self.max_steps = steps
+        self.blen = blen
+        self.buffer = deque(maxlen=blen)
+        self.gamma = gamma
+        self.alpha = alpha
+        self.epsilon = epsilon
+        self.decay_rate = decay_rate
+        self.play_audio = False
+        self.show_room = False
+
+    def fit(self, env):
+        for episode in range(self.episodes):
+            # Reset the environment and any other variables at beginning of each episode
+            env.reset()
+            prev_state = None
+            done = False
+            print("Value of epsilon: ", self.epsilon)
+
+            for step in range(self.max_steps):
+
+                # Perform random actions with prob < epsilon
+                random_prob = np.random.uniform(0, 1)
+                if random_prob < self.epsilon:
+                    action = env.action_space.sample()
+                else:
+                    """
+					Agent will decide the action here. Call the agent here 
+					"""
+                    # If it is the first step (prev_state is zero), then perform a random action
+                    if step == 0:
+                        action = env.action_space.sample()
+                    else:
+                        # This is where agent will actually do something
+                        pass
+
+                # Perform the chosen action
+                new_state, target, reward, done = env.step(
+                    action, play_audio=self.play_audio, show_room=self.show_room
+                )
+
+                # Perform the q-update or whatever we are using over here
+                """
+				Update q network 
+				"""
+
+                if step > 0:
+                    self.buffer.append((prev_state, action, new_state, reward))
+
+                prev_state = new_state
+
+                # Terminate the episode if done
+                if done:
+                    break
+
+            # Decay the epsilon
+            self.epsilon = constants.MIN_EPSILON + (
+                constants.MAX_EPSILON - constants.MIN_EPSILON
+            ) * np.exp(-self.decay_rate * episode)
 
 
 class RandomAgent(object):
@@ -81,8 +166,8 @@ class RandomAgent(object):
 		Quick note about the plot: It will fail to plot if the agent fails to find all sources within the given time steps 
 		Deal with this later 
 		"""
-        store_data.log_dist_and_num_steps(init_dist_to_target, steps_to_completion)
-        store_data.plot_dist_and_steps()
+        utils.log_dist_and_num_steps(init_dist_to_target, steps_to_completion)
+        utils.plot_dist_and_steps()
 
 
 class PerfectAgentORoom2:
@@ -245,9 +330,9 @@ class HumanAgent:
     def fit(self, env):
         # ("Enter action (wasd) followed by orientation: (012)")
         """
-		0 = Don't orient 
-		1 = Orient left 15 degrees 
-		2 = Orient right 15 degrees 			
+		0 = Don't orient
+		1 = Orient left 15 degrees
+		2 = Orient right 15 degrees
 		"""
         done = False
         while not done:
@@ -263,7 +348,3 @@ class HumanAgent:
                 new_state, self.target_loc, reward, done = env.step(
                     (0, 0), self.play_audio, self.show_room
                 )
-
-
-if __name__ == "__main__":
-    action, angle = map(str, input().split())
