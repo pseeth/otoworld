@@ -31,7 +31,6 @@ class AudioEnv(gym.Env):
         step_size=None,
         acceptable_radius=0.1,
         direct_sources=None,
-        target=None,
         degrees=0.2618,
     ):
         """
@@ -51,7 +50,6 @@ class AudioEnv(gym.Env):
 			step_size (float): specificed step size else we programmatically assign it
 			acceptable_radius (float): radius of acceptable range the agent can be in to be considered done
 			direct_sources (List[str]): list of path strings to the source audio files
-			target (int): index of which source in direct_sources is to be set as the target source (remove later)
 			degrees (float): value of degrees to rotate in radians (.2618 radians = 15 degrees)
 		"""
         self.resample_rate = resample_rate
@@ -80,8 +78,6 @@ class AudioEnv(gym.Env):
         self.direct_sources = direct_sources
         self.direct_sources_copy = deepcopy(direct_sources)
         self.source_locs = None
-        self.target_source = None
-        self.target = target
         self.min_size_audio = np.inf
         self.degrees = degrees
         self.cur_angle = 0  # The starting angle is 0
@@ -198,33 +194,6 @@ class AudioEnv(gym.Env):
         for idx, audio in enumerate(self.audio):
             self.room.add_source(self.source_locs[idx], signal=audio[: self.min_size_audio])
 
-        # If we are removing a source, we have to choose a new target
-        if removing_source is not None:
-            self.target = randint(0, len(self.source_locs) - 1)
-
-        # if not Shoebox config
-        if self.corners:
-            self.target_source = self.source_locs[self.target]
-        else:
-            # One of the sources would be the target source; i.e the one which agent will move to
-            if self.target is not None:
-                self.target_source = self.source_locs[self.target]
-            else:
-                # Set a random target otherwise
-                self.target = randint(0, len(self.source_locs) - 1)
-                self.target_source = self.source_locs[self.target]
-
-        self.target_source = np.array(self.target_source)
-        print("The target source is set as: ", self.target_source)
-        print("Dist between src and agent:", euclidean(self.agent_loc, self.target_source))
-
-        # Setting step size
-        x_dis = abs(self.agent_loc[0] - self.target_source[0])
-        y_dis = abs(self.agent_loc[1] - self.target_source[1])
-        total_dis = x_dis + y_dis
-        if self.step_size is None:
-            self.step_size = total_dis / self.converge_steps
-
     def _move_agent(self, agent_loc):
         """
 		This function moves the agent to a new location (given by agent_loc). It effectively removes the
@@ -261,7 +230,7 @@ class AudioEnv(gym.Env):
 			1 = Orient 15 degrees left
 			2 = Orient 15 degrees right
 
-		It calls _move_agent, checks to see if the agent has reached a target, and if not, computes the RIR.
+		It calls _move_agent, checks to see if the agent has reached a source, and if not, computes the RIR.
 
 		Args:
 			action (int): direction agent is to move - 0 (L), 1 (R), 2 (U), 3 (D)
@@ -300,40 +269,38 @@ class AudioEnv(gym.Env):
         # print("Action taken: ", self.action_to_string[action],  " Cur angle: ", self.cur_angle, " In degrees: ", self.cur_angle*180/np.pi)
         # Move agent in the direction of action
         self._move_agent(agent_loc=points)
-        dist = euclidean(self.agent_loc, self.target_source)
 
         # Check if goal state is reached
         """
 		If agent loc exactly matches target location then pyroomacoustics isn't able to 
 		calculate the convolved signal. Hence, check the location before calculating everything   
 		"""
+        for index, source in enumerate(self.source_locs):
+            # Agent has reach the goal if the agent is with the circle around the source
+            if euclidean(self.agent_loc, source) < self.acceptable_radius:
+                # If there is more than one source, then we want to remove this source
+                if len(self.source_locs) > 1:
+                    # remove the current source and reset the environment
+                    self.reset(removing_source=index)
 
-        # Agent has reach the goal if the agent is with the circle around the target
-        if euclidean(self.agent_loc, self.target_source) < self.acceptable_radius:
-            print("Got a source!\n")
-            # If there is more than one source, then we want to remove this source
-            if len(self.source_locs) > 1:
-                # remove the current source and reset the environment
-                self.reset(removing_source=self.target)
+                    # Calculate the impulse response
+                    self.room.compute_rir()
+                    self.room.simulate()
+                    data = self.room.mic_array.signals
 
-                # Calculate the impulse response
-                self.room.compute_rir()
-                self.room.simulate()
-                data = self.room.mic_array.signals
+                    if play_audio or show_room:
+                        self.render(data, play_audio, show_room)
 
-                if play_audio or show_room:
-                    self.render(data, play_audio, show_room)
+                    done = False
+                    reward = constants.TURN_OFF_REWARD
+                    # Return the room rir and convolved signals as the new state
+                    return data, reward, done
 
-                done = False
-                reward = constants.TURN_OFF_REWARD
-                # Return the room rir and convolved signals as the new state
-                return [data], self.target_source, reward, done
-
-            # This was the last source hence we can assume we are done
-            else:
-                done = True
-                reward = constants.TURN_OFF_REWARD
-                return [], None, reward, done
+                # This was the last source hence we can assume we are done
+                else:
+                    done = True
+                    reward = constants.TURN_OFF_REWARD
+                    return None, reward, done
 
         if not done:
             # Calculate the impulse response
@@ -348,7 +315,7 @@ class AudioEnv(gym.Env):
             reward = constants.STEP_PENALTY
 
             # Return the room rir and convolved signals as the new state
-            return data, self.target_source, constants.STEP_PENALTY, done
+            return data, constants.STEP_PENALTY, done
 
     def reset(self, removing_source=None):
         """

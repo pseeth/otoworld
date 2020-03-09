@@ -68,7 +68,7 @@ class RLAgent:
                         pass
 
                 # Perform the chosen action
-                new_state, target, reward, done = env.step(
+                new_state, reward, done = env.step(
                     action, play_audio=self.play_audio, show_room=self.show_room
                 )
 
@@ -120,17 +120,18 @@ class RandomAgent(object):
         for episode in range(self.episodes):
             env.reset()
             prev_state = None
-            prev_target = env.target_source.copy()
 
-            # Measure distance with the initial target
-            init_dist_to_target.append(euclidean(env.agent_loc, env.target_source))
+            # Measure distance with the all sources
+            init_dist_to_target.append(
+                sum([euclidean(env.agent_loc, source) for source in env.source_locs]))
+            steps_to_completion.append(0)
 
             start = time.time()
             for step in range(self.max_steps):
-
+                steps_to_completion[-1] += 1
                 # Sample actions randomly
                 action = env.action_space.sample()
-                new_state, target, reward, done = env.step(
+                new_state, reward, done = env.step(
                     action, play_audio=False, show_room=False
                 )
 
@@ -139,29 +140,12 @@ class RandomAgent(object):
 
                 prev_state = new_state
 
-                if (
-                    prev_target[0] != env.target_source[0]
-                    and prev_target[1] != env.target_source[1]
-                ):
-                    init_dist_to_target[-1] += euclidean(env.agent_loc, env.target_source)
-                    prev_target = env.target_source.copy()
-
                 if done:
                     end = time.time()
-                    steps_to_completion.append(step + 1)
                     print("Done! at step ", step + 1)
                     print("Time: ", end - start, "seconds")
                     print("Steps/second: ", float(step + 1) / (end - start))
-
-                    # reset environment for new episode
-                    # if episode != self.episodes - 1:
-                    # 	print('\n-------\n NEW EPISODE:', episode+1)
-                    # 	env.reset()
-                    # 	print('New initial agent location:', env.agent_loc)
-                    # dist = euclidean(env.agent_loc, env.target_source)
-                    # init_dist_to_target.append(dist)
                     break
-        # print(len(init_dist_to_target), len(steps_to_completion))
         """
 		Quick note about the plot: It will fail to plot if the agent fails to find all sources within the given time steps 
 		Deal with this later 
