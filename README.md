@@ -37,12 +37,16 @@ We recommend using a conda environment for this project:
 
 #### Installing the Pyroomacoustics Package
 Since we use a newer version than what is available through traditional install methods, it is necessary
-to to clone the library from the `master` branch on github and use that version. 
-* Clone pyroomacoustics so:
+to to clone the Pyroomacoustics library from the `master` branch on github and use that version. 
+* Clone pyroomacoustics like so:
 
     `git clone https://github.com/LCAV/pyroomacoustics.git`
 * With your environment activated, run `pip install -e .` 
 * You should see "Successfully installed pyroomacoustics"
+* The reason for this is that there's a parameter in the old version that is not large enough, causing the 
+`Room.is_inside` function to fail. With the version on the master branch, there is a new constant in `parameters.py` 
+named `room_isinside_max_iter` that is set to 20 (previously 5, too low). For training, we set this to 
+`room_isinside_max_iter = 50` to be even more cautious. 
 
 #### Using Poetry
 - For for package and dependency management, we use Poetry
@@ -64,7 +68,7 @@ pyroomacoustics as directed above, run `pip install -r requirements.txt`
 
 To set the max line length to 99: `black -l 99 {source_file_or_directory}`
 
-### Model
+### Model?
 - Old way: mask in (0, 1); element-wise multiply and get the original source
 - Train anchor points and "red" points 
 - Steps:
@@ -80,10 +84,7 @@ To set the max line length to 99: `black -l 99 {source_file_or_directory}`
         - loudness of source1 in R ear
     5. Take these with linear layer and map to action space 
 
-### Notes
-- Keep < 8K Hz sample rate (8,000 samples/time intervals per second)
-
-### To-do (High Level)
+### To Do (High Level)
 - [X] Split up Pyroom initiliazation and convolution calculation (in `basic_room.py`)
 - [X] If stereo file, take mean of 2 channels (in `basic_room.py`)
 - [X] Replace `wavfile.read` with `librosa` (add with poetry)
@@ -113,19 +114,18 @@ To set the max line length to 99: `black -l 99 {source_file_or_directory}`
 - [X] Reward: -.1 for each step, 10 for turning off source (put in `constants`)
 - [X] Make # of sources a parameter
 - [X] Put `is_inside` in try/catch statement in case it fails
-- [ ] Remove notion of targets
+- [X] Remove notion of targets
     - Loop thru all srcs and check if agent is close enough to turn off
 - [ ] Add option to choose new/different sources after resetting env for each episode
-- [ ] REMEMBER to clone PRA newest version on gpubox before training
+- [X] REMEMBER to clone PRA newest version on gpubox before training
 
 
 ### RL Setup
 * Agent should find source and "turn it off" (agent reaches same grid location)
     - State: convolved sound
-    - Action space 1: rotate_left (x degrees), rotate_right (x degrees), step (L, R, U, D)
-    - Action space 2: rotate_left (x degrees), rotate_right (x degrees), 
-    - Small negative reward for each action, large reward for turning off source
-    - Store replay buffer SAR
+    - Action space: rotate_left (x degrees), rotate_right (x degrees), step (L, R, U, D)
+    - Small negative reward for each action (-0.1), large reward for turning off source (+10)
+    - Store replay buffer (S, A, R, S')
 
 ### Resources: 
 #### Environments
@@ -133,3 +133,4 @@ To set the max line length to 99: `black -l 99 {source_file_or_directory}`
 * [Gym mini world](https://github.com/maximecb/gym-miniworld)
 * [Gym mini grid](https://github.com/maximecb/gym-minigrid)
 * [Pytorch DQN](https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html)
+* [Pyorch Ignite](https://pytorch.org/ignite/)

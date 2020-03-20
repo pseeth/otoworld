@@ -3,7 +3,7 @@ from pyroomacoustics import MicrophoneArray, ShoeBox, Room, linear_2D_array, Con
 import librosa
 import numpy as np
 import matplotlib.pyplot as plt
-import simpleaudio as sa
+#import simpleaudio as sa  # comment out for gpubox
 from gym import spaces
 from random import randint
 import time
