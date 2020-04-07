@@ -119,7 +119,12 @@ To set the max line length to 99: `black -l 99 {source_file_or_directory}`
 - [ ] Add option to choose new/different sources after resetting env for each episode
 - [X] REMEMBER to clone PRA newest version on gpubox before training
 
-
+### To Do (Spring Quarter)
+- [ ] Refactor code using `nussl`
+    - Using `AudioSignal` objects to store data
+    - Similar to [these mixing functions](https://github.com/interactiveaudiolab/nussl/blob/refactor/nussl/core/mixing.py)
+    - Store observations from environment into dataset subclass (`BaseDataset`) 
+    
 ### RL Setup
 * Agent should find source and "turn it off" (agent reaches same grid location)
     - State: convolved sound

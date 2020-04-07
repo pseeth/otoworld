@@ -145,7 +145,7 @@ class AudioEnv(gym.Env):
 		This function adds the sources to PyRoom. Assumes 2 sources.
 
 		Args:
-			source_loc (List[int]): A list consisting of [x, y] coordinates of source location
+			source_locs (List[int]): A list consisting of [x, y] coordinates of source location
 			reset (bool): Bool indicating whether we reset the agents position to be the mean
 				of all the sources
 			removing_source (None or int): Value that will tell us if we are removing a source 

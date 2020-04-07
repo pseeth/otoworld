@@ -136,3 +136,6 @@ dmypy.json
 
 # ide stuff
 .idea/
+
+# nussl tutorial
+nussl-tutorial.ipynb
