@@ -6,6 +6,8 @@ from scipy.spatial.distance import euclidean
 import utils
 import constants
 from collections import deque
+import nussl
+
 
 
 class RLAgent:
@@ -20,17 +22,17 @@ class RLAgent:
         decay_rate=0.005,
     ):
         """
-		This class is a wrapper for the actual RL agent
+        This class is a wrapper for the actual RL agent
 
-		Args:
-			episodes (int): # of episodes to simulate
-			steps (int): # of steps the agent can take before stopping an episode
-			blen (int): # of entries which the replay buffer can store
-			gamma (float): Discount factor
-			alpha (float): Learning rate alpha
-			epsilon (float): Exploration rate, P(taking random action)
-			decay_rate (float): decay rate for exploration rate (we want to decrease exploration as time proceeds)
-		"""
+        Args:
+            episodes (int): # of episodes to simulate
+            steps (int): # of steps the agent can take before stopping an episode
+            blen (int): # of entries which the replay buffer can store
+            gamma (float): Discount factor
+            alpha (float): Learning rate alpha
+            epsilon (float): Exploration rate, P(taking random action)
+            decay_rate (float): decay rate for exploration rate (we want to decrease exploration as time proceeds)
+        """
         self.episodes = episodes
         self.max_steps = steps
         self.blen = blen
@@ -58,8 +60,8 @@ class RLAgent:
                     action = env.action_space.sample()
                 else:
                     """
-					Agent will decide the action here. Call the agent here 
-					"""
+                    Agent will decide the action here. Call the agent here 
+                    """
                     # If it is the first step (prev_state is zero), then perform a random action
                     if step == 0:
                         action = env.action_space.sample()
@@ -74,8 +76,8 @@ class RLAgent:
 
                 # Perform the q-update or whatever we are using over here
                 """
-				Update q network 
-				"""
+                Update q network 
+                """
 
                 if step > 0:
                     self.buffer.append((prev_state, action, new_state, reward))
@@ -93,26 +95,26 @@ class RLAgent:
 
 
 class RandomAgent(object):
-    def __init__(self, episodes=1, steps=10, blen=1000):
+    def __init__(self, episodes=10, steps=1000, blen=1000):
         """
-		This class represents a random agent that will move throughout the room
+        This class represents a random agent that will move throughout the room
 
-		Args:
-			episodes (int): # of episodes to simulate
-			steps (int): # of steps the agent can take before stopping an episode
-		"""
+        Args:
+            episodes (int): # of episodes to simulate
+            steps (int): # of steps the agent can take before stopping an episode
+        """
         self.episodes = episodes
         self.max_steps = steps
         self.blen = blen
         self.buffer = deque(maxlen=blen)
 
-    def fit(self, env):
+    def fit(self, env, show_room=False, play_audio=False):
         """
-		This function runs the simulation
+        This function runs the simulation
 
-		Args:
-			env (Gym env obj): the environment used to sample the action space randomly (0, 1, 2, 3)
-		"""
+        Args:
+            env (Gym env obj): the environment used to sample the action space randomly (0, 1, 2, 3)
+        """
         # keep track of stats
         init_dist_to_target = []
         steps_to_completion = []
@@ -132,9 +134,8 @@ class RandomAgent(object):
                 # Sample actions randomly
                 action = env.action_space.sample()
                 new_state, reward, done = env.step(
-                    action, play_audio=False, show_room=False
+                    action, play_audio=play_audio, show_room=show_room
                 )
-
                 if step > 0:
                     self.buffer.append((prev_state, action, new_state, reward))
 
@@ -147,9 +148,9 @@ class RandomAgent(object):
                     print("Steps/second: ", float(step + 1) / (end - start))
                     break
         """
-		Quick note about the plot: It will fail to plot if the agent fails to find all sources within the given time steps 
-		Deal with this later 
-		"""
+        Quick note about the plot: It will fail to plot if the agent fails to find all sources within the given time steps 
+        Deal with this later 
+        """
         utils.log_dist_and_num_steps(init_dist_to_target, steps_to_completion)
         utils.plot_dist_and_steps()
 
@@ -166,15 +167,15 @@ class PerfectAgentORoom2:
         blen=1000,
     ):
         """
-		This class represents a perfect agent in a non-ShoeBox environment that will randomly choose a target,
-		then move throughout the room to the correct x value, then move to the correct y value and stop
-		once the target is reached.
-		Args:
-			target_loc (List[int] or np.array): the location of the target in the room
-			agent_loc (List[int] or np.array): the initial location of the agent in the room
-			episodes (int): # of episodes to simulate
-			steps (int): # of steps the agent can take before stopping an episode
-		"""
+        This class represents a perfect agent in a non-ShoeBox environment that will randomly choose a target,
+        then move throughout the room to the correct x value, then move to the correct y value and stop
+        once the target is reached.
+        Args:
+            target_loc (List[int] or np.array): the location of the target in the room
+            agent_loc (List[int] or np.array): the initial location of the agent in the room
+            episodes (int): # of episodes to simulate
+            steps (int): # of steps the agent can take before stopping an episode
+        """
         self.episodes = episodes
         self.max_steps = steps
         self.target_loc = target_loc
@@ -186,17 +187,17 @@ class PerfectAgentORoom2:
 
     def fit(self, env):
         """
-		Strategy to always reach goal.
-			1. Reduce the distance in x direction
-			2. Reduce the distance in y direction
-		Also, remember
-		0 = Left
-		1 = Right
-		2 = Up
-		3 = Down
-		Args:
-			env (Gym env obj): the environment used to take the action
-		"""
+        Strategy to always reach goal.
+            1. Reduce the distance in x direction
+            2. Reduce the distance in y direction
+        Also, remember
+        0 = Left
+        1 = Right
+        2 = Up
+        3 = Down
+        Args:
+            env (Gym env obj): the environment used to take the action
+        """
         start = time.time()
 
         visited = {}
@@ -276,17 +277,17 @@ class HumanAgent:
         show_room=True,
     ):
         """
-		This class is a human agent. The moves will be played by a human player. Easy way of navigating the environment
-		ourselves for testing and debugging purposes.
-		Args:
-			target_loc (List[int] or np.array): the location of the target in the room
-			agent_loc (List[int] or np.array): the initial location of the agent in the room
-			episodes (int): # of episodes to simulate
-			max_steps (int): # of steps the agent can take before stopping an episode
-			converge_steps (int): # of steps the perfect agent should make before rewards
-			acceptable_radius (float): radius of acceptable range the agent can be in to be considered done
-			step_size (float): specified step size else we programmatically assign it
-		"""
+        This class is a human agent. The moves will be played by a human player. Easy way of navigating the environment
+        ourselves for testing and debugging purposes.
+        Args:
+            target_loc (List[int] or np.array): the location of the target in the room
+            agent_loc (List[int] or np.array): the initial location of the agent in the room
+            episodes (int): # of episodes to simulate
+            max_steps (int): # of steps the agent can take before stopping an episode
+            converge_steps (int): # of steps the perfect agent should make before rewards
+            acceptable_radius (float): radius of acceptable range the agent can be in to be considered done
+            step_size (float): specified step size else we programmatically assign it
+        """
         self.episodes = episodes
         self.target_loc = target_loc
         self.agent_loc = agent_loc
@@ -314,10 +315,10 @@ class HumanAgent:
     def fit(self, env):
         # ("Enter action (wasd) followed by orientation: (012)")
         """
-		0 = Don't orient
-		1 = Orient left 15 degrees
-		2 = Orient right 15 degrees
-		"""
+        0 = Don't orient
+        1 = Orient left 15 degrees
+        2 = Orient right 15 degrees
+        """
         done = False
         while not done:
             action, angle = map(str, input().split())
