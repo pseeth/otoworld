@@ -98,7 +98,20 @@ def plot_dist_and_steps():
     plt.show()
 
 
-def write_buffer_data(prev_state, action, reward, new_state, episode, step):
+def create_buffer_data_folders():
+    # empty and re-create the folders
+    if os.path.exists(constants.DIR_PREV_STATES):
+        shutil.rmtree(constants.DIR_PREV_STATES)
+    os.makedirs(constants.DIR_PREV_STATES)
+    if os.path.exists(constants.DIR_NEW_STATES):
+        shutil.rmtree(constants.DIR_NEW_STATES)
+    os.makedirs(constants.DIR_NEW_STATES)
+    if os.path.exists(constants.DIR_DATASET_ITEMS):
+        shutil.rmtree(constants.DIR_DATASET_ITEMS)
+    os.makedirs(constants.DIR_DATASET_ITEMS)
+
+
+def write_buffer_data(prev_state, action, reward, new_state, episode, step, dataset):
     """
     Writes states (AudioSignal objects) to .wav files and stores this buffer data
     in json files with the states keys pointing to the .wav files. The json files
@@ -120,7 +133,7 @@ def write_buffer_data(prev_state, action, reward, new_state, episode, step):
         new_state (nussl.AudioSignal): new state to be converted and saved as wav file
         episode (int): which episode we're on, used to create unique file name for state
         step (int): which step we're on within episode, used to create unique file name for state
-
+        dataset (subclass of nussl.datasets.AudioSignal): dataset to append item to
     """
     # unique file names for each state
     prev_state_file_path = os.path.join(
@@ -147,15 +160,5 @@ def write_buffer_data(prev_state, action, reward, new_state, episode, step):
     with open(dataset_json_file_path, 'w') as json_file:
         json.dump(buffer_dict, json_file)
 
-
-def create_buffer_data_folders():
-    # empty and re-create the folders
-    if os.path.exists(constants.DIR_PREV_STATES):
-        shutil.rmtree(constants.DIR_PREV_STATES)
-    os.makedirs(constants.DIR_PREV_STATES)
-    if os.path.exists(constants.DIR_NEW_STATES):
-        shutil.rmtree(constants.DIR_NEW_STATES)
-    os.makedirs(constants.DIR_NEW_STATES)
-    if os.path.exists(constants.DIR_DATASET_ITEMS):
-        shutil.rmtree(constants.DIR_DATASET_ITEMS)
-    os.makedirs(constants.DIR_DATASET_ITEMS)
+        # KEY PART: append to items list of dataset object (our buffer)
+        dataset.items.append(json_file.name)

@@ -96,18 +96,19 @@ class RLAgent:
 
 
 class RandomAgent(object):
-    def __init__(self, episodes=10, steps=1000, blen=1000):
+    def __init__(self, dataset, episodes=10, steps=1000):
         """
         This class represents a random agent that will move throughout the room
 
         Args:
             episodes (int): # of episodes to simulate
             steps (int): # of steps the agent can take before stopping an episode
+            dataset (BufferData subclass of nussl.datasets.BaseDataset): dataset obj
         """
+        self.dataset = dataset
         self.episodes = episodes
         self.max_steps = steps
-        self.blen = blen
-        self.buffer = deque(maxlen=blen)
+        #self.buffer = deque(maxlen=constants.MAX_BUFFER_ITEMS)
 
     def fit(self, env, show_room=False, play_audio=False):
         """
@@ -139,14 +140,19 @@ class RandomAgent(object):
                 )
                 # store SARS in buffer
                 if prev_state is not None and new_state is not None and not done:
-                    self.buffer.append((prev_state, action, reward, new_state))
-                    utils.write_buffer_data(prev_state, action, reward, new_state, episode, step)
+                    #self.buffer.append((prev_state, action, reward, new_state))
+                    utils.write_buffer_data(
+                        prev_state, action, reward, new_state, episode, step, self.dataset
+                    )
 
                 if done:
                     # terminal state is silence
                     silence_array = np.zeros_like(prev_state.audio_data)
                     terminal_silent_state = prev_state.make_copy_with_audio_data(audio_data=silence_array)
-                    utils.write_buffer_data(prev_state, action, reward, terminal_silent_state, episode, step)
+                    #self.buffer.append((prev_state, action, reward, terminal_silent_state))
+                    utils.write_buffer_data(
+                        prev_state, action, reward, terminal_silent_state, episode, step, self.dataset
+                    )
 
                     end = time.time()
                     print("Done! at step ", step + 1)

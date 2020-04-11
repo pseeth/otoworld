@@ -10,6 +10,8 @@ import room_types
 import agent
 import audio_room
 import utils
+import constants
+from dataset import BufferData
 
 
 def run_random_agent():
@@ -40,8 +42,11 @@ def run_random_agent():
     # create buffer data folders
     utils.create_buffer_data_folders()
 
+    # create dataset object (subclass of nussl.datasets.BaseDataset)
+    dataset = BufferData(folder=constants.DIR_DATASET_ITEMS)
+
     # Load the agent class
-    a = agent.RandomAgent(episodes=10, steps=1000)
+    a = agent.RandomAgent(dataset=dataset, episodes=10, steps=1000)
     a.fit(env)
 
 
