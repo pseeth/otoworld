@@ -151,7 +151,7 @@ class AudioEnv(gym.Env):
             removing_source (None or int): Value that will tell us if we are removing a source
                 from sources
         """
-        # If we are reset_envting our env, we have to get the original sources
+        # If we are reset_env-ing our env, we have to get the original sources
         if reset_env:
             self.direct_sources = deepcopy(self.direct_sources_copy)
         # If we are removing a source, we remove from direct sources and source locs
@@ -316,7 +316,7 @@ class AudioEnv(gym.Env):
             reward = constants.STEP_PENALTY
 
             # Return the room rir and convolved signals as the new state
-            return data, constants.STEP_PENALTY, done
+            return data, reward, done
 
     def reset(self, removing_source=None):
         """
@@ -369,7 +369,7 @@ class AudioEnv(gym.Env):
         Play the convolved sound using SimpleAudio.
 
         Args:
-            data (np.array): if 2 mics, should be of shape (x, 2)
+            data (AudioSignal): if 2 mics, should be of shape (x, 2)
             play_audio (bool): If true, audio will play
             show_room (bool): If true, room will be displayed to user
         """

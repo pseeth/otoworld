@@ -3,6 +3,9 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import random
+import json
+import shutil
+
 import constants
 
 
@@ -58,6 +61,7 @@ def log_dist_and_num_steps(init_dist_to_target, steps_to_completion):
 
 
 def plot_dist_and_steps():
+    """Plots initial distance and number of steps to reach target"""
     with open(os.path.join(constants.DATA_PATH, constants.DIST_URL), "rb") as f:
         dist = pickle.load(f)
         avg_dist = np.mean(dist)
@@ -92,3 +96,66 @@ def plot_dist_and_steps():
     )
 
     plt.show()
+
+
+def write_buffer_data(prev_state, action, reward, new_state, episode, step):
+    """
+    Writes states (AudioSignal objects) to .wav files and stores this buffer data
+    in json files with the states keys pointing to the .wav files. The json files
+    are to be read by nussl.datasets.BaseDataset subclass as items.
+
+    E.g. {
+        'prev_state': '/path/to/previous/mix.wav',
+        'reward': [the reward obtained for reaching current state],
+        'action': [the action taken to reach current state from previous state]
+        'current_state': '/path/to/current/mix.wav',
+    }
+
+    The unique file names are structured as path/[prev or new]-[episode #]-[step #]
+
+    Args:
+        prev_state (nussl.AudioSignal): previous state to be converted and saved as .wav file
+        action (int): action
+        reward (int): reward
+        new_state (nussl.AudioSignal): new state to be converted and saved as wav file
+        episode (int): which episode we're on, used to create unique file name for state
+        step (int): which step we're on within episode, used to create unique file name for state
+
+    """
+    # unique file names for each state
+    prev_state_file_path = os.path.join(
+        constants.DIR_PREV_STATES, 'prev' + str(episode) + '-' + str(step) + '.wav'
+    )
+    new_state_file_path = os.path.join(
+        constants.DIR_NEW_STATES, 'new' + str(episode) + '-' + str(step) + '.wav'
+    )
+    dataset_json_file_path = os.path.join(
+        constants.DIR_DATASET_ITEMS, str(episode) + '-' + str(step) + '.json'
+    )
+
+    prev_state.write_audio_to_file(prev_state_file_path)
+    new_state.write_audio_to_file(new_state_file_path)
+
+    # write to json
+    buffer_dict = {
+        'prev_state': prev_state_file_path,
+        'action': action,
+        'reward': reward,
+        'new_state': new_state_file_path
+    }
+
+    with open(dataset_json_file_path, 'w') as json_file:
+        json.dump(buffer_dict, json_file)
+
+
+def create_buffer_data_folders():
+    # empty and re-create the folders
+    if os.path.exists(constants.DIR_PREV_STATES):
+        shutil.rmtree(constants.DIR_PREV_STATES)
+    os.makedirs(constants.DIR_PREV_STATES)
+    if os.path.exists(constants.DIR_NEW_STATES):
+        shutil.rmtree(constants.DIR_NEW_STATES)
+    os.makedirs(constants.DIR_NEW_STATES)
+    if os.path.exists(constants.DIR_DATASET_ITEMS):
+        shutil.rmtree(constants.DIR_DATASET_ITEMS)
+    os.makedirs(constants.DIR_DATASET_ITEMS)

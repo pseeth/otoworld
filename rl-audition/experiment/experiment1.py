@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 
 # get modules from diff folder (src folder)
 import sys
-
 sys.path.append("../src/")
 
 import room_types
@@ -13,7 +12,7 @@ import audio_room
 import utils
 
 
-def run_rl_agent():
+def run_random_agent():
     # paths of audio files
     paths = utils.choose_random_files()
 
@@ -38,10 +37,13 @@ def run_rl_agent():
     )
     env.add_sources()
 
+    # create buffer data folders
+    utils.create_buffer_data_folders()
+
     # Load the agent class
     a = agent.RandomAgent(episodes=10, steps=1000)
     a.fit(env)
 
 
 if __name__ == "__main__":
-    run_rl_agent()
+    run_random_agent()

@@ -121,9 +121,13 @@ To set the max line length to 99: `black -l 99 {source_file_or_directory}`
 
 ### To Do (Spring Quarter)
 - [ ] Refactor code using `nussl`
-    - Using `AudioSignal` objects to store data
+- [X] Using `AudioSignal` objects to store data
     - Similar to [these mixing functions](https://github.com/interactiveaudiolab/nussl/blob/refactor/nussl/core/mixing.py)
-    - Store observations from environment into dataset subclass (`BaseDataset`) 
+
+- [ ] Store observations from environment into dataset subclass (`BaseDataset`) 
+- [ ] Make all sources same length (i.e. 10 seconds)
+- [X] Make `new_state` when agent finds 2nd source (when `reward=10`) silence (i.e. `np.zeros` audioSignal)
+- [ ] Plot of step vs. reward within episode    
     
 ### RL Setup
 * Agent should find source and "turn it off" (agent reaches same grid location)

@@ -8,6 +8,7 @@ import constants
 from collections import deque
 import nussl
 
+from dataset import BufferData
 
 
 class RLAgent:
@@ -80,7 +81,7 @@ class RLAgent:
                 """
 
                 if step > 0:
-                    self.buffer.append((prev_state, action, new_state, reward))
+                    self.buffer.append((prev_state, action, reward, new_state))
 
                 prev_state = new_state
 
@@ -136,20 +137,29 @@ class RandomAgent(object):
                 new_state, reward, done = env.step(
                     action, play_audio=play_audio, show_room=show_room
                 )
-                if step > 0:
-                    self.buffer.append((prev_state, action, new_state, reward))
-
-                prev_state = new_state
+                # store SARS in buffer
+                if prev_state is not None and new_state is not None and not done:
+                    self.buffer.append((prev_state, action, reward, new_state))
+                    utils.write_buffer_data(prev_state, action, reward, new_state, episode, step)
 
                 if done:
+                    # terminal state is silence
+                    silence_array = np.zeros_like(prev_state.audio_data)
+                    terminal_silent_state = prev_state.make_copy_with_audio_data(audio_data=silence_array)
+                    utils.write_buffer_data(prev_state, action, reward, terminal_silent_state, episode, step)
+
                     end = time.time()
                     print("Done! at step ", step + 1)
                     print("Time: ", end - start, "seconds")
                     print("Steps/second: ", float(step + 1) / (end - start))
                     break
+
+                # set previous state
+                prev_state = new_state
         """
-        Quick note about the plot: It will fail to plot if the agent fails to find all sources within the given time steps 
-        Deal with this later 
+        Quick note about the plot: 
+        It will fail to plot if the agent fails to find all sources within the given time 
+        steps Deal with this later 
         """
         utils.log_dist_and_num_steps(init_dist_to_target, steps_to_completion)
         utils.plot_dist_and_steps()
@@ -251,7 +261,7 @@ class PerfectAgentORoom2:
                 )
 
                 if step > 0:
-                    self.buffer.append((prev_state, action, new_state, reward))
+                    self.buffer.append((prev_state, action, reward, new_state))
 
                 prev_state = new_state
 

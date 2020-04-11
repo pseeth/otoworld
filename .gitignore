@@ -139,3 +139,7 @@ dmypy.json
 
 # nussl tutorial
 nussl-tutorial.ipynb
+refactor-test.ipynb
+
+# data
+data/
