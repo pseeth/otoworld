@@ -116,26 +116,43 @@ To set the max line length to 99: `black -l 99 {source_file_or_directory}`
 - [X] Put `is_inside` in try/catch statement in case it fails
 - [X] Remove notion of targets
     - Loop thru all srcs and check if agent is close enough to turn off
-- [ ] Add option to choose new/different sources after resetting env for each episode
 - [X] REMEMBER to clone PRA newest version on gpubox before training
 
 ### To Do (Spring Quarter)
-- [ ] Refactor code using `nussl`
 - [X] Using `AudioSignal` objects to store data
     - Similar to [these mixing functions](https://github.com/interactiveaudiolab/nussl/blob/refactor/nussl/core/mixing.py)
 
 - [X] Store observations from environment into dataset subclass (`BaseDataset`) 
-- [ ] Make all sources same length (i.e. 10 seconds)
+- [X] Make all sources same length - already done!
 - [X] Make `new_state` when agent finds 2nd source (when `reward=10`) silence (i.e. `np.zeros` audioSignal)
+- [ ] Ensure agent doesn't spawn too close (or on top of) a source (sometimes it spawns too close and turns it off on 0th step)
 - [ ] Plot of step vs. reward within episode    
-- [ ] Limit # of buffer items (json files/prev wav files/new wav files) using `MAX_BUFFER_ITEMS`    
+- [ ] Add option to choose new/different sources after resetting env for each episode
+- [ ] Limit # of buffer items (json files/prev wav files/new wav files) using `MAX_BUFFER_ITEMS`
+    - Add push/pop functions to `BufferData` class to limit size of `items` list using
+    - Be sure that the # of files written into each folder (`data/dataset_items/`, `data/new_states`, `data/prev_states`) is also < `MAX_BUFFER_ITEMS`     
+- [ ] Refactor `agent.py` like so: One `Agent` base class with `fit` function
+    - Subclasses (Random Agent, Model Agent) implement different `choose_action` functions (based on current lines 137,138)
+- [ ] Using [this sampler](https://pytorch.org/docs/stable/data.html#torch.utils.data.WeightedRandomSampler), ensure we
+are sampling the same amount of items in `items` from each episode (i.e. if `batch_size=25` and we have 5 episodes, then
+choosing 5 samples from each episode, regardless of the size of the episode)
+- [ ] Implement [nussl transforms](https://nussl.github.io/docs/tutorials/datasets.html#Transforms) to prepare for training, transforms passed to `BufferData __init__`
+    - [Spectrum transform](https://nussl.github.io/docs/datasets.html#nussl.datasets.transforms.PhaseSensitiveSpectrumApproximation):
+    converts audio data -> spectrogram, where `mix_key=new_state` and `source_key=prev_state`
+    - [getExcerpt](https://nussl.github.io/docs/datasets.html#nussl.datasets.transforms.GetExcerpt): samples random 
+    frames from spectrograms
+    - [ToSeparationModel](https://nussl.github.io/docs/datasets.html#nussl.datasets.transforms.ToSeparationModel)
+    - [MagnitudeWeights](https://nussl.github.io/docs/datasets.html#nussl.datasets.transforms.MagnitudeWeights)
+    - Plot spectrograms (`imshow`) to verify transforms work
+- [ ] Use [PyTorch data loader](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) somehow
 
-### RL Setup
-* Agent should find source and "turn it off" (agent reaches same grid location)
-    - State: convolved sound
-    - Action space: rotate_left (x degrees), rotate_right (x degrees), step (L, R, U, D)
-    - Small negative reward for each action (-0.1), large reward for turning off source (+10)
-    - Store replay buffer (S, A, R, S')
+
+### Timeline
+* Want to run experiments in 1-2 weeks
+* Aggressive Deadline: May 8
+* Realistic: May 31 [ICML Workshop](https://icml-sas.gitlab.io/)
+* July, some conference
+* Maybe paper for ICML or ICLR 
 
 ### Resources: 
 #### Environments
