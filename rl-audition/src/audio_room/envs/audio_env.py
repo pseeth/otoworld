@@ -14,6 +14,7 @@ import sys
 
 sys.path.append("../../")
 import constants
+from utils import choose_random_files
 
 
 class AudioEnv(gym.Env):
@@ -32,6 +33,7 @@ class AudioEnv(gym.Env):
         acceptable_radius=0.1,
         direct_sources=None,
         degrees=0.2618,
+        reset_sources=True,
     ):
         """
         This class inherits from OpenAI Gym Env and is used to simulate the agent moving in PyRoom.
@@ -51,6 +53,7 @@ class AudioEnv(gym.Env):
             acceptable_radius (float): radius of acceptable range the agent can be in to be considered done
             direct_sources (List[str]): list of path strings to the source audio files
             degrees (float): value of degrees to rotate in radians (.2618 radians = 15 degrees)
+            reset_sources (bool): true if you want to choose different sources when reseting env
         """
         self.resample_rate = resample_rate
         self.absorption = absorption
@@ -81,6 +84,7 @@ class AudioEnv(gym.Env):
         self.min_size_audio = np.inf
         self.degrees = degrees
         self.cur_angle = 0  # The starting angle is 0
+        self.reset_sources = reset_sources
 
         # non-Shoebox config (corners of room are given)
         if self.corners:
@@ -115,28 +119,28 @@ class AudioEnv(gym.Env):
         """
 
         sampled_points = []
-        generated_points = {}  # To avoid placing multiple sources in the same location
 
         while len(sampled_points) < num_sources:
             random_point = [
-                np.random.randint(self.x_min, self.x_max),
-                np.random.randint(self.y_min, self.y_max),
+                np.random.uniform(self.x_min, self.x_max),
+                np.random.uniform(self.y_min, self.y_max),
             ]
             try:
+                out_of_range = True # track if this point is distant enough from other points
+                for point in sampled_points:
+                    if (
+                        euclidean(random_point, point) < self.acceptable_radius
+                        or euclidean(random_point, self.agent_loc) < self.acceptable_radius
+                    ):
+                        out_of_range = False
                 if (
                     self.room.is_inside(random_point, include_borders=False)
-                    and tuple(random_point) not in generated_points
+                    and out_of_range
                 ):
                     sampled_points.append(random_point)
-                    generated_points[tuple(random_point)] = 1
             except:
-                # in case is_inside func fails, place in the center for now
-                point = [
-                    ((self.x_max - self.x_min) // 2),
-                    ((self.y_max - self.y_min) // 2),
-                ]
-                sampled_points.append(point)
-                generated_points[tuple(point)] = 1
+                # in case is_inside func fails, randomly sample again
+                continue
 
         return sampled_points
 
@@ -153,7 +157,13 @@ class AudioEnv(gym.Env):
         """
         # If we are reset_env-ing our env, we have to get the original sources
         if reset_env:
-            self.direct_sources = deepcopy(self.direct_sources_copy)
+            
+            # We can choose to reset the sources when initializing
+            if self.reset_sources:
+                self.direct_sources = choose_random_files()
+            else:
+                self.direct_sources = deepcopy(self.direct_sources_copy)
+        
         # If we are removing a source, we remove from direct sources and source locs
         elif removing_source is not None:
             self.source_locs.pop(removing_source)

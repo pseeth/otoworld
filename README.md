@@ -125,14 +125,14 @@ To set the max line length to 99: `black -l 99 {source_file_or_directory}`
 - [X] Store observations from environment into dataset subclass (`BaseDataset`) 
 - [X] Make all sources same length - already done!
 - [X] Make `new_state` when agent finds 2nd source (when `reward=10`) silence (i.e. `np.zeros` audioSignal)
-- [ ] Ensure agent doesn't spawn too close (or on top of) a source (sometimes it spawns too close and turns it off on 0th step)
+- [X] Ensure agent doesn't spawn too close (or on top of) a source (sometimes it spawns too close and turns it off on 0th step)
+- [X] Refactor `agent.py` like so: One `Agent` base class with `fit` function
+    - Subclasses (Random Agent, Model Agent) implement different `choose_action` functions (based on current lines 137,138)
+- [X] Add option to choose new/different sources after resetting env for each episode
 - [ ] Plot of step vs. reward within episode    
-- [ ] Add option to choose new/different sources after resetting env for each episode
 - [ ] Limit # of buffer items (json files/prev wav files/new wav files) using `MAX_BUFFER_ITEMS`
     - Add push/pop functions to `BufferData` class to limit size of `items` list using
     - Be sure that the # of files written into each folder (`data/dataset_items/`, `data/new_states`, `data/prev_states`) is also < `MAX_BUFFER_ITEMS`     
-- [ ] Refactor `agent.py` like so: One `Agent` base class with `fit` function
-    - Subclasses (Random Agent, Model Agent) implement different `choose_action` functions (based on current lines 137,138)
 - [ ] Using [this sampler](https://pytorch.org/docs/stable/data.html#torch.utils.data.WeightedRandomSampler), ensure we
 are sampling the same amount of items in `items` from each episode (i.e. if `batch_size=25` and we have 5 episodes, then
 choosing 5 samples from each episode, regardless of the size of the episode)

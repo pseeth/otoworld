@@ -10,10 +10,10 @@ import nussl
 
 from dataset import BufferData
 
-
-class RLAgent:
+class AgentBase:
     def __init__(
         self,
+        dataset,
         episodes=1,
         steps=10,
         blen=1000,
@@ -21,9 +21,11 @@ class RLAgent:
         alpha=0.001,
         epsilon=1.0,
         decay_rate=0.005,
+        play_audio=False,
+        show_room=False,
     ):
         """
-        This class is a wrapper for the actual RL agent
+        This class is a base agent class which will be inherited when creating various agents.
 
         Args:
             episodes (int): # of episodes to simulate
@@ -33,7 +35,10 @@ class RLAgent:
             alpha (float): Learning rate alpha
             epsilon (float): Exploration rate, P(taking random action)
             decay_rate (float): decay rate for exploration rate (we want to decrease exploration as time proceeds)
+            play_audio (bool): choose to play audio at each iteration
+            show_room (bool): choose to display the configurations and movements within a room
         """
+        self.dataset = dataset
         self.episodes = episodes
         self.max_steps = steps
         self.blen = blen
@@ -42,18 +47,28 @@ class RLAgent:
         self.alpha = alpha
         self.epsilon = epsilon
         self.decay_rate = decay_rate
-        self.play_audio = False
-        self.show_room = False
-
+        self.play_audio = play_audio
+        self.show_room = show_room
+    
     def fit(self, env):
+        # keep track of stats
+        init_dist_to_target = []
+        steps_to_completion = []
+
         for episode in range(self.episodes):
             # Reset the environment and any other variables at beginning of each episode
             env.reset()
             prev_state = None
-            done = False
-            print("Value of epsilon: ", self.epsilon)
 
+            # Measure distance with the all sources
+            init_dist_to_target.append(
+                sum([euclidean(env.agent_loc, source) for source in env.source_locs]))
+            steps_to_completion.append(0)
+            
+            # Measure time to complete the episode
+            start = time.time()
             for step in range(self.max_steps):
+                steps_to_completion[-1] += 1
 
                 # Perform random actions with prob < epsilon
                 random_prob = np.random.uniform(0, 1)
@@ -68,7 +83,7 @@ class RLAgent:
                         action = env.action_space.sample()
                     else:
                         # This is where agent will actually do something
-                        pass
+                        action = self.choose_action(env)
 
                 # Perform the chosen action
                 new_state, reward, done = env.step(
@@ -80,75 +95,19 @@ class RLAgent:
                 Update q network 
                 """
 
-                if step > 0:
-                    self.buffer.append((prev_state, action, reward, new_state))
-
-                prev_state = new_state
-
-                # Terminate the episode if done
-                if done:
-                    break
-
-            # Decay the epsilon
-            self.epsilon = constants.MIN_EPSILON + (
-                constants.MAX_EPSILON - constants.MIN_EPSILON
-            ) * np.exp(-self.decay_rate * episode)
-
-
-class RandomAgent(object):
-    def __init__(self, dataset, episodes=10, steps=1000):
-        """
-        This class represents a random agent that will move throughout the room
-
-        Args:
-            episodes (int): # of episodes to simulate
-            steps (int): # of steps the agent can take before stopping an episode
-            dataset (BufferData subclass of nussl.datasets.BaseDataset): dataset obj
-        """
-        self.dataset = dataset
-        self.episodes = episodes
-        self.max_steps = steps
-        #self.buffer = deque(maxlen=constants.MAX_BUFFER_ITEMS)
-
-    def fit(self, env, show_room=False, play_audio=False):
-        """
-        This function runs the simulation
-
-        Args:
-            env (Gym env obj): the environment used to sample the action space randomly (0, 1, 2, 3)
-        """
-        # keep track of stats
-        init_dist_to_target = []
-        steps_to_completion = []
-
-        for episode in range(self.episodes):
-            env.reset()
-            prev_state = None
-
-            # Measure distance with the all sources
-            init_dist_to_target.append(
-                sum([euclidean(env.agent_loc, source) for source in env.source_locs]))
-            steps_to_completion.append(0)
-
-            start = time.time()
-            for step in range(self.max_steps):
-                steps_to_completion[-1] += 1
-                # Sample actions randomly
-                action = env.action_space.sample()
-                new_state, reward, done = env.step(
-                    action, play_audio=play_audio, show_room=show_room
-                )
                 # store SARS in buffer
                 if prev_state is not None and new_state is not None and not done:
-                    #self.buffer.append((prev_state, action, reward, new_state))
+                    self.buffer.append((prev_state, action, reward, new_state))
                     utils.write_buffer_data(
                         prev_state, action, reward, new_state, episode, step, self.dataset
                     )
 
+                # Terminate the episode if done
                 if done:
                     # terminal state is silence
                     silence_array = np.zeros_like(prev_state.audio_data)
-                    terminal_silent_state = prev_state.make_copy_with_audio_data(audio_data=silence_array)
+                    terminal_silent_state = prev_state.make_copy_with_audio_data(
+                        audio_data=silence_array)
                     #self.buffer.append((prev_state, action, reward, terminal_silent_state))
                     utils.write_buffer_data(
                         prev_state, action, reward, terminal_silent_state, episode, step, self.dataset
@@ -160,8 +119,13 @@ class RandomAgent(object):
                     print("Steps/second: ", float(step + 1) / (end - start))
                     break
 
-                # set previous state
                 prev_state = new_state
+
+            # Decay the epsilon
+            self.epsilon = constants.MIN_EPSILON + (
+                constants.MAX_EPSILON - constants.MIN_EPSILON
+            ) * np.exp(-self.decay_rate * episode)
+        
         """
         Quick note about the plot: 
         It will fail to plot if the agent fails to find all sources within the given time 
@@ -170,113 +134,78 @@ class RandomAgent(object):
         utils.log_dist_and_num_steps(init_dist_to_target, steps_to_completion)
         utils.plot_dist_and_steps()
 
+    def choose_action(self, env):
+        '''
+        This function needs to be overwritten when implementing an agent. It 
+        will choose the action to take at any given point.
 
-class PerfectAgentORoom2:
-    def __init__(
-        self,
-        target_loc,
-        agent_loc,
-        episodes=1,
-        steps=50,
-        play_audio=True,
-        show_room=True,
-        blen=1000,
-    ):
-        """
-        This class represents a perfect agent in a non-ShoeBox environment that will randomly choose a target,
-        then move throughout the room to the correct x value, then move to the correct y value and stop
-        once the target is reached.
         Args:
-            target_loc (List[int] or np.array): the location of the target in the room
-            agent_loc (List[int] or np.array): the initial location of the agent in the room
-            episodes (int): # of episodes to simulate
-            steps (int): # of steps the agent can take before stopping an episode
-        """
-        self.episodes = episodes
-        self.max_steps = steps
-        self.target_loc = target_loc
-        self.agent_loc = agent_loc
-        self.play_audio = play_audio
-        self.show_room = show_room
-        self.blen = blen
-        self.buffer = deque(maxlen=blen)
+            env (gym): The gym environment you are training from
+        '''
+        pass
 
-    def fit(self, env):
-        """
-        Strategy to always reach goal.
-            1. Reduce the distance in x direction
-            2. Reduce the distance in y direction
-        Also, remember
-        0 = Left
-        1 = Right
-        2 = Up
-        3 = Down
-        Args:
-            env (Gym env obj): the environment used to take the action
-        """
-        start = time.time()
 
-        visited = {}
-        for episode in range(self.episodes):
-            prev_state = None
-            for step in range(self.max_steps):
-                prob = np.random.randn(1)
-                if prob > 0.7:
-                    if self.agent_loc[0] < self.target_loc[0]:
-                        if env.check_if_inside([self.agent_loc[0] + 1, self.agent_loc[1]]):
-                            action = 1
-                            self.agent_loc[0] += 1
-                        elif (
-                            env.check_if_inside([self.agent_loc[0], self.agent_loc[1] - 1])
-                            and (self.agent_loc[0], self.agent_loc[1] - 1) not in visited
-                        ):
-                            action = 3
-                            self.agent_loc[1] -= 1
-                        elif env.check_if_inside([self.agent_loc[0], self.agent_loc[1] + 1]):
-                            action = 2
-                            self.agent_loc[1] += 1
-                    elif self.agent_loc[0] > self.target_loc[0]:
-                        if env.check_if_inside([self.agent_loc[0] - 1, self.agent_loc[1]]):
-                            action = 0
-                            self.agent_loc[0] -= 1
-                        elif (
-                            env.check_if_inside([self.agent_loc[0], self.agent_loc[1] - 1])
-                            and (self.agent_loc[0], self.agent_loc[1] - 1) not in visited
-                        ):
-                            action = 3
-                            self.agent_loc[1] -= 1
-                            # Added to the visited list
-                            visited[(self.agent_loc[0], self.agent_loc[1])] = 1
-                        elif env.check_if_inside([self.agent_loc[0], self.agent_loc[1] + 1]):
-                            action = 2
-                            self.agent_loc[1] += 1
+class RandomAgent(AgentBase):
+    def choose_action(self, env):
+        '''
+        Since this is a random agent, we just randomly sample our action 
+        every time.
+        '''
+        return env.action_space.sample()
 
-                    elif self.agent_loc[0] == self.target_loc[0]:
-                        if self.agent_loc[1] < self.target_loc[1]:
-                            action = 2
-                            self.agent_loc[1] += 1
-                        else:
-                            action = 3
-                            self.agent_loc[1] -= 1
+
+class PerfectAgentORoom2(AgentBase):
+    def choose_action(self, env):
+        '''
+        The action selection is simple, just find the closest point and move towards it.
+        '''
+        closest, distance = env.source_locs[0], euclidean(
+            env.agent_loc, env.source_locs[0])
+        for point in env.source_locs:
+            temp = euclidean(env.agent_loc, point)
+            if temp < distance:
+                distance = temp
+                closest = point
+
+        prob = np.random.randn(1)
+        if prob > 0.7:
+            if env.agent_loc[0] < closest[0]:
+                if env.room.is_inside([env.agent_loc[0] + 1, env.agent_loc[1]]):
+                    action = 1
+                    env.agent_loc[0] += 1
+                elif (
+                     env.room.is_inside(
+                        [env.agent_loc[0], env.agent_loc[1] - 1])
+                ):
+                    action = 3
+                    env.agent_loc[1] -= 1
+                elif  env.room.is_inside([env.agent_loc[0], env.agent_loc[1] + 1]):
+                    action = 2
+                    env.agent_loc[1] += 1
+            elif env.agent_loc[0] > closest[0]:
+                if  env.room.is_inside([env.agent_loc[0] - 1, env.agent_loc[1]]):
+                    action = 0
+                    env.agent_loc[0] -= 1
+                elif (
+                     env.room.is_inside(
+                        [env.agent_loc[0], env.agent_loc[1] - 1])
+                ):
+                    action = 3
+                    env.agent_loc[1] -= 1
+                elif  env.room.is_inside([env.agent_loc[0], env.agent_loc[1] + 1]):
+                    action = 2
+                    env.agent_loc[1] += 1
+
+            elif env.agent_loc[0] == closest[0]:
+                if env.agent_loc[1] < closest[1]:
+                    action = 2
+                    env.agent_loc[1] += 1
                 else:
-                    action = np.random.randint(4, 6)
-
-                # angle = np.random.randint(0, 3)
-                new_state, self.target_loc, reward, done = env.step(
-                    action, self.play_audio, self.show_room
-                )
-
-                if step > 0:
-                    self.buffer.append((prev_state, action, reward, new_state))
-
-                prev_state = new_state
-
-                if done:
-                    end = time.time()
-                    print("Done! at step ", step)
-                    print("Time: ", end - start, "seconds")
-                    print("Steps/second: ", float(step) / (end - start))
-                    break
+                    action = 3
+                    env.agent_loc[1] -= 1
+        else:
+            action = np.random.randint(4, 6)
+        return action
 
 
 class HumanAgent:
@@ -305,8 +234,8 @@ class HumanAgent:
             step_size (float): specified step size else we programmatically assign it
         """
         self.episodes = episodes
-        self.target_loc = target_loc
-        self.agent_loc = agent_loc
+        closest = target_loc
+        env.agent_loc = agent_loc
         self.play_audio = play_audio
         self.show_room = show_room
 
@@ -320,8 +249,8 @@ class HumanAgent:
         self.valid_angles = ["0", "1", "2"]
 
         # Finding the total distance to determine step size (total_dis / number of steps to converge)
-        x_dis = abs(self.agent_loc[0] - self.target_loc[0])
-        y_dis = abs(self.agent_loc[1] - self.target_loc[1])
+        x_dis = abs(env.agent_loc[0] - closest[0])
+        y_dis = abs(env.agent_loc[1] - closest[1])
         total_dis = x_dis + y_dis
         if step_size:
             self.step_size = step_size
@@ -340,12 +269,12 @@ class HumanAgent:
             action, angle = map(str, input().split())
 
             if action in self.valid_actions and angle in self.valid_angles:
-                new_state, self.target_loc, reward, done = env.step(
+                new_state, closest, reward, done = env.step(
                     (self.key_to_action[action], int(angle)), self.play_audio, self.show_room,
                 )
             else:
                 # Pass some dummy action
                 warnings.warn("Invalid action!")
-                new_state, self.target_loc, reward, done = env.step(
+                new_state, closest, reward, done = env.step(
                     (0, 0), self.play_audio, self.show_room
                 )

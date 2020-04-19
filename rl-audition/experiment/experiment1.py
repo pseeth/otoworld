@@ -46,7 +46,7 @@ def run_random_agent():
     dataset = BufferData(folder=constants.DIR_DATASET_ITEMS)
 
     # Load the agent class
-    a = agent.RandomAgent(dataset=dataset, episodes=10, steps=1000)
+    a = agent.RandomAgent(dataset, episodes=10, steps=1000)
     a.fit(env)
 
 
