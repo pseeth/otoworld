@@ -137,14 +137,13 @@ To set the max line length to 99: `black -l 99 {source_file_or_directory}`
 are sampling the same amount of items in `items` from each episode (i.e. if `batch_size=25` and we have 5 episodes, then
 choosing 5 samples from each episode, regardless of the size of the episode)
 - [ ] Implement [nussl transforms](https://nussl.github.io/docs/tutorials/datasets.html#Transforms) to prepare for training, transforms passed to `BufferData __init__`
-    - [Spectrum transform](https://nussl.github.io/docs/datasets.html#nussl.datasets.transforms.PhaseSensitiveSpectrumApproximation):
-    converts audio data -> spectrogram, where `mix_key=new_state` and `source_key=prev_state`
     - [getExcerpt](https://nussl.github.io/docs/datasets.html#nussl.datasets.transforms.GetExcerpt): samples random 
     frames from spectrograms
+    - getAudio transform: takes audio data and returns 
     - [ToSeparationModel](https://nussl.github.io/docs/datasets.html#nussl.datasets.transforms.ToSeparationModel)
-    - [MagnitudeWeights](https://nussl.github.io/docs/datasets.html#nussl.datasets.transforms.MagnitudeWeights)
-    - Plot spectrograms (`imshow`) to verify transforms work
 - [ ] Use [PyTorch data loader](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) somehow
+- [ ] Add update function to AgentBase class (random agent its just a pass, Q-learning update for other model)
+- [ ] Add print to logging 
 
 
 ### Timeline
