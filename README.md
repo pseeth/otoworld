@@ -130,7 +130,7 @@ To set the max line length to 99: `black -l 99 {source_file_or_directory}`
     - Subclasses (Random Agent, Model Agent) implement different `choose_action` functions (based on current lines 137,138)
 - [X] Add option to choose new/different sources after resetting env for each episode
 - [ ] Plot of step vs. reward within episode    
-- [ ] Limit # of buffer items (json files/prev wav files/new wav files) using `MAX_BUFFER_ITEMS`
+- [X] Limit # of buffer items (json files/prev wav files/new wav files) using `MAX_BUFFER_ITEMS`
     - Add push/pop functions to `BufferData` class to limit size of `items` list using
     - Be sure that the # of files written into each folder (`data/dataset_items/`, `data/new_states`, `data/prev_states`) is also < `MAX_BUFFER_ITEMS`     
 - [ ] Using [this sampler](https://pytorch.org/docs/stable/data.html#torch.utils.data.WeightedRandomSampler), ensure we
