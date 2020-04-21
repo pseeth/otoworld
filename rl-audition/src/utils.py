@@ -11,15 +11,15 @@ import constants
 
 def choose_random_files(num_sources=2):
     """
-	Function returns source random files using the directory constants. It chooses one file from the
-	female recordings and one from the male recordings
+    Function returns source random files using the directory constants. It chooses one file from the
+    female recordings and one from the male recordings
 
-	Args:
-	    num_sources (int): number of sources to place in the room
+    Args:
+        num_sources (int): number of sources to place in the room
 
-	Returns:
-		paths (List[str]): the paths to two wav files
-	"""
+    Returns:
+        paths (List[str]): the paths to two wav files
+    """
     paths = []
 
     for i in range(num_sources):
@@ -109,56 +109,3 @@ def create_buffer_data_folders():
     if os.path.exists(constants.DIR_DATASET_ITEMS):
         shutil.rmtree(constants.DIR_DATASET_ITEMS)
     os.makedirs(constants.DIR_DATASET_ITEMS)
-
-
-def write_buffer_data(prev_state, action, reward, new_state, episode, step, dataset):
-    """
-    Writes states (AudioSignal objects) to .wav files and stores this buffer data
-    in json files with the states keys pointing to the .wav files. The json files
-    are to be read by nussl.datasets.BaseDataset subclass as items.
-
-    E.g. {
-        'prev_state': '/path/to/previous/mix.wav',
-        'reward': [the reward obtained for reaching current state],
-        'action': [the action taken to reach current state from previous state]
-        'current_state': '/path/to/current/mix.wav',
-    }
-
-    The unique file names are structured as path/[prev or new]-[episode #]-[step #]
-
-    Args:
-        prev_state (nussl.AudioSignal): previous state to be converted and saved as .wav file
-        action (int): action
-        reward (int): reward
-        new_state (nussl.AudioSignal): new state to be converted and saved as wav file
-        episode (int): which episode we're on, used to create unique file name for state
-        step (int): which step we're on within episode, used to create unique file name for state
-        dataset (subclass of nussl.datasets.AudioSignal): dataset to append item to
-    """
-    # unique file names for each state
-    prev_state_file_path = os.path.join(
-        constants.DIR_PREV_STATES, 'prev' + str(episode) + '-' + str(step) + '.wav'
-    )
-    new_state_file_path = os.path.join(
-        constants.DIR_NEW_STATES, 'new' + str(episode) + '-' + str(step) + '.wav'
-    )
-    dataset_json_file_path = os.path.join(
-        constants.DIR_DATASET_ITEMS, str(episode) + '-' + str(step) + '.json'
-    )
-
-    prev_state.write_audio_to_file(prev_state_file_path)
-    new_state.write_audio_to_file(new_state_file_path)
-
-    # write to json
-    buffer_dict = {
-        'prev_state': prev_state_file_path,
-        'action': action,
-        'reward': reward,
-        'new_state': new_state_file_path
-    }
-
-    with open(dataset_json_file_path, 'w') as json_file:
-        json.dump(buffer_dict, json_file)
-
-        # KEY PART: append to items list of dataset object (our buffer)
-        dataset.items.append(json_file.name)

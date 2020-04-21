@@ -7,12 +7,13 @@ import utils
 import constants
 from collections import deque
 import nussl
+from datasets import BufferData
 
-from dataset import BufferData
 
 class AgentBase:
     def __init__(
         self,
+        env,
         dataset,
         episodes=1,
         steps=10,
@@ -28,6 +29,8 @@ class AgentBase:
         This class is a base agent class which will be inherited when creating various agents.
 
         Args:
+            self.env (gym object): The gym self.environment object which the agent is going to explore
+            dataset (nussl dataset): Nussl dataset object for experience replay
             episodes (int): # of episodes to simulate
             steps (int): # of steps the agent can take before stopping an episode
             blen (int): # of entries which the replay buffer can store
@@ -38,6 +41,7 @@ class AgentBase:
             play_audio (bool): choose to play audio at each iteration
             show_room (bool): choose to display the configurations and movements within a room
         """
+        self.env = env
         self.dataset = dataset
         self.episodes = episodes
         self.max_steps = steps
@@ -50,19 +54,19 @@ class AgentBase:
         self.play_audio = play_audio
         self.show_room = show_room
     
-    def fit(self, env):
+    def fit(self):
         # keep track of stats
         init_dist_to_target = []
         steps_to_completion = []
 
         for episode in range(self.episodes):
-            # Reset the environment and any other variables at beginning of each episode
-            env.reset()
+            # Reset the self.environment and any other variables at beginning of each episode
+            self.env.reset()
             prev_state = None
 
             # Measure distance with the all sources
             init_dist_to_target.append(
-                sum([euclidean(env.agent_loc, source) for source in env.source_locs]))
+                sum([euclidean(self.env.agent_loc, source) for source in self.env.source_locs]))
             steps_to_completion.append(0)
             
             # Measure time to complete the episode
@@ -73,20 +77,20 @@ class AgentBase:
                 # Perform random actions with prob < epsilon
                 random_prob = np.random.uniform(0, 1)
                 if random_prob < self.epsilon:
-                    action = env.action_space.sample()
+                    action = self.env.action_space.sample()
                 else:
                     """
                     Agent will decide the action here. Call the agent here 
                     """
                     # If it is the first step (prev_state is zero), then perform a random action
                     if step == 0:
-                        action = env.action_space.sample()
+                        action = self.env.action_space.sample()
                     else:
                         # This is where agent will actually do something
-                        action = self.choose_action(env)
+                        action = self.choose_action()
 
                 # Perform the chosen action
-                new_state, reward, done = env.step(
+                new_state, reward, done = self.env.step(
                     action, play_audio=self.play_audio, show_room=self.show_room
                 )
 
@@ -97,9 +101,9 @@ class AgentBase:
 
                 # store SARS in buffer
                 if prev_state is not None and new_state is not None and not done:
-                    self.buffer.append((prev_state, action, reward, new_state))
-                    utils.write_buffer_data(
-                        prev_state, action, reward, new_state, episode, step, self.dataset
+                    # self.buffer.append((prev_state, action, reward, new_state))
+                    self.dataset.write_buffer_data(
+                        prev_state, action, reward, new_state, episode, step
                     )
 
                 # Terminate the episode if done
@@ -108,9 +112,9 @@ class AgentBase:
                     silence_array = np.zeros_like(prev_state.audio_data)
                     terminal_silent_state = prev_state.make_copy_with_audio_data(
                         audio_data=silence_array)
-                    #self.buffer.append((prev_state, action, reward, terminal_silent_state))
-                    utils.write_buffer_data(
-                        prev_state, action, reward, terminal_silent_state, episode, step, self.dataset
+                    # self.buffer.append((prev_state, action, reward, terminal_silent_state))
+                    self.dataset.write_buffer_data(
+                        prev_state, action, reward, terminal_silent_state, episode, step
                     )
 
                     end = time.time()
@@ -134,75 +138,75 @@ class AgentBase:
         utils.log_dist_and_num_steps(init_dist_to_target, steps_to_completion)
         utils.plot_dist_and_steps()
 
-    def choose_action(self, env):
+    def choose_action(self):
         '''
         This function needs to be overwritten when implementing an agent. It 
         will choose the action to take at any given point.
 
         Args:
-            env (gym): The gym environment you are training from
+            self.env (gym): The gym self.environment you are training from
         '''
         pass
 
 
 class RandomAgent(AgentBase):
-    def choose_action(self, env):
+    def choose_action(self):
         '''
         Since this is a random agent, we just randomly sample our action 
         every time.
         '''
-        return env.action_space.sample()
+        return self.env.action_space.sample()
 
 
 class PerfectAgentORoom2(AgentBase):
-    def choose_action(self, env):
+    def choose_action(self):
         '''
         The action selection is simple, just find the closest point and move towards it.
         '''
-        closest, distance = env.source_locs[0], euclidean(
-            env.agent_loc, env.source_locs[0])
-        for point in env.source_locs:
-            temp = euclidean(env.agent_loc, point)
+        closest, distance = self.env.source_locs[0], euclidean(
+            self.env.agent_loc, self.env.source_locs[0])
+        for point in self.env.source_locs:
+            temp = euclidean(self.env.agent_loc, point)
             if temp < distance:
                 distance = temp
                 closest = point
 
         prob = np.random.randn(1)
         if prob > 0.7:
-            if env.agent_loc[0] < closest[0]:
-                if env.room.is_inside([env.agent_loc[0] + 1, env.agent_loc[1]]):
+            if self.env.agent_loc[0] < closest[0]:
+                if self.env.room.is_inside([self.env.agent_loc[0] + 1, self.env.agent_loc[1]]):
                     action = 1
-                    env.agent_loc[0] += 1
+                    self.env.agent_loc[0] += 1
                 elif (
-                     env.room.is_inside(
-                        [env.agent_loc[0], env.agent_loc[1] - 1])
+                     self.env.room.is_inside(
+                        [self.env.agent_loc[0], self.env.agent_loc[1] - 1])
                 ):
                     action = 3
-                    env.agent_loc[1] -= 1
-                elif  env.room.is_inside([env.agent_loc[0], env.agent_loc[1] + 1]):
+                    self.env.agent_loc[1] -= 1
+                elif  self.env.room.is_inside([self.env.agent_loc[0], self.env.agent_loc[1] + 1]):
                     action = 2
-                    env.agent_loc[1] += 1
-            elif env.agent_loc[0] > closest[0]:
-                if  env.room.is_inside([env.agent_loc[0] - 1, env.agent_loc[1]]):
+                    self.env.agent_loc[1] += 1
+            elif self.env.agent_loc[0] > closest[0]:
+                if  self.env.room.is_inside([self.env.agent_loc[0] - 1, self.env.agent_loc[1]]):
                     action = 0
-                    env.agent_loc[0] -= 1
+                    self.env.agent_loc[0] -= 1
                 elif (
-                     env.room.is_inside(
-                        [env.agent_loc[0], env.agent_loc[1] - 1])
+                     self.env.room.is_inside(
+                        [self.env.agent_loc[0], self.env.agent_loc[1] - 1])
                 ):
                     action = 3
-                    env.agent_loc[1] -= 1
-                elif  env.room.is_inside([env.agent_loc[0], env.agent_loc[1] + 1]):
+                    self.env.agent_loc[1] -= 1
+                elif  self.env.room.is_inside([self.env.agent_loc[0], self.env.agent_loc[1] + 1]):
                     action = 2
-                    env.agent_loc[1] += 1
+                    self.env.agent_loc[1] += 1
 
-            elif env.agent_loc[0] == closest[0]:
-                if env.agent_loc[1] < closest[1]:
+            elif self.env.agent_loc[0] == closest[0]:
+                if self.env.agent_loc[1] < closest[1]:
                     action = 2
-                    env.agent_loc[1] += 1
+                    self.env.agent_loc[1] += 1
                 else:
                     action = 3
-                    env.agent_loc[1] -= 1
+                    self.env.agent_loc[1] -= 1
         else:
             action = np.random.randint(4, 6)
         return action
@@ -222,7 +226,7 @@ class HumanAgent:
         show_room=True,
     ):
         """
-        This class is a human agent. The moves will be played by a human player. Easy way of navigating the environment
+        This class is a human agent. The moves will be played by a human player. Easy way of navigating the self.environment
         ourselves for testing and debugging purposes.
         Args:
             target_loc (List[int] or np.array): the location of the target in the room
@@ -235,7 +239,7 @@ class HumanAgent:
         """
         self.episodes = episodes
         closest = target_loc
-        env.agent_loc = agent_loc
+        self.env.agent_loc = agent_loc
         self.play_audio = play_audio
         self.show_room = show_room
 
@@ -249,15 +253,15 @@ class HumanAgent:
         self.valid_angles = ["0", "1", "2"]
 
         # Finding the total distance to determine step size (total_dis / number of steps to converge)
-        x_dis = abs(env.agent_loc[0] - closest[0])
-        y_dis = abs(env.agent_loc[1] - closest[1])
+        x_dis = abs(self.env.agent_loc[0] - closest[0])
+        y_dis = abs(self.env.agent_loc[1] - closest[1])
         total_dis = x_dis + y_dis
         if step_size:
             self.step_size = step_size
         else:
             self.step_size = (total_dis) / self.converge_steps
 
-    def fit(self, env):
+    def fit(self):
         # ("Enter action (wasd) followed by orientation: (012)")
         """
         0 = Don't orient
@@ -269,12 +273,14 @@ class HumanAgent:
             action, angle = map(str, input().split())
 
             if action in self.valid_actions and angle in self.valid_angles:
-                new_state, closest, reward, done = env.step(
+                new_state, closest, reward, done = self.env.step(
                     (self.key_to_action[action], int(angle)), self.play_audio, self.show_room,
                 )
             else:
                 # Pass some dummy action
                 warnings.warn("Invalid action!")
-                new_state, closest, reward, done = env.step(
+                new_state, closest, reward, done = self.env.step(
                     (0, 0), self.play_audio, self.show_room
                 )
+
+

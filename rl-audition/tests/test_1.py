@@ -8,6 +8,7 @@ import os
 import matplotlib.pyplot as plt
 import room_types
 import utils
+from datasets import BufferData
 
 DIR_MALE = '../sounds/dry_recordings/dev/051_subset/'
 DIR_FEMALE = '../sounds/dry_recordings/dev/050_subset/'
@@ -35,8 +36,11 @@ def run_random_agent():
 	env.add_sources()
 
 	# Load the agent class
-	agent = RandomAgent()
-	agent.fit(env, show_room=False, play_audio=False)
+	dataset = BufferData(folder='ignore', to_disk=False)
+	agent = RandomAgent(env=env, dataset=dataset, show_room=False, play_audio=False, steps=100, episodes=3)
+	agent.fit()
+	print(dataset, len(dataset))
+	print(dataset[0])
 
 
 # run_random_agent()
