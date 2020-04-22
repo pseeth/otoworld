@@ -19,5 +19,5 @@ MIN_EPSILON = 0.01
 STEP_PENALTY = -0.1
 TURN_OFF_REWARD = 10
 
-# dataset
-MAX_BUFFER_ITEMS = 10
+# dataset (reminder: do 20000 for experiments)
+MAX_BUFFER_ITEMS = 100

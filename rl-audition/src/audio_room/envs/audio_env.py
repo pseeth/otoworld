@@ -105,8 +105,6 @@ class AudioEnv(gym.Env):
             self.y_max = room_config[1]
             self.x_min, self.y_min = 0, 0
 
-        print("Initial agent location: ", self.agent_loc)
-
     def _sample_points(self, num_sources):
         """
         This method would generate random sample points using rejection sampling method

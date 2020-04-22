@@ -1,17 +1,16 @@
+import sys
+sys.path.append("../src/")  # get modules from src folder
+
 import gym
 import numpy as np
 import matplotlib.pyplot as plt
-
-# get modules from diff folder (src folder)
-import sys
-sys.path.append("../src/")
 
 import room_types
 import agent
 import audio_room
 import utils
 import constants
-from dataset import BufferData
+from datasets import BufferData
 
 
 def run_random_agent():
@@ -43,11 +42,11 @@ def run_random_agent():
     utils.create_buffer_data_folders()
 
     # create dataset object (subclass of nussl.datasets.BaseDataset)
-    dataset = BufferData(folder=constants.DIR_DATASET_ITEMS)
+    dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=True)
 
     # Load the agent class
-    a = agent.RandomAgent(dataset, episodes=10, steps=1000)
-    a.fit(env)
+    a = agent.RandomAgent(env=env, dataset=dataset, episodes=10, steps=1000)
+    a.fit()
 
 
 if __name__ == "__main__":

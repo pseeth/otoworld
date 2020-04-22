@@ -142,8 +142,8 @@ choosing 5 samples from each episode, regardless of the size of the episode)
     - getAudio transform: takes audio data and returns 
     - [ToSeparationModel](https://nussl.github.io/docs/datasets.html#nussl.datasets.transforms.ToSeparationModel)
 - [ ] Use [PyTorch data loader](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) somehow
-- [ ] Add update function to AgentBase class (random agent its just a pass, Q-learning update for other model)
-- [ ] Add print to logging 
+- [X] Add update function to AgentBase class (random agent its just a pass, Q-learning update for other model)
+- [X] Add print to logging 
 
 
 ### Timeline
