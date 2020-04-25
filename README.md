@@ -129,14 +129,14 @@ To set the max line length to 99: `black -l 99 {source_file_or_directory}`
 - [X] Refactor `agent.py` like so: One `Agent` base class with `fit` function
     - Subclasses (Random Agent, Model Agent) implement different `choose_action` functions (based on current lines 137,138)
 - [X] Add option to choose new/different sources after resetting env for each episode
-- [ ] Plot of step vs. reward within episode    
+- [X] Plot of step vs. reward within episode    
 - [X] Limit # of buffer items (json files/prev wav files/new wav files) using `MAX_BUFFER_ITEMS`
     - Add push/pop functions to `BufferData` class to limit size of `items` list using
     - Be sure that the # of files written into each folder (`data/dataset_items/`, `data/new_states`, `data/prev_states`) is also < `MAX_BUFFER_ITEMS`     
 - [ ] Using [this sampler](https://pytorch.org/docs/stable/data.html#torch.utils.data.WeightedRandomSampler), ensure we
 are sampling the same amount of items in `items` from each episode (i.e. if `batch_size=25` and we have 5 episodes, then
 choosing 5 samples from each episode, regardless of the size of the episode)
-- [ ] Implement [nussl transforms](https://nussl.github.io/docs/tutorials/datasets.html#Transforms) to prepare for training, transforms passed to `BufferData __init__`
+- [X] Implement [nussl transforms](https://nussl.github.io/docs/tutorials/datasets.html#Transforms) to prepare for training, transforms passed to `BufferData __init__`
     - [getExcerpt](https://nussl.github.io/docs/datasets.html#nussl.datasets.transforms.GetExcerpt): samples random 
     frames from spectrograms
     - getAudio transform: takes audio data and returns 

@@ -10,6 +10,7 @@ import agent
 import audio_room
 import utils
 import constants
+import nussl
 from datasets import BufferData
 
 
@@ -42,11 +43,20 @@ def run_random_agent():
     utils.create_buffer_data_folders()
 
     # create dataset object (subclass of nussl.datasets.BaseDataset)
-    dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=True)
+
+
+    tfm = nussl.datasets.transforms.Compose([
+        nussl.datasets.transforms.GetAudio(mix_key='new_state'),
+        nussl.datasets.transforms.ToSeparationModel(),
+        nussl.datasets.transforms.GetExcerpt(excerpt_length=400, tf_keys=['mix_audio']),
+    ])
+    dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=True, transform=tfm)
 
     # Load the agent class
-    a = agent.RandomAgent(env=env, dataset=dataset, episodes=10, steps=1000)
+    a = agent.RandomAgent(env=env, dataset=dataset, episodes=1, steps=100, plot_reward_vs_steps=True)
     a.fit()
+
+    print(dataset[0])
 
 
 if __name__ == "__main__":

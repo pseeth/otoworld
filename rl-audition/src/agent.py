@@ -11,6 +11,13 @@ import utils
 import constants
 from datasets import BufferData
 
+'''
+Why arent we using bufferdata anywhere here and if we use it where exactly does it fit in?
+Transforms are just another way to interpret the data?
+Where do I apply the transforms?
+Plot of step vs. reward within episode?
+How do you want to integrate dataloader?
+'''
 
 class AgentBase:
     def __init__(
@@ -25,7 +32,8 @@ class AgentBase:
         decay_rate=0.005,
         play_audio=False,
         show_room=False,
-        track_dist_vs_steps=False
+        track_dist_vs_steps=False,
+        plot_reward_vs_steps=False,
     ):
         """
         This class is a base agent class which will be inherited when creating various agents.
@@ -42,6 +50,7 @@ class AgentBase:
             play_audio (bool): choose to play audio at each iteration
             show_room (bool): choose to display the configurations and movements within a room
             track_dist_vs_steps (bool): choose to track dist vs. num steps for each episode, use utils to log and plot
+            plot_reward_vs_steps (bool): choose to track reward vs. num steps for each episode, use utils to log and plot
         """
         self.env = env
         self.dataset = dataset
@@ -54,6 +63,7 @@ class AgentBase:
         self.play_audio = play_audio
         self.show_room = show_room
         self.track_dist_vs_steps = track_dist_vs_steps
+        self.plot_reward_vs_steps = plot_reward_vs_steps
 
         # move this somewhere else?
         logging.basicConfig(filename='agent.log', level=logging.INFO)
@@ -62,6 +72,9 @@ class AgentBase:
         if self.track_dist_vs_steps:
             init_dist_to_target = []
             steps_to_completion = []
+        
+        if self.plot_reward_vs_steps:
+            rewards_per_episode = []
 
         for episode in range(self.episodes):
             # Reset the self.environment and any other variables at beginning of each episode
@@ -73,6 +86,10 @@ class AgentBase:
                 init_dist_to_target.append(
                     sum([euclidean(self.env.agent_loc, source) for source in self.env.source_locs]))
                 steps_to_completion.append(0)
+            
+            # Keep track of rewards for this episode
+            if self.plot_reward_vs_steps:
+                temp_rewards = []
             
             # Measure time to complete the episode
             start = time.time()
@@ -95,6 +112,8 @@ class AgentBase:
                 new_state, reward, done = self.env.step(
                     action, play_audio=self.play_audio, show_room=self.show_room
                 )
+
+                temp_rewards.append(reward)
 
                 # Perform Update
                 self.update()
@@ -126,7 +145,11 @@ class AgentBase:
                         f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n"
                     )
                     logging.info(logging_str)
+                    rewards_per_episode.append(temp_rewards)
                     break
+
+                if step == (self.max_steps - 1) and self.plot_reward_vs_steps:
+                    rewards_per_episode.append(temp_rewards)
 
                 prev_state = new_state
 
@@ -139,6 +162,10 @@ class AgentBase:
             utils.log_dist_and_num_steps(init_dist_to_target, steps_to_completion)
             # NOTE: plot will fail if agent doesn't find all sources within given number of steps
             utils.plot_dist_and_steps()
+        
+        if self.plot_reward_vs_steps:
+            utils.log_reward_vs_steps(rewards_per_episode)
+            utils.plot_reward_vs_steps()
 
     def choose_action(self):
         """

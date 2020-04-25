@@ -5,7 +5,7 @@ import constants
 
 
 class BufferData(nussl.datasets.BaseDataset):
-    def __init__(self, folder, to_disk=False):
+    def __init__(self, folder, to_disk=False, transform=None):
         """
 
         Args:
@@ -27,7 +27,7 @@ class BufferData(nussl.datasets.BaseDataset):
         if not os.path.exists(constants.DIR_DATASET_ITEMS):
             os.mkdir(constants.DIR_DATASET_ITEMS)
 
-        super().__init__(folder=folder)
+        super().__init__(folder=folder, transform=transform)
 
     def get_items(self, folder):
         """
@@ -94,8 +94,8 @@ class BufferData(nussl.datasets.BaseDataset):
 
         # subdictionary for observations
         del output['prev_state'], output['new_state']
-        output['observations'] = {'prev_state': prev_state, 'new_state': new_state}
-
+        # output['observations'] = {'prev_state': prev_state, 'new_state': new_state}
+        output['prev_state'], output['new_state'] = prev_state, new_state
         return output
 
     def append(self, item):

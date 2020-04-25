@@ -9,6 +9,7 @@ DIR_NEW_STATES = os.path.join(DATA_PATH, 'new_states/')
 DIR_DATASET_ITEMS = os.path.join(DATA_PATH, 'dataset_items/')
 DIST_URL = "init_dist_to_target.p"
 STEPS_URL = "steps_to_completion.p"
+REWARD_URL = "rewards_per_episode.p"
 AUDIO_EXTENSION = ".wav"
 
 # max and min values of exploration rate

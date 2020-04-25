@@ -60,6 +60,41 @@ def log_dist_and_num_steps(init_dist_to_target, steps_to_completion):
     )
 
 
+def log_reward_vs_steps(rewards_per_episode):
+    """
+    This function logs the rewards per episode in order to plot the rewards vs. step for each episode. 
+    The lists are stored in pickle files. The pairs (dist, steps) are in parallel lists, indexed by the 
+    episode number.
+
+    Args:
+        rewards_per_episode (List[float]): rewards gained per episode
+    """
+    # create data folder
+    if not os.path.exists(constants.DATA_PATH):
+        os.makedirs(constants.DATA_PATH)
+
+    # write objects
+    pickle.dump(
+        rewards_per_episode, open(os.path.join(
+            constants.DATA_PATH, constants.REWARD_URL), "wb"),
+    )
+
+
+def plot_reward_vs_steps():
+    '''
+    Plots the reward vs step for an episode.
+    '''
+    with open(os.path.join(constants.DATA_PATH, constants.REWARD_URL), "rb") as f:
+        rewards = pickle.load(f)
+
+    reward = rewards[0]
+    plt.scatter(list(range(len(reward))), reward)
+    plt.title("Reward vs. Number of Steps")
+    plt.xlabel("Step")
+    plt.ylabel("Reward")
+
+    plt.show()
+
 def plot_dist_and_steps():
     """Plots initial distance and number of steps to reach target"""
     with open(os.path.join(constants.DATA_PATH, constants.DIST_URL), "rb") as f:
