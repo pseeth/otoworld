@@ -48,7 +48,7 @@ def run_random_agent():
     tfm = nussl.datasets.transforms.Compose([
         nussl.datasets.transforms.GetAudio(mix_key='new_state'),
         nussl.datasets.transforms.ToSeparationModel(),
-        nussl.datasets.transforms.GetExcerpt(excerpt_length=400, tf_keys=['mix_audio']),
+        nussl.datasets.transforms.GetExcerpt(excerpt_length=32000, tf_keys=['mix_audio'], time_dim=1),
     ])
     dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=True, transform=tfm)
 
