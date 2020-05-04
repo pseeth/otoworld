@@ -133,18 +133,21 @@ To set the max line length to 99: `black -l 99 {source_file_or_directory}`
 - [X] Limit # of buffer items (json files/prev wav files/new wav files) using `MAX_BUFFER_ITEMS`
     - Add push/pop functions to `BufferData` class to limit size of `items` list using
     - Be sure that the # of files written into each folder (`data/dataset_items/`, `data/new_states`, `data/prev_states`) is also < `MAX_BUFFER_ITEMS`     
-- [ ] Using [this sampler](https://pytorch.org/docs/stable/data.html#torch.utils.data.WeightedRandomSampler), ensure we
-are sampling the same amount of items in `items` from each episode (i.e. if `batch_size=25` and we have 5 episodes, then
-choosing 5 samples from each episode, regardless of the size of the episode)
 - [X] Implement [nussl transforms](https://nussl.github.io/docs/tutorials/datasets.html#Transforms) to prepare for training, transforms passed to `BufferData __init__`
     - [getExcerpt](https://nussl.github.io/docs/datasets.html#nussl.datasets.transforms.GetExcerpt): samples random 
     frames from spectrograms
     - getAudio transform: takes audio data and returns 
     - [ToSeparationModel](https://nussl.github.io/docs/datasets.html#nussl.datasets.transforms.ToSeparationModel)
-- [ ] Use [PyTorch data loader](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader) somehow
+- [X] Use [PyTorch data loader](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader)
 - [X] Add update function to AgentBase class (random agent its just a pass, Q-learning update for other model)
 - [X] Add print to logging 
-
+- [ ] Using [this sampler](https://pytorch.org/docs/stable/data.html#torch.utils.data.WeightedRandomSampler), ensure we
+are sampling the same amount of items in `items` from each episode (i.e. if `batch_size=25` and we have 5 episodes, then
+choosing 5 samples from each episode, regardless of the size of the episode)
+- [ ] Figure out way to map output of model to action 
+    - [Cross-correlation](https://discuss.pytorch.org/t/how-to-perform-cross-correlation-for-two-2d-inputs-and-obtain-same-results-as-an-operation-in-numpy-scipy/10746)
+- [ ] Run on gpubox
+- [ ] Write smoke/unit tests
 
 ### Timeline
 * Want to run experiments in 1-2 weeks
