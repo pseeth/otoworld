@@ -13,6 +13,7 @@ import utils
 import constants
 import nussl
 from datasets import BufferData
+import time
 
 
 def run_random_agent():
@@ -53,16 +54,16 @@ def run_random_agent():
     dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=True, transform=tfm)
 
     # Load the agent class
-    a = agent.RandomAgent(env=env, dataset=dataset, episodes=2, steps=100, plot_reward_vs_steps=True)
+    a = agent.RandomAgent(env=env, dataset=dataset, episodes=10, steps=1000, plot_reward_vs_steps=False)
     a.fit()
 
-    print(dataset[0])
-    print(dataset.items)
-    print(len(dataset.items))
+    # print(dataset[0])
+    # print((dataset.items))
+    print("Buffer filled: ", len(dataset.items))
 
-    # dataloader = torch.utils.data.DataLoader(dataset, batch_size=25, shuffle=True)
-    #
-    # for item in dataloader:
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=100, shuffle=False)
+
+    # for index, item in enumerate(dataloader):
     #     for key in item:
     #         print(key, item[key].shape)
     #     break
@@ -87,14 +88,90 @@ def run_random_agent():
     build_recurrent_end_to_end.trainable = False
     build_recurrent_end_to_end.window_type = 'sqrt_hann'
     """
-    config = nussl.ml.networks.builders.build_recurrent_end_to_end(
-        bidirectional=True, dropout=0.3, filter_length=256, hidden_size=300, hop_length=64, mask_activation=['sigmoid'],
-        mask_complex=False, mix_key='mix_audio', normalization_class='BatchNorm', num_audio_channels=1, num_filters=256,
-        num_layers=2, num_sources=2, rnn_type='lstm', trainable=False, window_type='sqrt_hann'
-    )
+    # config = nussl.ml.networks.builders.build_recurrent_end_to_end(
+    #     bidirectional=True, dropout=0.3, filter_length=256, hidden_size=300, hop_length=64, mask_activation=['sigmoid'],
+    #     mask_complex=False, mix_key='mix_audio', normalization_class='BatchNorm', num_audio_channels=1, num_filters=256,
+    #     num_layers=2, num_sources=2, rnn_type='lstm', trainable=False, window_type='sqrt_hann'
+    # )
+    #
+    # model = nussl.ml.SeparationModel(config)
+    # print(model)
 
-    model = nussl.ml.SeparationModel(config)
-    print(model)
 
 if __name__ == "__main__":
-    run_random_agent()
+    runs = 3
+    for i in range(runs):
+        print("Run: {}".format(i+1))
+        start = time.time()
+        run_random_agent()
+        end = time.time()
+        print("Total time taken: {} seconds".format(end-start))
+
+
+
+"""
+Timing experiment results: 
+
+Setting: 
+Episodes = 10 
+Steps per episode: 1000
+Buffer size: 5000 
+-------------------------------------------------
+With to_disk = true 
+Buffer Filled: 2499
+Total time taken: 45.95445275306702 seconds 
+
+Buffer filled:  1995
+Total time taken: 31.331244230270386 seconds
+
+Buffer filled:  3973
+Total time taken: 96.270427942276 seconds
+
+Buffer filled:  3054
+Total time taken: 36.36921525001526 seconds
+
+Buffer filled:  2121
+Total time taken: 32.37190365791321 seconds
+-------------------------------------------------
+With to_disk = False 
+Buffer filled:  5000
+Total time taken: 52.56600522994995 seconds
+
+Buffer filled:  5000
+Total time taken: 47.749303340911865 seconds
+
+Buffer filled:  3444
+Total time taken: 33.542359828948975 seconds
+
+Buffer filled:  3267
+Total time taken: 28.833098888397217 seconds
+
+---
+
+Setting: 
+Episodes = 10 
+Steps per episode: 1000
+Buffer size: 500  (smaller buffer so should be full more often)
+-------------------------------------------------
+With to_disk = True 
+
+Buffer filled:  500
+Total time taken: 54.17424130439758 seconds
+
+Buffer filled:  500
+Total time taken: 56.30148649215698 seconds
+
+Buffer filled:  500
+Total time taken: 39.96235132217407 seconds
+-------------------------------------------------
+With to_disk = False 
+
+Buffer filled:  500
+Total time taken: 37.481664419174194 seconds
+
+Buffer filled:  500
+Total time taken: 44.5657320022583 seconds
+
+Buffer filled:  500
+Total time taken: 39.662904500961304 seconds
+"""

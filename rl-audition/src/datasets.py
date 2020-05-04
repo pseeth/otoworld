@@ -81,7 +81,9 @@ class BufferData(nussl.datasets.BaseDataset):
             This should return a dictionary that gets processed by the transforms.
         """
         if self.to_disk:
-            with open(os.path.join(item), 'r') as json_file:
+            cur_path = os.path.join(constants.DIR_DATASET_ITEMS, str(item) + '.json')
+
+            with open(os.path.join(cur_path), 'r') as json_file:
                 output = json.load(json_file)
 
             # convert wav files to AudioSignal objects
@@ -153,14 +155,15 @@ class BufferData(nussl.datasets.BaseDataset):
             self.append(buffer_dict)
         else:
             # Unique file names for each state
+            cur_file = str(episode) + '-' + str(step)
             prev_state_file_path = os.path.join(
-                constants.DIR_PREV_STATES, 'prev' + str(episode) + '-' + str(step) + '.wav'
+                constants.DIR_PREV_STATES, 'prev' + cur_file + '.wav'
             )
             new_state_file_path = os.path.join(
-                constants.DIR_NEW_STATES, 'new' + str(episode) + '-' + str(step) + '.wav'
+                constants.DIR_NEW_STATES, 'new' + cur_file + '.wav'
             )
             dataset_json_file_path = os.path.join(
-                constants.DIR_DATASET_ITEMS, str(episode) + '-' + str(step) + '.json'
+                constants.DIR_DATASET_ITEMS, cur_file + '.json'
             )
 
             prev_state.write_audio_to_file(prev_state_file_path)
@@ -174,19 +177,24 @@ class BufferData(nussl.datasets.BaseDataset):
                 'new_state': new_state_file_path
             }
 
+            # If buffer is full, delete old files from disk
+            if self.full_buffer:
+
+                file_to_delete = self.items[self.ptr]
+                # print("Ptr: {}, val at ptr: {}".format(self.ptr, file_to_delete))
+                # print(self.items)
+                # old_file_ps = sorted(os.listdir(constants.DIR_PREV_STATES))[0]
+                # old_file_ns = sorted(os.listdir(constants.DIR_NEW_STATES))[0]
+                # old_file_di = sorted(os.listdir(constants.DIR_DATASET_ITEMS))[0]
+
+                os.remove(os.path.join(constants.DIR_PREV_STATES, 'prev' + file_to_delete + '.wav'))
+                os.remove(os.path.join(constants.DIR_NEW_STATES, 'new' + file_to_delete + '.wav'))
+                os.remove(os.path.join(constants.DIR_DATASET_ITEMS, file_to_delete + '.json'))
+
             with open(dataset_json_file_path, 'w') as json_file:
                 json.dump(buffer_dict, json_file)
 
                 # KEY PART: append to items list of dataset object (our buffer)
-                self.append(json_file.name)
-
-            # If buffer is full, delete old files from disk
-            if self.full_buffer:
-                old_file_ps = sorted(os.listdir(constants.DIR_PREV_STATES))[0]
-                old_file_ns = sorted(os.listdir(constants.DIR_NEW_STATES))[0]
-                old_file_di = sorted(os.listdir(constants.DIR_DATASET_ITEMS))[0]
-
-                os.remove(os.path.join(constants.DIR_PREV_STATES, old_file_ps))
-                os.remove(os.path.join(constants.DIR_NEW_STATES, old_file_ns))
-                os.remove(os.path.join(constants.DIR_DATASET_ITEMS, old_file_di))
+                # self.append(json_file.name)
+                self.append(cur_file)
 

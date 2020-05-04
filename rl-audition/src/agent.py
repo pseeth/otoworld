@@ -113,7 +113,8 @@ class AgentBase:
                     action, play_audio=self.play_audio, show_room=self.show_room
                 )
 
-                temp_rewards.append(reward)
+                if self.plot_reward_vs_steps:
+                    temp_rewards.append(reward)
 
                 # Perform Update
                 self.update()
@@ -135,6 +136,7 @@ class AgentBase:
 
                     end = time.time()
                     total_time = end - start
+
                     logging_str = (
                         f"\n\n"
                         f"Episode Summary \n"
@@ -145,7 +147,8 @@ class AgentBase:
                         f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n"
                     )
                     logging.info(logging_str)
-                    rewards_per_episode.append(temp_rewards)
+                    if self.plot_reward_vs_steps:
+                        rewards_per_episode.append(temp_rewards)
                     break
 
                 if step == (self.max_steps - 1) and self.plot_reward_vs_steps:
