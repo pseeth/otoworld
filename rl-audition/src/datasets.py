@@ -2,6 +2,7 @@ import nussl
 import json
 import os
 import constants
+import numpy as np
 
 
 class BufferData(nussl.datasets.BaseDataset):
@@ -96,6 +97,8 @@ class BufferData(nussl.datasets.BaseDataset):
         del output['prev_state'], output['new_state']
         # output['observations'] = {'prev_state': prev_state, 'new_state': new_state}
         output['prev_state'], output['new_state'] = prev_state, new_state
+        output['reward'] = np.array([output['reward']])
+        output['action'] = np.array([output['action']])
         return output
 
     def append(self, item):
