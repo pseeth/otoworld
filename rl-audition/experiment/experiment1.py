@@ -54,14 +54,14 @@ def run_random_agent():
     dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=True, transform=tfm)
 
     # Load the agent class
-    a = agent.RandomAgent(env=env, dataset=dataset, episodes=10, steps=1000, plot_reward_vs_steps=False)
+    a = agent.RandomAgent(env=env, dataset=dataset, episodes=5, steps=100, plot_reward_vs_steps=False)
     a.fit()
 
     # print(dataset[0])
     # print((dataset.items))
     print("Buffer filled: ", len(dataset.items))
 
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=100, shuffle=False)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=25, shuffle=False)
 
     # for index, item in enumerate(dataloader):
     #     for key in item:
@@ -88,24 +88,25 @@ def run_random_agent():
     build_recurrent_end_to_end.trainable = False
     build_recurrent_end_to_end.window_type = 'sqrt_hann'
     """
-    # config = nussl.ml.networks.builders.build_recurrent_end_to_end(
-    #     bidirectional=True, dropout=0.3, filter_length=256, hidden_size=300, hop_length=64, mask_activation=['sigmoid'],
-    #     mask_complex=False, mix_key='mix_audio', normalization_class='BatchNorm', num_audio_channels=1, num_filters=256,
-    #     num_layers=2, num_sources=2, rnn_type='lstm', trainable=False, window_type='sqrt_hann'
-    # )
-    #
-    # model = nussl.ml.SeparationModel(config)
-    # print(model)
+    config = nussl.ml.networks.builders.build_recurrent_end_to_end(
+        bidirectional=True, dropout=0.3, filter_length=256, hidden_size=300, hop_length=64, mask_activation=['sigmoid'],
+        mask_complex=False, mix_key='mix_audio', normalization_class='BatchNorm', num_audio_channels=1, num_filters=256,
+        num_layers=2, num_sources=2, rnn_type='lstm', trainable=False, window_type='sqrt_hann'
+    )
+    
+    model = nussl.ml.SeparationModel(config)
+    print(model)
 
 
 if __name__ == "__main__":
-    runs = 3
-    for i in range(runs):
-        print("Run: {}".format(i+1))
-        start = time.time()
-        run_random_agent()
-        end = time.time()
-        print("Total time taken: {} seconds".format(end-start))
+    # runs = 3
+    # for i in range(runs):
+    #     print("Run: {}".format(i+1))
+    #     start = time.time()
+    #     run_random_agent()
+    #     end = time.time()
+    #     print("Total time taken: {} seconds".format(end-start))
+    run_random_agent()
 
 
 

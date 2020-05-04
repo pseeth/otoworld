@@ -146,7 +146,7 @@ are sampling the same amount of items in `items` from each episode (i.e. if `bat
 choosing 5 samples from each episode, regardless of the size of the episode)
 - [ ] Figure out way to map output of model to action 
     - [Cross-correlation](https://discuss.pytorch.org/t/how-to-perform-cross-correlation-for-two-2d-inputs-and-obtain-same-results-as-an-operation-in-numpy-scipy/10746)
-- [ ] Run on gpubox
+- [X] Run on gpubox
 - [ ] Write smoke/unit tests
 
 ### Timeline
