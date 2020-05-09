@@ -11,13 +11,6 @@ import utils
 import constants
 from datasets import BufferData
 
-'''
-Why arent we using bufferdata anywhere here and if we use it where exactly does it fit in?
-Transforms are just another way to interpret the data?
-Where do I apply the transforms?
-Plot of step vs. reward within episode?
-How do you want to integrate dataloader?
-'''
 
 class AgentBase:
     def __init__(

@@ -5,29 +5,6 @@ Advisor: Prem Seetharaman
 
 Applying reinforcement learning to perform source separation.
 
-Project timeline
-- Week of 1/13
-  - Learn: RL, Double Deep Q-Learning (DDQN), SOTA (vision-related tasks), acoustics (how sound travels)
-  - Code: Existing implementations (Gym), Pyroom acoustics
-  - Deliverable: Want `f(direct_sound, agent_loc, sound_loc, room_config) => convolved_sound`
-- Week of 1/20
-  - RL review 
-  - Deliverable: Want environment setup and be observable; `file = env.render()`, save audio file with librosa
-- Week of 1/27
-  - Presentation on Thursday (RL overview + Project Explanation)
-  - Deliverable: See To-do
-- Week of 2/03
-  - See To-do
-- Week of 2/10
-  - See To-do
-- Week of 2/17
-  - See To-do
-- Week of 2/24
-  - See To-do
-- Week of 3/02
-  - See To-do
-- Week of 3/09
-
 ### Requirements:
 
 #### Environment
@@ -48,7 +25,7 @@ to to clone the Pyroomacoustics library from the `master` branch on github and u
 named `room_isinside_max_iter` that is set to 20 (previously 5, too low). For training, we set this to 
 `room_isinside_max_iter = 50` to be even more cautious. 
 
-#### Using Poetry
+#### Using Poetry (For us)
 - For for package and dependency management, we use Poetry
 - [How to install Poetry](https://python-poetry.org/docs/#installation)
 - Run `poetry install` to install dependencies for the project (listed in `pyproject.toml`)
@@ -59,7 +36,7 @@ Assuming `requirements.txt` is up do date and you've successfully installed
 pyroomacoustics as directed above, run `pip install -r requirements.txt`
 
 ### Run
-`python main.py`
+CD into `experiments/` and run a file like so: `python experiment1.py`
 
 ### Formatting
 `pip install black`
