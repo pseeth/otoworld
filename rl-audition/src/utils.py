@@ -11,8 +11,7 @@ import constants
 
 def choose_random_files(num_sources=2):
     """
-    Function returns source random files using the directory constants. It chooses one file from the
-    female recordings and one from the male recordings
+    Function returns randomly chosen files as sources. 
 
     Args:
         num_sources (int): number of sources to place in the room
@@ -24,6 +23,7 @@ def choose_random_files(num_sources=2):
 
     for i in range(num_sources):
         # randomly choose male or female voice folder
+        # note its possible to have all one gender 
         dir = random.choice([constants.DIR_MALE, constants.DIR_FEMALE])
         files = os.listdir(dir)
 

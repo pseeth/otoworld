@@ -1,9 +1,14 @@
 import numpy as np
 
+"""
+Currently, we are only working with rooms that are convex and 2D. 
+"""
 
 class Polygon:
     def __init__(self, n, r, x_center=0, y_center=0, theta=0):
         """
+        This class represents a polygon room. 
+        pyroomacoustics.Room.from_corners() is called to create a polygon room. 
 
 		Args:
 			n (int): Number of vertices of the polygon
@@ -16,6 +21,7 @@ class Polygon:
         self.r = r
         self.x_center = x_center
         self.y_center = y_center
+        assert(theta >= 0.0)
         self.theta = theta
         self.corners = True
 
@@ -24,8 +30,8 @@ class Polygon:
         This function generates a polygon and returns the points
 
         Returns:
-            x_points
-            y_points
+            x_points (List[np.array]): x-coordinates of points that makeup the room
+            y_points (List[np.array]): y-coordinates of points that makeup the room
         """
         numbers = np.array([i for i in range(self.n)])
 
@@ -42,8 +48,9 @@ class Polygon:
 class ShoeBox:
     def __init__(self, x_length=10, y_length=10):
         """
-        This class represents a shoe box (rectangular) room. It is defined further
-        in pyroomacoustics.Room
+        This class represents a shoe box (rectangular) room. It is a wrapper 
+        for the pyroomacoustics.Room.ShoeBox class. We are sticking with
+        2D rooms (4 walls) for now, though PRA supports 3D rooms (6 walls)
 
         Args:
             x_length (float): the horizontal length of the room
@@ -55,7 +62,7 @@ class ShoeBox:
 
     def generate(self):
         """
-        This function generates a polygon and returns the points
+        This function generates a shoebox and returns the points
 
         Returns:
             List[int]: x_length and y_length

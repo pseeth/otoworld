@@ -1,0 +1,14 @@
+Thoughs that have come up during testing 
+
+
+ROOMS
+    - should we be using 3D rooms? Seems more realistic for simulating sound 
+    - the shoebox rooms are just convex 2d rectangles
+    - some of the polygon (rooms) generated are not convex
+        - may want to add plotting code somewhere for helpful debugging 
+        i.e. pra.Room.plot()
+
+UTILS
+    - choose_random_files randomly chooses male or female, so there may be just one gender
+    - also default is 2 sources, but we can pass more 
+

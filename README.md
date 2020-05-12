@@ -38,6 +38,9 @@ pyroomacoustics as directed above, run `pip install -r requirements.txt`
 ### Run
 CD into `experiments/` and run a file like so: `python experiment1.py`
 
+### Testing
+CD into `tests/` and run `pytest` 
+
 ### Formatting
 `pip install black`
 
@@ -61,7 +64,7 @@ To set the max line length to 99: `black -l 99 {source_file_or_directory}`
         - loudness of source1 in R ear
     5. Take these with linear layer and map to action space 
 
-### To Do (High Level)
+### To Do (Winter Quarter)
 - [X] Split up Pyroom initiliazation and convolution calculation (in `basic_room.py`)
 - [X] If stereo file, take mean of 2 channels (in `basic_room.py`)
 - [X] Replace `wavfile.read` with `librosa` (add with poetry)

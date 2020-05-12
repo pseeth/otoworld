@@ -16,15 +16,17 @@ import nussl
 from datasets import BufferData
 from agent import RandomAgent
 
-def test_agent():
+def test_experiment_shoebox():
+    """
+    Testing a run with ShoeBox room
+
+    TODO
+    """
     # paths of audio files
     paths = utils.choose_random_files()
 
     # Shoebox Room
     room = room_types.ShoeBox(x_length=10, y_length=10)
-
-    # Uncomment for Polygon Room
-    # room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
 
     agent_loc = np.array([3, 8])
 
@@ -59,3 +61,12 @@ def test_agent():
 
     # what should we assert? 
     #assert()
+
+def test_experiment_polygon():
+    """
+    Testing a run with Polygon room
+
+    TODO
+    """
+    # Uncomment for Polygon Room
+    room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)

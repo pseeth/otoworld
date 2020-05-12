@@ -59,7 +59,11 @@ class AgentBase:
         self.plot_reward_vs_steps = plot_reward_vs_steps
 
         # move this somewhere else?
-        logging.basicConfig(filename='agent.log', level=logging.INFO)
+        logging.basicConfig(
+            filename='agent.log', 
+            level=logging.INFO, 
+            format='%(asctime)s:%(levelname)s:%(message)s'
+        )
     
     def fit(self):
         if self.track_dist_vs_steps:
@@ -68,6 +72,9 @@ class AgentBase:
         
         if self.plot_reward_vs_steps:
             rewards_per_episode = []
+
+        logging_str = ('\n\n\nSTARTING FIT \n\n')
+        logging.info(logging_str)
 
         for episode in range(self.episodes):
             # Reset the self.environment and any other variables at beginning of each episode
@@ -134,6 +141,7 @@ class AgentBase:
                         f"\n\n"
                         f"Episode Summary \n"
                         f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n"
+                        f"- Episode: {episode+1}\n"
                         f"- Done a step: {step+1}\n"
                         f"- Time taken:   {total_time:04f} \n"
                         f"- Steps/Second: {float(step+1)/total_time:04f} \n"

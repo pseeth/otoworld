@@ -89,7 +89,7 @@ class AudioEnv(gym.Env):
         # non-Shoebox config (corners of room are given)
         if self.corners:
             self.room = Room.from_corners(
-                room_config, fs=resample_rate, absorption=absorption, max_order=max_order,
+                room_config, fs=resample_rate, absorption=absorption, max_order=max_order
             )
 
             # The x_max and y_max in this case would be used to generate agent's location randomly
@@ -241,7 +241,7 @@ class AudioEnv(gym.Env):
         Args:
             action (int): direction agent is to move - 0 (L), 1 (R), 2 (U), 3 (D)
             play_audio (bool): whether to play the the mic audio (stored in "data")
-            show_room (bool): Controls whether room is visually plotted or not
+            show_room (bool): Controls whether room is visually plotted at each step
 
         Returns:
             Tuple of the format List (empty if done, else [data]), reward, done
