@@ -230,11 +230,8 @@ class AudioEnv(gym.Env):
             1 = Right
             2 = Up
             3 = Down
-
-        Agent can also simultaneously orient itself 15 degrees left or 15 degrees right
-            0 = Don't orient
-            1 = Orient 15 degrees left
-            2 = Orient 15 degrees right
+            4 = Turn left x degrees
+            5 = Turn right x degrees
 
         It calls _move_agent, checks to see if the agent has reached a source, and if not, computes the RIR.
 

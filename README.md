@@ -124,15 +124,16 @@ To set the max line length to 99: `black -l 99 {source_file_or_directory}`
 - [ ] Using [this sampler](https://pytorch.org/docs/stable/data.html#torch.utils.data.WeightedRandomSampler), ensure we
 are sampling the same amount of items in `items` from each episode (i.e. if `batch_size=25` and we have 5 episodes, then
 choosing 5 samples from each episode, regardless of the size of the episode)
-- [ ] Figure out way to map output of model to action 
-    - [Cross-correlation](https://discuss.pytorch.org/t/how-to-perform-cross-correlation-for-two-2d-inputs-and-obtain-same-results-as-an-operation-in-numpy-scipy/10746)
 - [X] Run on gpubox
-- [ ] Write smoke/unit tests
+- [In progress] Write smoke/unit tests
+- [ ] Output of separation model `[25, 2, 32000, 2]` => `ipd_ild_features()` => sum ipd and ild across all time steps for each spectogram
+    - What would be the output dim of that function? (for just one spectrogram, the result would be `[f, 1, 2]`)
+    - [Video](https://northwestern.zoom.us/rec/play/u5QucuH8-zs3Ht2Q5ASDBqQvW465KK2shyFK__QJnRy1UnMGY1qlNecQY7HpTSf8zvbjcqTAP0wpqMuX?continueMode=true)
+    - Then reshape [f * ipd | f * ild] (one spectrogram's ipd/ild after being summed across time) and 
+    map that to 6-dim action space w/ softmax using `torch.nn.Linear(2f, 6)`
 
 ### Timeline
-* Want to run experiments in 1-2 weeks
-* Aggressive Deadline: May 8
-* Realistic: May 31 [ICML Workshop](https://icml-sas.gitlab.io/)
+* Realistic: June 15 [ICML Workshop](https://icml-sas.gitlab.io/)
 * July, some conference
 * Maybe paper for ICML or ICLR 
 
