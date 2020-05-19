@@ -126,11 +126,13 @@ are sampling the same amount of items in `items` from each episode (i.e. if `bat
 choosing 5 samples from each episode, regardless of the size of the episode)
 - [X] Run on gpubox
 - [In progress] Write smoke/unit tests
-- [ ] Output of separation model `[25, 2, 32000, 2]` => `ipd_ild_features()` => sum ipd and ild across all time steps for each spectogram
-    - What would be the output dim of that function? (for just one spectrogram, the result would be `[f, 1, 2]`)
+- [ ] Output of separation model `[25, 2, 32000, 2]` => [`ipd_ild_features()`](https://github.com/nussl/nussl/blob/551d5e46c23dadea328e0473e3038d99cd0c1ce6/nussl/core/audio_signal.py#L1096) => sum ipd and ild across all time steps for each spectogram
+    - What would be the output dim of that function? (for just one spectrogram, the result would be `[f, 1, 2]` like `[freq, time bin, ipd and ild]`)
     - [Video](https://northwestern.zoom.us/rec/play/u5QucuH8-zs3Ht2Q5ASDBqQvW465KK2shyFK__QJnRy1UnMGY1qlNecQY7HpTSf8zvbjcqTAP0wpqMuX?continueMode=true)
     - Then reshape [f * ipd | f * ild] (one spectrogram's ipd/ild after being summed across time) and 
     map that to 6-dim action space w/ softmax using `torch.nn.Linear(2f, 6)`
+    - nussl [`SpatialClustering`](https://github.com/nussl/nussl/blob/master/nussl/separation/spatial/spatial_clustering.py) class 
+    - nussl [STFT](https://github.com/nussl/nussl/blob/master/nussl/ml/networks/modules/filter_bank.py#L240)
 
 ### Timeline
 * Realistic: June 15 [ICML Workshop](https://icml-sas.gitlab.io/)

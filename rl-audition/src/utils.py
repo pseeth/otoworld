@@ -81,9 +81,9 @@ def log_reward_vs_steps(rewards_per_episode):
 
 
 def plot_reward_vs_steps():
-    '''
+    """
     Plots the reward vs step for an episode.
-    '''
+    """
     with open(os.path.join(constants.DATA_PATH, constants.REWARD_URL), "rb") as f:
         rewards = pickle.load(f)
 

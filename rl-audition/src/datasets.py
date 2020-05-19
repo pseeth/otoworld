@@ -12,6 +12,9 @@ class BufferData(nussl.datasets.BaseDataset):
         Args:
             folder (string): File path to store the data. Put any string when not saving to disk.
             to_disk (bool): When true, buffer will be saved to disk, else data will be stored directly in memory.
+            transform (transforms.* object): A transforms to apply to the output of
+              ``self.process_item``. If using transforms.Compose, each transform will be
+              applied in sequence. Defaults to None.
         """
         # Circular buffer parameters
         self.MAX_BUFFER_ITEMS = constants.MAX_BUFFER_ITEMS
@@ -44,10 +47,7 @@ class BufferData(nussl.datasets.BaseDataset):
         Returns:
             list: list of items (path to json files in our case) that should be processed
         """
-        # for file in os.listdir(folder):
-        #     self.items.append(os.path.join(folder, file))
-
-        # In our case, as we are initializing the dataset without having any actual data, just return self.items
+        # We are initializing the dataset without having any actual data, just return self.items
         return self.items
 
     def process_item(self, item):
@@ -95,9 +95,8 @@ class BufferData(nussl.datasets.BaseDataset):
             output = item
             prev_state, new_state = output['prev_state'], output['new_state']
 
-        # subdictionary for observations
+        # convert to output dict format
         del output['prev_state'], output['new_state']
-        # output['observations'] = {'prev_state': prev_state, 'new_state': new_state}
         output['prev_state'], output['new_state'] = prev_state, new_state
         output['reward'] = np.array([output['reward']])
         output['action'] = np.array([output['action']])
@@ -110,7 +109,6 @@ class BufferData(nussl.datasets.BaseDataset):
             item (object): Item to append to the list
 
         Returns: Nothing (Item is appended to the circular buffer in place)
-
         """
         if self.full_buffer:
             self.items[self.ptr] = item
@@ -181,12 +179,6 @@ class BufferData(nussl.datasets.BaseDataset):
             if self.full_buffer:
 
                 file_to_delete = self.items[self.ptr]
-                # print("Ptr: {}, val at ptr: {}".format(self.ptr, file_to_delete))
-                # print(self.items)
-                # old_file_ps = sorted(os.listdir(constants.DIR_PREV_STATES))[0]
-                # old_file_ns = sorted(os.listdir(constants.DIR_NEW_STATES))[0]
-                # old_file_di = sorted(os.listdir(constants.DIR_DATASET_ITEMS))[0]
-
                 os.remove(os.path.join(constants.DIR_PREV_STATES, 'prev' + file_to_delete + '.wav'))
                 os.remove(os.path.join(constants.DIR_NEW_STATES, 'new' + file_to_delete + '.wav'))
                 os.remove(os.path.join(constants.DIR_DATASET_ITEMS, file_to_delete + '.json'))
@@ -195,6 +187,5 @@ class BufferData(nussl.datasets.BaseDataset):
                 json.dump(buffer_dict, json_file)
 
                 # KEY PART: append to items list of dataset object (our buffer)
-                # self.append(json_file.name)
                 self.append(cur_file)
 

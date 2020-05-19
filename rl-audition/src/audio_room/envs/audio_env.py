@@ -223,7 +223,7 @@ class AudioEnv(gym.Env):
             mic = MicrophoneArray(agent_loc.reshape(-1, 1), self.room.fs)
             self.room.add_microphone_array(mic)
 
-    def step(self, action, play_audio=True, show_room=True):
+    def step(self, action, play_audio=False, show_room=False):
         """
         This function simulates the agent taking one step in the environment (and room) given an action:
             0 = Left
@@ -377,6 +377,8 @@ class AudioEnv(gym.Env):
             data (AudioSignal): if 2 mics, should be of shape (x, 2)
             play_audio (bool): If true, audio will play
             show_room (bool): If true, room will be displayed to user
+
+        TODO: currently throws error when called from step
         """
         if play_audio:
             data.play()

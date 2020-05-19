@@ -7,6 +7,7 @@ import numpy as np
 import utils
 import constants
 
+
 def test_choose_random_files():
     # test a range of different numbers of files 
     for num_sources in range(5):

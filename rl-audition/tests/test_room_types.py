@@ -7,6 +7,7 @@ from pyroomacoustics import ShoeBox, Room
 import room_types
 import constants
 
+
 def test_polygon_num_sides():
     """
     Test Polygon room class with different number of sides
@@ -27,6 +28,7 @@ def test_polygon_num_sides():
         # apparently polygons don't need to be convex 
         # pra_room.convex_hull()
         # assert(len(pra_room.obstructing_walls) == 0)
+
 
 def test_shoebox():
     """
