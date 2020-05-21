@@ -121,7 +121,7 @@ To set the max line length to 99: `black -l 99 {source_file_or_directory}`
 - [X] Use [PyTorch data loader](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader)
 - [X] Add update function to AgentBase class (random agent its just a pass, Q-learning update for other model)
 - [X] Add print to logging 
-- [ ] Using [this sampler](https://pytorch.org/docs/stable/data.html#torch.utils.data.WeightedRandomSampler), ensure we
+- [X] Using [this sampler](https://pytorch.org/docs/stable/data.html#torch.utils.data.WeightedRandomSampler), ensure we
 are sampling the same amount of items in `items` from each episode (i.e. if `batch_size=25` and we have 5 episodes, then
 choosing 5 samples from each episode, regardless of the size of the episode)
 - [X] Run on gpubox
