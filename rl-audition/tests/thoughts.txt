@@ -12,3 +12,8 @@ UTILS
     - choose_random_files randomly chooses male or female, so there may be just one gender
     - also default is 2 sources, but we can pass more 
 
+AUDIOENV
+    - only supports 2 sources; add_source function assumes 2 rooms
+    - confused about this:
+        if a.is_stereo:
+            a.to_mono()

@@ -17,6 +17,9 @@ REWARD_URL = "rewards_per_episode.p"
 # audio stuff
 RESAMPLE_RATE = 8000
 
+# env stuff
+DIST_BTWN_EARS = 0.2
+
 # max and min values of exploration rate
 MAX_EPSILON = 1.0
 MIN_EPSILON = 0.01
