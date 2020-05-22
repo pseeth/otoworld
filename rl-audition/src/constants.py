@@ -29,4 +29,4 @@ STEP_PENALTY = -0.1
 TURN_OFF_REWARD = 10.0  # Keep this a float, otherwise Pytorch dataloader will throw errors
 
 # dataset (reminder: do 20000 for experiments)
-MAX_BUFFER_ITEMS = 500
+MAX_BUFFER_ITEMS = 10000

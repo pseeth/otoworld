@@ -30,8 +30,7 @@ def test_audio_env():
         acceptable_radius=0.5,
     )
 
-    # add sources
-    env.add_sources()
+    # store initial room obj
     init_room = env.room
 
     # basic things of initial env

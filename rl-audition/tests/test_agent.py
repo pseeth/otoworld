@@ -41,7 +41,6 @@ def test_experiment_shoebox():
         direct_sources=paths,
         acceptable_radius=0.8,
     )
-    env.add_sources()
 
     # create buffer data folders
     utils.create_buffer_data_folders()

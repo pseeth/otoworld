@@ -85,13 +85,13 @@ class AudioEnv(gym.Env):
 
         # create the room and add sources
         self._create_room()
-
         self._add_sources()
 
     def _create_room(self):
         """
         This function creates the Pyroomacoustics room with our environment class variables.
         """
+        print('Create room.')
         # non-Shoebox config (corners of room are given)
         if self.corners:
             self.room = Room.from_corners(
@@ -115,18 +115,47 @@ class AudioEnv(gym.Env):
             self.y_max = self.room_config[1]
             self.x_min, self.y_min = 0, 0
 
-    def _place_agent(self):
+    def _move_agent(self, new_agent_loc, initial_placing=False):
         """
-        This function places the agent in an initial location (at the start of an episode). This
-        should be called by reset function.
+        This function moves the agent to a new location (given by new_agent_loc). It effectively removes the
+        agent (mic array) from the room and then adds it back in the new location.
+
+        If initial_placing == True, the agent is placed in the room for the first time.
+
+        Args:
+            new_agent_loc (List[int] or np.array or None): [x,y] coordinates of the agent's new location. Should be
+                None if initial_placing is True.
+            initial_placing (bool): True if initially placing the agent in the room at the beginning of the episode
         """
-        loc = self._sample_points(1, sources=False, agent=True)
-        self.initial_agent_loc = loc
-        self.agent_loc = loc
+        # Placing agent in room for the first time (likely at the beginning of a new episode, after a reset)
+        if initial_placing:
+            if new_agent_loc is None:
+                loc = self._sample_points(1, sources=False, agent=True)
+                print('Placing agent at', loc)
+                self.initial_agent_loc = loc
+                self.agent_loc = loc
+            else:
+                raise ValueError(
+                    """new_agent_loc must be None (new_agent_loc={}) if initial_placing is True. With initial placement, 
+                    the agent is randomly placed in the room and there is no need for a new 
+                    location to be provided.""".format(new_agent_loc)
+                )
+        else:
+            # Set the new agent location (where to move)
+            self.agent_loc = new_agent_loc
 
-        # ensure mic array is place using _move_agent
-        self._move_agent(new_agent_loc=loc)
+        # Delete the array at previous time step
+        self.room.mic_array = None
 
+        if self.num_channels == 2:
+            # Create the array at current time step (2 mics, angle IN RADIANS, 0.2m apart)
+            mic = MicrophoneArray(
+                linear_2D_array(self.agent_loc, 2, self.cur_angle, constants.DIST_BTWN_EARS), self.room.fs
+            )
+            self.room.add_microphone_array(mic)
+        else:
+            mic = MicrophoneArray(self.agent_loc.reshape(-1, 1), self.room.fs)
+            self.room.add_microphone_array(mic)
 
     def _sample_points(self, num_points, sources=True, agent=False):
         """
@@ -195,34 +224,25 @@ class AudioEnv(gym.Env):
 
         TODO: only supports 2 sources; make more flexible
         """
-        # If we want to add sources to the environment after a reset
-        if reset_env:
-            # Can reset with new randomly sampled sources (typically at the start of a new episode)
-            if self.reset_sources:
-                self.direct_sources = choose_random_files()
-            else:
-                self.direct_sources = deepcopy(self.direct_sources_copy)
-        
-        # If we are removing a source, we remove from direct sources and source locs
-        elif removing_source is not None:
-            self.source_locs.pop(removing_source)
-            self.direct_sources.pop(removing_source)
+        # Can reset with new randomly sampled sources (typically at the start of a new episode)
+        if self.reset_sources:
+            self.direct_sources = choose_random_files()
+        else:
+            self.direct_sources = deepcopy(self.direct_sources_copy)
 
-        # Place sources in room if we need to reset_env or if sources are none
-        if self.source_locs is None or reset_env:
-            if new_source_locs is None:
-                # Generate random points using rejection sampling method
-                self.source_locs = self._sample_points(num_points=len(self.direct_sources))
-            else:
-                self.source_locs = new_source_locs
+        if new_source_locs is None:
+            self.source_locs = self._sample_points(num_points=len(self.direct_sources))
+        else:
+            self.source_locs = new_source_locs
 
-        # Resetting the agents position to be the mean of all sources
-        # if self.agent_loc is None or reset_env:
-        #     self.agent_loc = np.mean(self.source_locs, axis=0)
+        print('Adding sources')
+        print('Direct Sources:', self.direct_sources)
+        print('Source locs:', self.source_locs)
 
         self.audio = []
         self.min_size_audio = np.inf
         for idx, audio_file in enumerate(self.direct_sources):
+            print('Adding src {} ({}) to pyroom.'.format(idx, audio_file))
             # Audio will be automatically re-sampled to the given rate (default sr=8000).
             a = nussl.AudioSignal(audio_file, sample_rate=self.resample_rate)
 
@@ -242,29 +262,21 @@ class AudioEnv(gym.Env):
         for idx, audio in enumerate(self.audio):
             self.room.add_source(self.source_locs[idx], signal=audio[: self.min_size_audio])
 
-    def _move_agent(self, new_agent_loc):
+    def _remove_source(self, index):
         """
-        This function moves the agent to a new location (given by agent_loc). It effectively removes the
-        agent (mic array) from the room and then adds it back in the new location.
+        This function removes a source from the environment
 
         Args:
-            new_agent_loc (List[int] or np.array): [x,y] coordinates of the agent's new location
+            index (int): index of the source to remove
         """
-        # Set the new agent location
-        self.agent_loc = new_agent_loc
+        src = self.source_locs.pop(index)
+        src2 = self.direct_sources.pop(index)
 
-        # Delete the array at previous time step
-        self.room.mic_array = None
+        # actually remove source from the room
+        room_src = self.room.sources.pop(index)
 
-        if self.num_channels == 2:
-            # Create the array at current time step (2 mics, angle IN RADIANS, 0.2m apart)
-            mic = MicrophoneArray(
-                linear_2D_array(new_agent_loc, 2, self.cur_angle, constants.DIST_BTWN_EARS), self.room.fs
-            )
-            self.room.add_microphone_array(mic)
-        else:
-            mic = MicrophoneArray(new_agent_loc.reshape(-1, 1), self.room.fs)
-            self.room.add_microphone_array(mic)
+        print('Removing src {}, direct src {}, room src {} at index {}'.format(src, src2, room_src, index))
+        print('Remaining sources: {}, and their locations: {}, and in pyroom: {}'.format(self.direct_sources, self.source_locs, self.room.sources))
 
     def step(self, action, play_audio=False, show_room=False):
         """
@@ -285,6 +297,8 @@ class AudioEnv(gym.Env):
 
         Returns:
             Tuple of the format List (empty if done, else [data]), reward, done
+
+        # NOTE: unlikely case that agent finds source on step 0, data doesn't get recorded
         """
         x, y = self.agent_loc[0], self.agent_loc[1]
         # Separate out the action and orientation
@@ -316,17 +330,15 @@ class AudioEnv(gym.Env):
         self._move_agent(new_agent_loc=points)
 
         # Check if goal state is reached
-        """
-        If agent loc exactly matches target location then pyroomacoustics isn't able to 
-        calculate the convolved signal. Hence, check the location before calculating everything   
-        """
         for index, source in enumerate(self.source_locs):
             # Agent has found the source
             if euclidean(self.agent_loc, source) < self.acceptable_radius:
+                print('Agent has found source. Agent loc: {}, Source loc: {}'.format(self.agent_loc, source))
                 # If there is more than one source, then we want to remove this source
                 if len(self.source_locs) > 1:
-                    # remove the current source and reset_env the environment
-                    self.reset(removing_source=index)
+                    print('Not the last source! Still returning reward {}'.format(constants.TURN_OFF_REWARD))
+                    # remove the source (will take effect in the next step)
+                    self._remove_source(index=index)
 
                     # Calculate the impulse response
                     self.room.compute_rir()
@@ -340,13 +352,14 @@ class AudioEnv(gym.Env):
 
                     done = False
                     reward = constants.TURN_OFF_REWARD
-                    # Return the room rir and convolved signals as the new state
                     return data, reward, done
 
                 # This was the last source hence we can assume we are done
                 else:
+                    print('Last source found. Returning reward {}. Moving onto next episode.'.format(constants.TURN_OFF_REWARD))
                     done = True
                     reward = constants.TURN_OFF_REWARD
+                    self.reset()
                     return None, reward, done
 
         if not done:
@@ -354,13 +367,14 @@ class AudioEnv(gym.Env):
             self.room.compute_rir()
             self.room.simulate()
             data = self.room.mic_array.signals
+
             # Convert data to nussl audio signal
             data = nussl.AudioSignal(audio_data_array=data, sample_rate=self.resample_rate)
 
             if play_audio or show_room:
                 self.render(data, play_audio, show_room)
 
-            # penalize time it takes to reach a source
+            # penalize time it takes to reach a source (penalty for each step)
             reward = constants.STEP_PENALTY
 
             # Return the room rir and convolved signals as the new state
@@ -373,20 +387,15 @@ class AudioEnv(gym.Env):
         args:
             removing_source (int): Integer that tells us the index of sources that we will be removing
         """
+        print('Reset environment. Create room, place agent, add sources.')
         # re-create room
         self._create_room()
 
-        if removing_source is None:
-            # randomly place agent in room to begin a new episode
-            self._place_agent()
+        # randomly place agent in room at beginning of next episode
+        self._move_agent(new_agent_loc=None, initial_placing=True)
 
-            # randomly add generated source locations if not removing a source
-            self._add_sources(reset_env=True)
-        else:
-            self._move_agent(new_agent_loc=self.agent_loc)
-
-            # remove source
-            self._add_sources(removing_source=removing_source)
+        # randomly add sources to the room
+        self._add_sources()
 
     def render(self, data, play_audio, show_room):
         """
@@ -396,8 +405,6 @@ class AudioEnv(gym.Env):
             data (AudioSignal): if 2 mics, should be of shape (x, 2)
             play_audio (bool): If true, audio will play
             show_room (bool): If true, room will be displayed to user
-
-        TODO: currently throws error when called from step
         """
         if play_audio:
             data.play()

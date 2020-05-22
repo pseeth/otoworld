@@ -18,7 +18,7 @@ class AgentBase:
         env,
         dataset,
         episodes=1,
-        steps=10,
+        max_steps=100,
         gamma=0.9,
         alpha=0.001,
         epsilon=1.0,
@@ -35,7 +35,7 @@ class AgentBase:
             self.env (gym object): The gym self.environment object which the agent is going to explore
             dataset (nussl dataset): Nussl dataset object for experience replay
             episodes (int): # of episodes to simulate
-            steps (int): # of steps the agent can take before stopping an episode
+            max_steps (int): # of steps the agent can take before stopping an episode
             gamma (float): Discount factor
             alpha (float): Learning rate alpha
             epsilon (float): Exploration rate, P(taking random action)
@@ -48,7 +48,7 @@ class AgentBase:
         self.env = env
         self.dataset = dataset
         self.episodes = episodes
-        self.max_steps = steps
+        self.max_steps = max_steps
         self.gamma = gamma
         self.alpha = alpha
         self.epsilon = epsilon
@@ -78,7 +78,6 @@ class AgentBase:
 
         for episode in range(self.episodes):
             # Reset the self.environment and any other variables at beginning of each episode
-            self.env.reset()
             prev_state = None
 
             # Measure distance with the all sources
@@ -113,6 +112,9 @@ class AgentBase:
                     action, play_audio=self.play_audio, show_room=self.show_room
                 )
 
+                if reward == constants.TURN_OFF_REWARD:
+                    print('In FIT. Received reward {} at step: {}'.format(reward, step))
+
                 if self.plot_reward_vs_steps:
                     temp_rewards.append(reward)
 
@@ -137,6 +139,8 @@ class AgentBase:
                     end = time.time()
                     total_time = end - start
 
+                    # remove print statement later
+                    print('Done! Time: {}, Step: {}'. format(total_time, step))
                     logging_str = (
                         f"\n\n"
                         f"Episode Summary \n"
@@ -173,7 +177,7 @@ class AgentBase:
 
     def choose_action(self):
         """
-        This function must be implemented by whatever class inherits AgentBase.
+        This function must be implemented by subclass.
         It will choose the action to take at any time step.
 
         Returns:
@@ -183,7 +187,7 @@ class AgentBase:
 
     def update(self):
         """
-        This function must be implemented by whatever class inherits AgentBase.
+        This function must be implemented by subclass.
         It will perform an update (e.g. updating Q table or Q network)
         """
         raise NotImplementedError()
@@ -193,6 +197,9 @@ class RLAgent(AgentBase):
     def choose_action(self):
         """
         TODO
+
+        Input => NN => Softmax => P(action) over all actions
+            - sample from action probabilities or choose argmax
         """
         pass
 
