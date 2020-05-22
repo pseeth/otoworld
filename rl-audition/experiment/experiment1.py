@@ -53,7 +53,7 @@ def run_random_agent():
     dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=True, transform=tfm)
 
     # Load the agent class
-    a = agent.RandomAgent(env=env, dataset=dataset, episodes=3, steps=200, plot_reward_vs_steps=False)
+    a = agent.RandomAgent(env=env, dataset=dataset, episodes=3, max_steps=200, plot_reward_vs_steps=False)
     a.fit()
 
     # print(dataset[0])
