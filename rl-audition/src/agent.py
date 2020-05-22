@@ -78,7 +78,7 @@ class AgentBase:
 
         for episode in range(self.episodes):
             # Reset the self.environment and any other variables at beginning of each episode
-            self.env.reset()
+            #self.env.reset()
             prev_state = None
 
             # Measure distance with the all sources
@@ -113,6 +113,9 @@ class AgentBase:
                     action, play_audio=self.play_audio, show_room=self.show_room
                 )
 
+                if reward == constants.TURN_OFF_REWARD:
+                    print('In FIT. Received reward {} at step: {}'.format(reward, step))
+
                 if self.plot_reward_vs_steps:
                     temp_rewards.append(reward)
 
@@ -137,6 +140,8 @@ class AgentBase:
                     end = time.time()
                     total_time = end - start
 
+                    # remove print statement later
+                    print('Done! Time: {}, Step: {}'. format(total_time, step))
                     logging_str = (
                         f"\n\n"
                         f"Episode Summary \n"

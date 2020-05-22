@@ -21,12 +21,12 @@ def run_random_agent():
     paths = utils.choose_random_files()
 
     # Shoebox Room
-    room = room_types.ShoeBox(x_length=10, y_length=10)
+    room = room_types.ShoeBox(x_length=5, y_length=5)
 
     # Uncomment for Polygon Room
     # room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
 
-    agent_loc = np.array([3, 8])
+    agent_loc = np.array([3, 3])
 
     # Set up the gym environment
     env = gym.make(
@@ -37,7 +37,7 @@ def run_random_agent():
         max_order=10,
         step_size=1.0,
         direct_sources=paths,
-        acceptable_radius=0.8,
+        acceptable_radius=1.0
     )
 
     # create buffer data folders
@@ -53,14 +53,13 @@ def run_random_agent():
     dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=True, transform=tfm)
 
     # Load the agent class
-    a = agent.RandomAgent(env=env, dataset=dataset, episodes=5, steps=100, plot_reward_vs_steps=False)
+    a = agent.RandomAgent(env=env, dataset=dataset, episodes=3, steps=200, plot_reward_vs_steps=False)
     a.fit()
 
     # print(dataset[0])
     print("Buffer filled: ", len(dataset.items))
 
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=25, shuffle=False)
-
 
     # Parameters for build_recurrent_end_to_end:
     config = nussl.ml.networks.builders.build_recurrent_end_to_end(
