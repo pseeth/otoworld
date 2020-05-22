@@ -20,6 +20,7 @@ class BufferData(nussl.datasets.BaseDataset):
         self.MAX_BUFFER_ITEMS = constants.MAX_BUFFER_ITEMS
         self.ptr = 0
         self.items = []
+        self.metadata = {}
         self.full_buffer = False
         self.to_disk = to_disk
 
@@ -142,6 +143,10 @@ class BufferData(nussl.datasets.BaseDataset):
             episode (int): which episode we're on, used to create unique file name for state
             step (int): which step we're on within episode, used to create unique file name for state
         """
+        if episode not in self.metadata:
+            self.metadata[episode] = 1
+        else:
+            self.metadata[episode] += 1
 
         if not self.to_disk:
             buffer_dict = {
