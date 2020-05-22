@@ -123,7 +123,8 @@ class AudioEnv(gym.Env):
         If initial_placing == True, the agent is placed in the room for the first time.
 
         Args:
-            new_agent_loc (List[int] or np.array): [x,y] coordinates of the agent's new location
+            new_agent_loc (List[int] or np.array or None): [x,y] coordinates of the agent's new location. Should be
+                None if initial_placing is True.
             initial_placing (bool): True if initially placing the agent in the room at the beginning of the episode
         """
         # Placing agent in room for the first time (likely at the beginning of a new episode, after a reset)
@@ -135,8 +136,9 @@ class AudioEnv(gym.Env):
                 self.agent_loc = loc
             else:
                 raise ValueError(
-                    """new_agent_loc must be None if initial_placing is True. With initial placement, the agent is
-                    randomly placed in the room and there is no need for a new location to be provided."""
+                    """new_agent_loc must be None (new_agent_loc={}) if initial_placing is True. With initial placement, 
+                    the agent is randomly placed in the room and there is no need for a new 
+                    location to be provided.""".format(new_agent_loc)
                 )
         else:
             # Set the new agent location (where to move)
