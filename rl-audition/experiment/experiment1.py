@@ -2,6 +2,7 @@ import sys
 sys.path.append("../src/")
 
 import gym
+import itertools
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
@@ -17,9 +18,6 @@ import time
 
 
 def run_random_agent():
-    # paths of audio files
-    paths = utils.choose_random_files()
-
     # Shoebox Room
     room = room_types.ShoeBox(x_length=5, y_length=5)
 
@@ -36,7 +34,7 @@ def run_random_agent():
         corners=room.corners,
         max_order=10,
         step_size=1.0,
-        direct_sources=paths,
+        num_sources=2,
         acceptable_radius=1.0
     )
 
@@ -57,9 +55,15 @@ def run_random_agent():
     a.fit()
 
     # print(dataset[0])
-    print("Buffer filled: ", len(dataset.items))
+    print("Buffer filled: ", dataset.metadata)
+    
+    # Finding the distribution of samples in each episode for the weighted random sampling
+    weights = torch.tensor([1 / dataset.metadata[episode] for episode in dataset.metadata])
+    sample_weights = np.concatenate([np.array([weights[episode]] * dataset.metadata[episode]) for episode in dataset.metadata])
 
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=25, shuffle=False)
+    sampler = torch.utils.data.sampler.WeightedRandomSampler(weights=sample_weights, num_samples=len(sample_weights))
+
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=25, shuffle=False, sampler=sampler)
 
     # Parameters for build_recurrent_end_to_end:
     config = nussl.ml.networks.builders.build_recurrent_end_to_end(

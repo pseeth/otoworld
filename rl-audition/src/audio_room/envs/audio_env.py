@@ -1,9 +1,11 @@
+from utils import choose_random_files
+import constants
 import gym
 from pyroomacoustics import MicrophoneArray, ShoeBox, Room, linear_2D_array, Constants
 import librosa
 import numpy as np
 import matplotlib.pyplot as plt
-#import simpleaudio as sa  # comment out for gpubox
+# import simpleaudio as sa  # comment out for gpubox
 from gym import spaces
 from random import randint
 import time
@@ -13,8 +15,6 @@ import nussl
 import sys
 
 sys.path.append("../../")
-import constants
-from utils import choose_random_files
 
 
 class AudioEnv(gym.Env):
@@ -30,6 +30,7 @@ class AudioEnv(gym.Env):
         max_order=2,
         step_size=1,
         acceptable_radius=0.1,
+        num_sources=2,
         direct_sources=None,
         degrees=0.2618,
         reset_sources=True,
@@ -49,6 +50,7 @@ class AudioEnv(gym.Env):
             max_order (int): another room parameter
             step_size (float): specified step size else we programmatically assign it
             acceptable_radius (float): source is considered found/turned off if agent is within this distance of src
+            num_sources (int): the number of audio sources the agent will listen to
             direct_sources (List[str]): list of path strings to the source audio files
             degrees (float): value of degrees to rotate in radians (.2618 radians = 15 degrees)
             reset_sources (bool): True if you want to choose different sources when resetting env
@@ -75,8 +77,22 @@ class AudioEnv(gym.Env):
         self.initial_agent_loc = agent_loc
         self.acceptable_radius = acceptable_radius
         self.step_size = step_size
-        self.direct_sources = direct_sources
-        self.direct_sources_copy = deepcopy(direct_sources)
+        self.num_sources = num_sources
+
+        # We can optionally pass in our own sources
+        if direct_sources is not None:
+            if self.num_sources != len(direct_sources):
+                raise ValueError(
+                    """If you are optionally passing in your own  audio source paths, please make sure to pass in num_sources into the initialization of 
+                    the environment. The number of audio sources (num_sources) must be equal to the number of direct sources (len(direct_sources)).
+                    Currently the num_sources is {} and number of direct sources is {}.""".format(self.num_sources, len(direct_sources))
+                )
+            self.direct_sources = direct_sources
+        else:
+            self.direct_sources = choose_random_files(
+                num_sources=self.num_sources)
+        self.direct_sources_copy = deepcopy(self.direct_sources)
+
         self.source_locs = None
         self.min_size_audio = np.inf
         self.degrees = degrees
@@ -150,7 +166,8 @@ class AudioEnv(gym.Env):
         if self.num_channels == 2:
             # Create the array at current time step (2 mics, angle IN RADIANS, 0.2m apart)
             mic = MicrophoneArray(
-                linear_2D_array(self.agent_loc, 2, self.cur_angle, constants.DIST_BTWN_EARS), self.room.fs
+                linear_2D_array(self.agent_loc, 2, self.cur_angle,
+                                constants.DIST_BTWN_EARS), self.room.fs
             )
             self.room.add_microphone_array(mic)
         else:
@@ -185,7 +202,8 @@ class AudioEnv(gym.Env):
                     # ensures sources are not too close to each other or the agent
                     if sources:
                         if (
-                            euclidean(random_point, point) < self.acceptable_radius
+                            euclidean(random_point,
+                                      point) < self.acceptable_radius
                             or euclidean(random_point, self.agent_loc) < self.acceptable_radius
                         ):
                             out_of_range = False
@@ -193,7 +211,8 @@ class AudioEnv(gym.Env):
                     elif agent:
                         for source_loc in self.source_locs:
                             if (
-                                euclidean(random_point, point) < self.acceptable_radius
+                                euclidean(random_point,
+                                          point) < self.acceptable_radius
                                 or euclidean(random_point, source_loc) < self.acceptable_radius
                             ):
                                 out_of_range = False
@@ -226,12 +245,13 @@ class AudioEnv(gym.Env):
         """
         # Can reset with new randomly sampled sources (typically at the start of a new episode)
         if self.reset_sources:
-            self.direct_sources = choose_random_files()
+            self.direct_sources = choose_random_files(
+                num_sources=self.num_sources)
         else:
             self.direct_sources = deepcopy(self.direct_sources_copy)
 
         if new_source_locs is None:
-            self.source_locs = self._sample_points(num_points=len(self.direct_sources))
+            self.source_locs = self._sample_points(num_points=self.num_sources)
         else:
             self.source_locs = new_source_locs
 
@@ -260,7 +280,8 @@ class AudioEnv(gym.Env):
 
         # add sources using audio data
         for idx, audio in enumerate(self.audio):
-            self.room.add_source(self.source_locs[idx], signal=audio[: self.min_size_audio])
+            self.room.add_source(
+                self.source_locs[idx], signal=audio[: self.min_size_audio])
 
     def _remove_source(self, index):
         """
@@ -275,8 +296,10 @@ class AudioEnv(gym.Env):
         # actually remove source from the room
         room_src = self.room.sources.pop(index)
 
-        print('Removing src {}, direct src {}, room src {} at index {}'.format(src, src2, room_src, index))
-        print('Remaining sources: {}, and their locations: {}, and in pyroom: {}'.format(self.direct_sources, self.source_locs, self.room.sources))
+        print('Removing src {}, direct src {}, room src {} at index {}'.format(
+            src, src2, room_src, index))
+        print('Remaining sources: {}, and their locations: {}, and in pyroom: {}'.format(
+            self.direct_sources, self.source_locs, self.room.sources))
 
     def step(self, action, play_audio=False, show_room=False):
         """
@@ -333,10 +356,12 @@ class AudioEnv(gym.Env):
         for index, source in enumerate(self.source_locs):
             # Agent has found the source
             if euclidean(self.agent_loc, source) < self.acceptable_radius:
-                print('Agent has found source. Agent loc: {}, Source loc: {}'.format(self.agent_loc, source))
+                print('Agent has found source. Agent loc: {}, Source loc: {}'.format(
+                    self.agent_loc, source))
                 # If there is more than one source, then we want to remove this source
                 if len(self.source_locs) > 1:
-                    print('Not the last source! Still returning reward {}'.format(constants.TURN_OFF_REWARD))
+                    print('Not the last source! Still returning reward {}'.format(
+                        constants.TURN_OFF_REWARD))
                     # remove the source (will take effect in the next step)
                     self._remove_source(index=index)
 
@@ -345,7 +370,8 @@ class AudioEnv(gym.Env):
                     self.room.simulate()
                     data = self.room.mic_array.signals
                     # Convert the data back to Nussl Audio object
-                    data = nussl.AudioSignal(audio_data_array=data, sample_rate=self.resample_rate)
+                    data = nussl.AudioSignal(
+                        audio_data_array=data, sample_rate=self.resample_rate)
 
                     if play_audio or show_room:
                         self.render(data, play_audio, show_room)
@@ -356,7 +382,8 @@ class AudioEnv(gym.Env):
 
                 # This was the last source hence we can assume we are done
                 else:
-                    print('Last source found. Returning reward {}. Moving onto next episode.'.format(constants.TURN_OFF_REWARD))
+                    print('Last source found. Returning reward {}. Moving onto next episode.'.format(
+                        constants.TURN_OFF_REWARD))
                     done = True
                     reward = constants.TURN_OFF_REWARD
                     self.reset()
@@ -369,7 +396,8 @@ class AudioEnv(gym.Env):
             data = self.room.mic_array.signals
 
             # Convert data to nussl audio signal
-            data = nussl.AudioSignal(audio_data_array=data, sample_rate=self.resample_rate)
+            data = nussl.AudioSignal(
+                audio_data_array=data, sample_rate=self.resample_rate)
 
             if play_audio or show_room:
                 self.render(data, play_audio, show_room)
