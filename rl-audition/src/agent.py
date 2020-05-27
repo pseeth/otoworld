@@ -118,7 +118,7 @@ class AgentBase:
                     temp_rewards.append(reward)
 
                 # Perform Update
-                self.update()
+                self.update(episode)
 
                 # store SARS in buffer
                 if prev_state is not None and new_state is not None and not done:

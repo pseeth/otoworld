@@ -10,8 +10,10 @@ import agent
 from datasets import BufferData, RLDataset
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 
-class RnnQNet(agent.AgentBase):
+
+class RnnAgent(agent.AgentBase):
     def __init__(self, env_config, dataset_config, rnn_config=None, stft_config=None, verbose=False):
         """
         Args:
@@ -44,8 +46,16 @@ class RnnQNet(agent.AgentBase):
         # Initialize the Agent Base class
         super().__init__(**env_config)
 
+        # Select device
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        # Uncomment this to find backprop errors
+        # torch.autograd.set_detect_anomaly(True)
+
         # Initialize the rnn model
-        self.rnn_model = nussl.ml.SeparationModel(self.rnn_config, verbose=verbose)
+        # self.rnn_model = nussl.ml.SeparationModel(self.rnn_config, verbose=verbose)
+        self.rnn_model = RnnSeparator(self.rnn_config)
+        self.rnn_model_stable = RnnSeparator(self.rnn_config)  # Fixed Q network
 
         # Initialize dataset related parameters
         self.bs = dataset_config['batch_size']
@@ -53,14 +63,27 @@ class RnnQNet(agent.AgentBase):
         # self.dynamic_dataset = RLDataset(buffer=self.dataset, sample_size=self.bs)
         # self.dataloader = torch.utils.data.DataLoader(self.dynamic_dataset, batch_size=self.bs)
 
-        # Initialize network layers
+        # Initialize network layers for DQN network
         filter_length = stft_config['filter_length']+2 if stft_config is not None else 514
         total_actions = self.env.action_space.n
-        self.fc1 = nn.Linear(filter_length*2, 64)
-        self.fc2 = nn.Linear(64, total_actions)
+        self.gamma = 1.0
+        network_params = {'filter_length': filter_length, 'total_actions': total_actions, 'stft_diff': self.stft_diff}
+        self.q_net = DQN(network_params)
+        self.q_net_stable = DQN(network_params) # Fixed Q net
+        self.update_networks = 1
+        params = list(self.rnn_model.parameters()) + list(self.q_net.parameters())
+        self.optimizer = optim.Adam(params, lr=0.001)
 
-    def update(self):
-        print("Size of dataset {}".format(len(self.dataset.items)) )#len(self.dynamic_dataset.buffer)))
+    def update(self, episode):
+        """
+
+        Args:
+            episode (int): Current episode number to keep update the stable Q networks every k episodes
+
+        Returns:
+
+        """
+        # print("Size of dataset {}".format(len(self.dataset.items)) )#len(self.dynamic_dataset.buffer)))
         # Run the update only if samples >= batch_size
         if len(self.dataset.items) < self.bs:
             return
@@ -71,41 +94,98 @@ class RnnQNet(agent.AgentBase):
         for index, data in enumerate(dataloader):
             if index > self.num_updates:
                 break
-
+            # print(data.keys())
+            # print("Action ", data['action'].shape)
             # Get the total number of time steps
-            total_time_steps = data['mix_audio'].shape[-1]
-            print("Data shape: ", data['mix_audio'].shape)
+            total_time_steps = data['mix_audio_prev_state'].shape[-1]
+            # print("Data shape: ", data['mix_audio_prev_state'].shape)
             # Reshape the mixture to pass through the separation model (Convert dual channels into one)
-            data['mix_audio'] = data['mix_audio'].float().view(-1, 1, total_time_steps)
+            # Also, rename the state to work on to mix_audio so that it can pass through remaining nussl architecture
+            data['mix_audio'] = data['mix_audio_prev_state'].float().view(-1, 1, total_time_steps)
 
-
+            # Get the separated sources by running through RNN separation model
             output = self.rnn_model(data)
-            # Reshape the output again to get dual channels
-            output['audio'] = output['audio'].view(-1, 2, total_time_steps, 2)
+            # Pass then through the DQN model to get q values
+            q_values = self.q_net(output, total_time_steps).gather(1, data['action'])
+            # print("Q values", q_values.shape)
 
-            # Perform short time fourier transform of this output
-            stft_data = self.stft_diff(output['audio'], direction='transform')
+            with torch.no_grad():
+                # Now, get Q-values for the next-state
+                # Get the total number of time steps
+                total_time_steps = data['mix_audio_new_state'].shape[-1]
+                # print("Data shape: ", data['mix_audio_new_state'].shape)
+                # Reshape the mixture to pass through the separation model (Convert dual channels into one)
+                data['mix_audio'] = data['mix_audio_new_state'].float().view(-1, 1, total_time_steps)
+                output = self.rnn_model_stable(data)
+                q_values_next = self.q_net_stable(output, total_time_steps).max(1)[0].unsqueeze(-1)
+                # print("Next state", q_values_next.shape)
 
-            # Get the IPD and ILD features from the stft data
-            ipd, ild = audio_processing.ipd_ild_features(stft_data)
+            expected_q_values = data['reward'] + self.gamma*q_values_next
+            # Calculate loss
+            loss = F.mse_loss(q_values, expected_q_values)
+            print("Loss: ", loss)
+            # Optimize the model
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
 
-            print("IPD: {}, ILD {}".format(ipd.shape, ild.shape))
+        if episode % self.update_networks == 0:
+            self.rnn_model_stable.load_state_dict(self.rnn_model.state_dict())
+            self.q_net_stable.load_state_dict(self.q_net.state_dict())
 
-            # Concatenate IPD And ILD features
-            X = torch.cat((ipd, ild), dim=2)  # Concatenate the features dimension
+    def choose_action(self):
+        return self.env.action_space.sample()
 
-            # Sum over the time frame axis
-            X = torch.sum(X, dim=1)
 
-            # Flatten the features
-            num_features = self.flatten_features(X)
-            X = X.view(-1, num_features)  # Shape = [Batch_size, filter_length*2]
+class RnnSeparator(nn.Module):
+    def __init__(self, rnn_config, verbose=False):
+        super(RnnSeparator, self).__init__()
+        self.rnn_model = nussl.ml.SeparationModel(rnn_config, verbose=verbose)
 
-            # Run through simple feedforward network
-            X = F.relu(self.fc1(X))
-            q_values = F.softmax(self.fc2(X), dim=1)
+    def forward(self, x):
+        return self.rnn_model(x)
 
-            print("Q values", q_values.shape)
+
+class DQN(nn.Module):
+    def __init__(self, network_params):
+        """
+
+        Args:
+            network_params (dict): Dict of network parameters
+        """
+        super(DQN, self).__init__()
+
+        self.stft_diff = network_params['stft_diff']
+        self.fc1 = nn.Linear(network_params['filter_length'] * 2, 64)
+        self.fc2 = nn.Linear(64, network_params['total_actions'])
+
+    def forward(self, output, total_time_steps):
+        # Reshape the output again to get dual channels
+        output['audio'] = output['audio'].view(-1, 2, total_time_steps, 2)
+
+        # Perform short time fourier transform of this output
+        stft_data = self.stft_diff(output['audio'], direction='transform')
+
+        # Get the IPD and ILD features from the stft data
+        ipd, ild = audio_processing.ipd_ild_features(stft_data)
+
+        # print("IPD: {}, ILD {}".format(ipd.shape, ild.shape))
+
+        # Concatenate IPD And ILD features
+        X = torch.cat((ipd, ild), dim=2)  # Concatenate the features dimension
+
+        # Sum over the time frame axis
+        X = torch.sum(X, dim=1)
+
+        # Flatten the features
+        num_features = self.flatten_features(X)
+        X = X.view(-1, num_features)  # Shape = [Batch_size, filter_length*2]
+
+        # Run through simple feedforward network
+        X = F.relu(self.fc1(X))
+        q_values = F.softmax(self.fc2(X), dim=1)
+
+        return q_values
 
     def flatten_features(self, x):
         size = x.size()[1:]  # Flatten all dimensions except the batch
@@ -114,19 +194,6 @@ class RnnQNet(agent.AgentBase):
             num_features *= dimension
 
         return num_features
-
-    def choose_action(self):
-        return self.env.action_space.sample()
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -14,12 +14,14 @@ import nussl
 from datasets import BufferData
 import time
 import audio_processing
-from models import RnnQNet
+from models import RnnAgent
+import transforms
 
 """
 Experiment 3 details: 
 Train the agent on the actual model which includes separation model + Q Network (The RNNQNet model) 
 """
+
 
 def run():
     # Shoebox Room
@@ -44,10 +46,17 @@ def run():
     # create buffer data folders
     utils.create_buffer_data_folders()
 
-    tfm = nussl.datasets.transforms.Compose([
-        nussl.datasets.transforms.GetAudio(mix_key='new_state'),
-        nussl.datasets.transforms.ToSeparationModel(),
-        nussl.datasets.transforms.GetExcerpt(excerpt_length=32000, tf_keys=['mix_audio'], time_dim=1),
+    # tfm = nussl.datasets.transforms.Compose([
+    #     nussl.datasets.transforms.GetAudio(mix_key='new_state'),
+    #     nussl.datasets.transforms.ToSeparationModel(),
+    #     nussl.datasets.transforms.GetExcerpt(excerpt_length=32000, tf_keys=['mix_audio'], time_dim=1),
+    # ])
+
+    tfm = transforms.Compose([
+        transforms.GetAudio(mix_key=['prev_state', 'new_state']),
+        transforms.ToSeparationModel(),
+        transforms.GetExcerpt(excerpt_length=32000,
+                              tf_keys=['mix_audio_prev_state', 'mix_audio_new_state'], time_dim=1),
     ])
 
     # create dataset object (subclass of nussl.datasets.BaseDataset)
@@ -56,7 +65,7 @@ def run():
     # Define the relevant dictionaries
     env_config = {'env': env, 'dataset': dataset, 'episodes': 5, 'max_steps': 100, 'plot_reward_vs_steps': False}
     dataset_config = {'batch_size': 25, 'num_updates': 1}
-    rnn_agent = RnnQNet(env_config=env_config, dataset_config=dataset_config)
+    rnn_agent = RnnAgent(env_config=env_config, dataset_config=dataset_config)
 
     rnn_agent.fit()
 
