@@ -54,9 +54,16 @@ def run_random_agent():
     a = agent.RandomAgent(env=env, dataset=dataset, episodes=3, max_steps=200, plot_reward_vs_steps=False)
     a.fit()
 
-    print(dataset[0])
+    # print(dataset[0])
+    print("Buffer filled: ", dataset.metadata)
     
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=25, shuffle=False)
+    # Finding the distribution of samples in each episode for the weighted random sampling
+    weights = torch.tensor([1 / dataset.metadata[episode] for episode in dataset.metadata])
+    sample_weights = np.concatenate([np.array([weights[episode]] * dataset.metadata[episode]) for episode in dataset.metadata])
+
+    sampler = torch.utils.data.sampler.WeightedRandomSampler(weights=sample_weights, num_samples=len(sample_weights))
+
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=25, shuffle=False, sampler=sampler)
 
     # Parameters for build_recurrent_end_to_end:
     config = nussl.ml.networks.builders.build_recurrent_end_to_end(

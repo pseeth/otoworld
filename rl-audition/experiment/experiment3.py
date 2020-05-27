@@ -1,12 +1,7 @@
-# NOTE: to run, need to cd into tests/, then run pytest
-import sys
-sys.path.append("../src")
-
 import gym
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
-
 import room_types
 import agent
 import audio_room
@@ -14,20 +9,24 @@ import utils
 import constants
 import nussl
 from datasets import BufferData
-from agent import RandomAgent
+import time
+import audio_processing
+from models import RnnQNet
 
+"""
+Experiment 3 details: 
+Train the agent on the actual model which includes separation model + Q Network (The RNNQNet model) 
+"""
 
-def test_experiment_shoebox():
-    """
-    Testing a run with ShoeBox room
-
-    TODO
-    """
+def run():
     # paths of audio files
     paths = utils.choose_random_files()
 
     # Shoebox Room
     room = room_types.ShoeBox(x_length=10, y_length=10)
+
+    # Uncomment for Polygon Room
+    # room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
 
     agent_loc = np.array([3, 8])
 
@@ -42,6 +41,7 @@ def test_experiment_shoebox():
         direct_sources=paths,
         acceptable_radius=0.8,
     )
+    env.add_sources()
 
     # create buffer data folders
     utils.create_buffer_data_folders()
@@ -53,21 +53,15 @@ def test_experiment_shoebox():
     ])
 
     # create dataset object (subclass of nussl.datasets.BaseDataset)
-    dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=True, transform=tfm)
+    dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=False, transform=tfm)
 
-    # Load the agent class
-    a = agent.RandomAgent(env=env, dataset=dataset, episodes=2, max_steps=10, plot_reward_vs_steps=False)
-    a.fit()
+    # Define the relevant dictionaries
+    env_config = {'env': env, 'dataset': dataset, 'episodes': 5, 'steps': 100, 'plot_reward_vs_steps': False}
+    dataset_config = {'batch_size': 25, 'num_updates': 1}
+    rnn_agent = RnnQNet(env_config=env_config, dataset_config=dataset_config)
 
-    # what should we assert? 
-    #assert()
+    rnn_agent.fit()
 
 
-def test_experiment_polygon():
-    """
-    Testing a run with Polygon room
-
-    TODO
-    """
-    # Uncomment for Polygon Room
-    room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
+if __name__ == '__main__':
+    run()
