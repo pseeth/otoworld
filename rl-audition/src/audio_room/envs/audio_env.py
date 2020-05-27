@@ -31,7 +31,6 @@ class AudioEnv(gym.Env):
         step_size=1,
         acceptable_radius=0.1,
         num_sources=2,
-        direct_sources=None,
         degrees=0.2618,
         reset_sources=True,
     ):
@@ -51,7 +50,6 @@ class AudioEnv(gym.Env):
             step_size (float): specified step size else we programmatically assign it
             acceptable_radius (float): source is considered found/turned off if agent is within this distance of src
             num_sources (int): the number of audio sources the agent will listen to
-            direct_sources (List[str]): list of path strings to the source audio files
             degrees (float): value of degrees to rotate in radians (.2618 radians = 15 degrees)
             reset_sources (bool): True if you want to choose different sources when resetting env
         """
@@ -78,26 +76,15 @@ class AudioEnv(gym.Env):
         self.acceptable_radius = acceptable_radius
         self.step_size = step_size
         self.num_sources = num_sources
-
-        # We can optionally pass in our own paths to sources (instead of choosing randomly)
-        if direct_sources is not None:
-            if self.num_sources != len(direct_sources):
-                raise ValueError(
-                    """If you are passing in your own source paths, please make sure to pass num_sources to the 
-                    initialization of the environment. The number of audio sources (num_sources) must be equal to the 
-                    number of direct sources (len(direct_sources)). Currently the num_sources is {} and number 
-                    of direct sources is {}.""".format(self.num_sources, len(direct_sources))
-                )
-            self.direct_sources = direct_sources
-        else:
-            self.direct_sources = choose_random_files(num_sources=self.num_sources)
-        self.direct_sources_copy = deepcopy(self.direct_sources)
-
         self.source_locs = None
         self.min_size_audio = np.inf
         self.degrees = degrees
         self.cur_angle = 0  # The starting angle is 0
         self.reset_sources = reset_sources
+
+        # randomly choose sources
+        self.direct_sources = choose_random_files(num_sources=self.num_sources)
+        self.direct_sources_copy = deepcopy(self.direct_sources)
 
         # create the room and add sources
         self._create_room()
@@ -240,8 +227,6 @@ class AudioEnv(gym.Env):
                 of all the sources
             removing_source (None or int): Value that will tell us if we are removing a source
                 from sources
-
-        TODO: only supports 2 sources; make more flexible
         """
         # Can reset with new randomly sampled sources (typically at the start of a new episode)
         if self.reset_sources:
@@ -369,6 +354,7 @@ class AudioEnv(gym.Env):
                     self.room.compute_rir()
                     self.room.simulate()
                     data = self.room.mic_array.signals
+
                     # Convert the data back to Nussl Audio object
                     data = nussl.AudioSignal(
                         audio_data_array=data, sample_rate=self.resample_rate)
