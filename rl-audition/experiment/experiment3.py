@@ -1,3 +1,6 @@
+import sys
+sys.path.append("../src/")
+
 import gym
 import numpy as np
 import matplotlib.pyplot as plt
@@ -19,9 +22,6 @@ Train the agent on the actual model which includes separation model + Q Network 
 """
 
 def run():
-    # paths of audio files
-    paths = utils.choose_random_files()
-
     # Shoebox Room
     room = room_types.ShoeBox(x_length=10, y_length=10)
 
@@ -38,10 +38,8 @@ def run():
         corners=room.corners,
         max_order=10,
         step_size=1.0,
-        direct_sources=paths,
         acceptable_radius=0.8,
     )
-    env.add_sources()
 
     # create buffer data folders
     utils.create_buffer_data_folders()
@@ -56,7 +54,7 @@ def run():
     dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=False, transform=tfm)
 
     # Define the relevant dictionaries
-    env_config = {'env': env, 'dataset': dataset, 'episodes': 5, 'steps': 100, 'plot_reward_vs_steps': False}
+    env_config = {'env': env, 'dataset': dataset, 'episodes': 5, 'max_steps': 100, 'plot_reward_vs_steps': False}
     dataset_config = {'batch_size': 25, 'num_updates': 1}
     rnn_agent = RnnQNet(env_config=env_config, dataset_config=dataset_config)
 
