@@ -3,6 +3,7 @@ import json
 import os
 import constants
 import numpy as np
+from torch.utils.data import IterableDataset
 
 
 class BufferData(nussl.datasets.BaseDataset):
@@ -93,13 +94,14 @@ class BufferData(nussl.datasets.BaseDataset):
 
         else:
             # If we are directly getting the item from memory, it will be a dictionary
-            output = item
+            output = item.copy()
+            # print("Ouput: ", output.keys())
             prev_state, new_state = output['prev_state'], output['new_state']
 
         # convert to output dict format
         del output['prev_state'], output['new_state']
         output['prev_state'], output['new_state'] = prev_state, new_state
-        output['reward'] = np.array([output['reward']])
+        output['reward'] = np.array([output['reward']], dtype='float32')
         output['action'] = np.array([output['action']])
         return output
 
@@ -194,3 +196,16 @@ class BufferData(nussl.datasets.BaseDataset):
                 # KEY PART: append to items list of dataset object (our buffer)
                 self.append(cur_file)
 
+
+class RLDataset(IterableDataset):
+    """
+    Dataset which gets updated as buffer gets filled
+    """
+    def __init__(self, buffer, sample_size):
+        self.buffer = buffer
+        self.sample_size = sample_size
+
+    def __iter__(self):
+        for index, data in enumerate(self.buffer):
+            if index > self.sample_size:
+                yield data

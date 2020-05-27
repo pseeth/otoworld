@@ -11,6 +11,14 @@ import utils
 import constants
 from datasets import BufferData
 
+# setup logging (with different logger than the agent logger)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(message)s')
+file_handler = logging.FileHandler('agent.log')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+logger.info('\nStarting to Fit with Agent\n')
 
 class AgentBase:
     def __init__(
@@ -58,12 +66,6 @@ class AgentBase:
         self.track_dist_vs_steps = track_dist_vs_steps
         self.plot_reward_vs_steps = plot_reward_vs_steps
 
-        # move this somewhere else?
-        logging.basicConfig(
-            filename='agent.log', 
-            level=logging.INFO, 
-            format='%(asctime)s:%(levelname)s:%(message)s'
-        )
     
     def fit(self):
         if self.track_dist_vs_steps:
@@ -72,9 +74,6 @@ class AgentBase:
         
         if self.plot_reward_vs_steps:
             rewards_per_episode = []
-
-        logging_str = ('\n\n\nSTARTING FIT \n\n')
-        logging.info(logging_str)
 
         for episode in range(self.episodes):
             # Reset the self.environment and any other variables at beginning of each episode
@@ -113,7 +112,7 @@ class AgentBase:
                 )
 
                 if reward == constants.TURN_OFF_REWARD:
-                    print('In FIT. Received reward {} at step: {}'.format(reward, step))
+                    logger.info(f"In FIT. Received reward {reward} at step: {step}")
 
                 if self.plot_reward_vs_steps:
                     temp_rewards.append(reward)
@@ -139,8 +138,6 @@ class AgentBase:
                     end = time.time()
                     total_time = end - start
 
-                    # remove print statement later
-                    print('Done! Time: {}, Step: {}'. format(total_time, step))
                     logging_str = (
                         f"\n\n"
                         f"Episode Summary \n"
@@ -151,7 +148,7 @@ class AgentBase:
                         f"- Steps/Second: {float(step+1)/total_time:04f} \n"
                         f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n"
                     )
-                    logging.info(logging_str)
+                    logger.info(logging_str)
                     if self.plot_reward_vs_steps:
                         rewards_per_episode.append(temp_rewards)
                     break
