@@ -55,7 +55,7 @@ def test_experiment_shoebox():
     dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=True, transform=tfm)
 
     # Load the agent class
-    a = agent.RandomAgent(env=env, dataset=dataset, episodes=2, steps=10, plot_reward_vs_steps=False)
+    a = agent.RandomAgent(env=env, dataset=dataset, episodes=2, max_steps=10, plot_reward_vs_steps=False)
     a.fit()
 
     # what should we assert? 

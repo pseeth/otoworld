@@ -79,18 +79,18 @@ class AudioEnv(gym.Env):
         self.step_size = step_size
         self.num_sources = num_sources
 
-        # We can optionally pass in our own sources
+        # We can optionally pass in our own paths to sources (instead of choosing randomly)
         if direct_sources is not None:
             if self.num_sources != len(direct_sources):
                 raise ValueError(
-                    """If you are optionally passing in your own  audio source paths, please make sure to pass in num_sources into the initialization of 
-                    the environment. The number of audio sources (num_sources) must be equal to the number of direct sources (len(direct_sources)).
-                    Currently the num_sources is {} and number of direct sources is {}.""".format(self.num_sources, len(direct_sources))
+                    """If you are passing in your own source paths, please make sure to pass num_sources to the 
+                    initialization of the environment. The number of audio sources (num_sources) must be equal to the 
+                    number of direct sources (len(direct_sources)). Currently the num_sources is {} and number 
+                    of direct sources is {}.""".format(self.num_sources, len(direct_sources))
                 )
             self.direct_sources = direct_sources
         else:
-            self.direct_sources = choose_random_files(
-                num_sources=self.num_sources)
+            self.direct_sources = choose_random_files(num_sources=self.num_sources)
         self.direct_sources_copy = deepcopy(self.direct_sources)
 
         self.source_locs = None

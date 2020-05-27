@@ -24,7 +24,7 @@ def run_random_agent():
     # Uncomment for Polygon Room
     # room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
 
-    agent_loc = np.array([3, 3])
+    agent_loc = np.array([4, 5])
 
     # Set up the gym environment
     env = gym.make(
@@ -54,16 +54,9 @@ def run_random_agent():
     a = agent.RandomAgent(env=env, dataset=dataset, episodes=3, max_steps=200, plot_reward_vs_steps=False)
     a.fit()
 
-    # print(dataset[0])
-    print("Buffer filled: ", dataset.metadata)
+    print(dataset[0])
     
-    # Finding the distribution of samples in each episode for the weighted random sampling
-    weights = torch.tensor([1 / dataset.metadata[episode] for episode in dataset.metadata])
-    sample_weights = np.concatenate([np.array([weights[episode]] * dataset.metadata[episode]) for episode in dataset.metadata])
-
-    sampler = torch.utils.data.sampler.WeightedRandomSampler(weights=sample_weights, num_samples=len(sample_weights))
-
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=25, shuffle=False, sampler=sampler)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=25, shuffle=False)
 
     # Parameters for build_recurrent_end_to_end:
     config = nussl.ml.networks.builders.build_recurrent_end_to_end(
