@@ -11,6 +11,14 @@ import utils
 import constants
 from datasets import BufferData
 
+# setup logging (with different logger than the agent logger)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(message)s')
+file_handler = logging.FileHandler('agent.log')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+logger.info('\nStarting to Fit with Agent\n')
 
 class AgentBase:
     def __init__(
@@ -18,7 +26,7 @@ class AgentBase:
         env,
         dataset,
         episodes=1,
-        steps=10,
+        max_steps=100,
         gamma=0.9,
         alpha=0.001,
         epsilon=1.0,
@@ -35,7 +43,7 @@ class AgentBase:
             self.env (gym object): The gym self.environment object which the agent is going to explore
             dataset (nussl dataset): Nussl dataset object for experience replay
             episodes (int): # of episodes to simulate
-            steps (int): # of steps the agent can take before stopping an episode
+            max_steps (int): # of steps the agent can take before stopping an episode
             gamma (float): Discount factor
             alpha (float): Learning rate alpha
             epsilon (float): Exploration rate, P(taking random action)
@@ -48,7 +56,7 @@ class AgentBase:
         self.env = env
         self.dataset = dataset
         self.episodes = episodes
-        self.max_steps = steps
+        self.max_steps = max_steps
         self.gamma = gamma
         self.alpha = alpha
         self.epsilon = epsilon
@@ -58,12 +66,6 @@ class AgentBase:
         self.track_dist_vs_steps = track_dist_vs_steps
         self.plot_reward_vs_steps = plot_reward_vs_steps
 
-        # move this somewhere else?
-        logging.basicConfig(
-            filename='agent.log', 
-            level=logging.INFO, 
-            format='%(asctime)s:%(levelname)s:%(message)s'
-        )
     
     def fit(self):
         if self.track_dist_vs_steps:
@@ -73,12 +75,8 @@ class AgentBase:
         if self.plot_reward_vs_steps:
             rewards_per_episode = []
 
-        logging_str = ('\n\n\nSTARTING FIT \n\n')
-        logging.info(logging_str)
-
         for episode in range(self.episodes):
             # Reset the self.environment and any other variables at beginning of each episode
-            self.env.reset()
             prev_state = None
 
             # Measure distance with the all sources
@@ -112,6 +110,9 @@ class AgentBase:
                 new_state, reward, done = self.env.step(
                     action, play_audio=self.play_audio, show_room=self.show_room
                 )
+
+                if reward == constants.TURN_OFF_REWARD:
+                    logger.info(f"In FIT. Received reward {reward} at step: {step}")
 
                 if self.plot_reward_vs_steps:
                     temp_rewards.append(reward)
@@ -147,7 +148,7 @@ class AgentBase:
                         f"- Steps/Second: {float(step+1)/total_time:04f} \n"
                         f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n"
                     )
-                    logging.info(logging_str)
+                    logger.info(logging_str)
                     if self.plot_reward_vs_steps:
                         rewards_per_episode.append(temp_rewards)
                     break
@@ -173,7 +174,7 @@ class AgentBase:
 
     def choose_action(self):
         """
-        This function must be implemented by whatever class inherits AgentBase.
+        This function must be implemented by subclass.
         It will choose the action to take at any time step.
 
         Returns:
@@ -183,7 +184,7 @@ class AgentBase:
 
     def update(self):
         """
-        This function must be implemented by whatever class inherits AgentBase.
+        This function must be implemented by subclass.
         It will perform an update (e.g. updating Q table or Q network)
         """
         raise NotImplementedError()
@@ -193,6 +194,9 @@ class RLAgent(AgentBase):
     def choose_action(self):
         """
         TODO
+
+        Input => NN => Softmax => P(action) over all actions
+            - sample from action probabilities or choose argmax
         """
         pass
 
@@ -217,62 +221,3 @@ class RandomAgent(AgentBase):
         """
         pass
 
-
-class PerfectAgent(AgentBase):
-    def choose_action(self):
-        """
-        The action selection is simple, just find the closest point and move towards it.
-        """
-        closest, distance = self.env.source_locs[0], euclidean(
-            self.env.agent_loc, self.env.source_locs[0])
-        for point in self.env.source_locs:
-            temp = euclidean(self.env.agent_loc, point)
-            if temp < distance:
-                distance = temp
-                closest = point
-
-        prob = np.random.randn(1)
-        if prob > 0.7:
-            if self.env.agent_loc[0] < closest[0]:
-                if self.env.room.is_inside([self.env.agent_loc[0] + 1, self.env.agent_loc[1]]):
-                    action = 1
-                    self.env.agent_loc[0] += 1
-                elif (
-                     self.env.room.is_inside(
-                        [self.env.agent_loc[0], self.env.agent_loc[1] - 1])
-                ):
-                    action = 3
-                    self.env.agent_loc[1] -= 1
-                elif  self.env.room.is_inside([self.env.agent_loc[0], self.env.agent_loc[1] + 1]):
-                    action = 2
-                    self.env.agent_loc[1] += 1
-            elif self.env.agent_loc[0] > closest[0]:
-                if self.env.room.is_inside([self.env.agent_loc[0] - 1, self.env.agent_loc[1]]):
-                    action = 0
-                    self.env.agent_loc[0] -= 1
-                elif (
-                     self.env.room.is_inside(
-                        [self.env.agent_loc[0], self.env.agent_loc[1] - 1])
-                ):
-                    action = 3
-                    self.env.agent_loc[1] -= 1
-                elif self.env.room.is_inside([self.env.agent_loc[0], self.env.agent_loc[1] + 1]):
-                    action = 2
-                    self.env.agent_loc[1] += 1
-
-            elif self.env.agent_loc[0] == closest[0]:
-                if self.env.agent_loc[1] < closest[1]:
-                    action = 2
-                    self.env.agent_loc[1] += 1
-                else:
-                    action = 3
-                    self.env.agent_loc[1] -= 1
-        else:
-            action = np.random.randint(4, 6)
-        return action
-
-    def update(self):
-        """
-        No update for perfect agent
-        """
-        pass

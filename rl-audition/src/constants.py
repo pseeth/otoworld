@@ -17,6 +17,9 @@ REWARD_URL = "rewards_per_episode.p"
 # audio stuff
 RESAMPLE_RATE = 8000
 
+# env stuff
+DIST_BTWN_EARS = 0.2
+
 # max and min values of exploration rate
 MAX_EPSILON = 1.0
 MIN_EPSILON = 0.01
@@ -26,4 +29,4 @@ STEP_PENALTY = -0.1
 TURN_OFF_REWARD = 10.0  # Keep this a float, otherwise Pytorch dataloader will throw errors
 
 # dataset (reminder: do 20000 for experiments)
-MAX_BUFFER_ITEMS = 500
+MAX_BUFFER_ITEMS = 10000

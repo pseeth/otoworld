@@ -2,8 +2,6 @@ import pickle
 import os
 import matplotlib.pyplot as plt
 import numpy as np
-import random
-import json
 import shutil
 
 import constants
@@ -11,7 +9,7 @@ import constants
 
 def choose_random_files(num_sources=2):
     """
-    Function returns randomly chosen files as sources. 
+    Function returns randomly chosen files as sources.
 
     Args:
         num_sources (int): number of sources to place in the room
@@ -20,22 +18,28 @@ def choose_random_files(num_sources=2):
         paths (List[str]): the paths to two wav files
     """
     paths = []
-
-    for i in range(num_sources):
+    done = False
+    while not done:
         # randomly choose male or female voice folder
         # note its possible to have all one gender 
-        dir = random.choice([constants.DIR_MALE, constants.DIR_FEMALE])
+        dir = np.random.choice([constants.DIR_MALE, constants.DIR_FEMALE])
         files = os.listdir(dir)
 
-        file = ""
-        while constants.AUDIO_EXTENSION not in file:
-            idx = np.random.randint(len(files), size=1)[0]
-            file = files[idx]
+        file = np.random.choice(files)
+        path = os.path.join(dir, file)
 
-        paths.append(os.path.join(dir, file))
+        # no duplicates and make sure its an audio file
+        if path not in paths and constants.AUDIO_EXTENSION in path:
+            paths.append(path)
+
+        # check done
+        if len(paths) == num_sources:
+            done = True
+
+    # no duplicate sources
+    assert(len(paths) == len(set(paths)))
 
     return paths
-
 
 def log_dist_and_num_steps(init_dist_to_target, steps_to_completion):
     """
