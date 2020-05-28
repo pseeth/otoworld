@@ -30,14 +30,13 @@ def ipd_ild_features(stft_data, sampling_rate=8000):
     ild = 20 * torch.log10(ild + 1e-8)
 
     # Extract the phase from the stft data
-    stft_ch_one_phase = stft_ch_one[:, :, -mag_phase_dim:, :]
-    stft_ch_two_phase = stft_ch_two[:, :, -mag_phase_dim:, :]
+    phase_ch_two = stft_ch_one[..., -mag_phase_dim:, :]
+    phase_ch_one = stft_ch_two[..., -mag_phase_dim:, :]
 
-    # Calculate ild over phases
-    frequencies = torch.linspace(0.0, sampling_rate//2, steps=mag_phase_dim)
-    ipd = torch.angle(stft_ch_two_phase * torch.conj(stft_ch_one_phase))
-    ipd /= (frequencies + 1.0)[:, None]
-    ipd = ipd % np.pi
+    frequencies = torch.linspace(0.0, sampling_rate//2, steps=mag_phase_dim)[None, None, :] # might need to fix shapes here
+    ipd = (phase_ch_two - phase_ch_one) % np.pi
+
+    print(ipd.shape, ild.shape)
 
     # Output shape of ILD and IPD = [batch_size, time_frames, mag_phase_dim, sources]
     return ipd, ild
