@@ -21,7 +21,7 @@ formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(message)s')
 file_handler = logging.FileHandler('environment.log')
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
-logger.info('\nCreating new Audio Environment!\n')
+logger.info('\n\nCreating new Audio Environment!\n')
 
 
 class AudioEnv(gym.Env):

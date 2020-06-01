@@ -1,8 +1,8 @@
 import os
 
 # source data
-DIR_MALE = "../sounds/dry_recordings/dev/051_subset/"
-DIR_FEMALE = "../sounds/dry_recordings/dev/050_subset/"
+DIR_MALE = "../sounds/dry_recordings/dev/051/"
+DIR_FEMALE = "../sounds/dry_recordings/dev/050/"
 AUDIO_EXTENSION = ".wav"
 
 # saved data during experiment

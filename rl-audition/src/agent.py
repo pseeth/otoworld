@@ -116,6 +116,7 @@ class AgentBase:
                 )
 
                 if reward == constants.TURN_OFF_REWARD:
+                    print('In FIT. Received reward: {} at step {}'.format(reward, step))
                     logger.info(f"In FIT. Received reward {reward} at step: {step}")
 
                 if self.plot_reward_vs_steps:
@@ -152,6 +153,7 @@ class AgentBase:
                         f"- Steps/Second: {float(step+1)/total_time:04f} \n"
                         f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n"
                     )
+                    print(logging_str)
                     logger.info(logging_str)
                     if self.plot_reward_vs_steps:
                         rewards_per_episode.append(temp_rewards)
