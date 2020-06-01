@@ -360,6 +360,7 @@ class BufferData(BaseDataset):
         self.metadata = {}
         self.full_buffer = False
         self.to_disk = to_disk
+        self.last_ptr = -1   # To keep track of the latest item in the buffer
 
         # Make sure the relevant directories exist
         if not os.path.exists(constants.DIR_PREV_STATES):
@@ -451,11 +452,14 @@ class BufferData(BaseDataset):
         """
         if self.full_buffer:
             self.items[self.ptr] = item
+            self.last_ptr = self.ptr
             self.ptr = (self.ptr + 1) % self.MAX_BUFFER_ITEMS
         else:
             self.items.append(item)
+            self.last_ptr += 1
             if len(self.items) == self.MAX_BUFFER_ITEMS:
                 self.ptr = 0
+                self.last_ptr = 0
                 self.full_buffer = True
 
     def write_buffer_data(self, prev_state, action, reward, new_state, episode, step):

@@ -29,8 +29,10 @@ class AgentBase:
         max_steps=100,
         gamma=0.9,
         alpha=0.001,
-        epsilon=1.0,
+        epsilon=1,
         decay_rate=0.005,
+        stable_update_freq=-1,
+        save_freq=1,
         play_audio=False,
         show_room=False,
         track_dist_vs_steps=False,
@@ -48,6 +50,7 @@ class AgentBase:
             alpha (float): Learning rate alpha
             epsilon (float): Exploration rate, P(taking random action)
             decay_rate (float): decay rate for exploration rate (we want to decrease exploration as time proceeds)
+            stable_update_freq (int): Update frequency value for stable networks (Target networks)
             play_audio (bool): choose to play audio at each iteration
             show_room (bool): choose to display the configurations and movements within a room
             track_dist_vs_steps (bool): choose to track dist vs. num steps for each episode, use utils to log and plot
@@ -61,12 +64,13 @@ class AgentBase:
         self.alpha = alpha
         self.epsilon = epsilon
         self.decay_rate = decay_rate
+        self.stable_update_freq = stable_update_freq
+        self.save_freq = save_freq
         self.play_audio = play_audio
         self.show_room = show_room
         self.track_dist_vs_steps = track_dist_vs_steps
         self.plot_reward_vs_steps = plot_reward_vs_steps
 
-    
     def fit(self):
         if self.track_dist_vs_steps:
             init_dist_to_target = []
@@ -99,8 +103,8 @@ class AgentBase:
                 if np.random.uniform(0, 1) < self.epsilon:
                     action = self.env.action_space.sample()
                 else:
-                    # If it is the first step (prev_state is zero), then perform a random action
-                    if step == 0:
+                    # For the first two steps (We don't have prev_state, new_state pair), then perform a random action
+                    if step < 2:
                         action = self.env.action_space.sample()
                     else:
                         # This is where agent will actually do something
@@ -118,7 +122,7 @@ class AgentBase:
                     temp_rewards.append(reward)
 
                 # Perform Update
-                self.update(episode)
+                self.update()
 
                 # store SARS in buffer
                 if prev_state is not None and new_state is not None and not done:
@@ -158,6 +162,13 @@ class AgentBase:
 
                 prev_state = new_state
 
+            if episode % self.stable_update_freq == 0:
+                self.update_stable_networks()
+
+            if episode % self.save_freq == 0:
+                name = 'ep{}.pt'.format(episode)
+                self.save_model(name)
+
             # Decay the epsilon
             self.epsilon = constants.MIN_EPSILON + (
                 constants.MAX_EPSILON - constants.MIN_EPSILON
@@ -187,6 +198,16 @@ class AgentBase:
         This function must be implemented by subclass.
         It will perform an update (e.g. updating Q table or Q network)
         """
+        raise NotImplementedError()
+
+    def update_stable_networks(self):
+        """
+            This function must be implemented by subclass.
+            It will perform an update to the stable networks. I.E Copy values from current network to target network
+            """
+        raise NotImplementedError()
+
+    def save_model(self, name):
         raise NotImplementedError()
 
 
@@ -219,5 +240,11 @@ class RandomAgent(AgentBase):
         """
         No update for a random agent
         """
+        pass
+
+    def update_stable_networks(self):
+        pass
+
+    def save_model(self, name):
         pass
 

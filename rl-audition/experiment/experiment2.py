@@ -59,9 +59,8 @@ def run():
 
     print("Buffer filled: ", len(dataset.items))
 
-    dataloader = dataset
     #
-    # dataloader = torch.utils.data.DataLoader(dataset, batch_size=25, shuffle=False)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=25, shuffle=False)
     #
     # Parameters for build_recurrent_end_to_end:
     config = nussl.ml.networks.builders.build_recurrent_end_to_end(
@@ -76,7 +75,9 @@ def run():
 
     stft_diff = nussl.ml.networks.modules.STFT(hop_length=128, filter_length=512, direction='transform',
                                                num_filters=512)
-    #
+
+
+
     for i in range(2):
         for index, data in enumerate(dataloader):
             # print(data['mix_audio'].shape)

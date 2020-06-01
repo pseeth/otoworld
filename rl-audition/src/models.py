@@ -28,6 +28,10 @@ class RnnAgent(agent.AgentBase):
             rnn_config (dict):  Dictionary containing the parameters for the model
             stft_config (dict):  Dictionary containing the parameters for STFT
         """
+
+        # Select device
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
         # Use default config if configs are not provided by user
         if rnn_config is None:
             self.rnn_config = nussl.ml.networks.builders.build_recurrent_end_to_end(
@@ -46,16 +50,13 @@ class RnnAgent(agent.AgentBase):
         # Initialize the Agent Base class
         super().__init__(**env_config)
 
-        # Select device
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
         # Uncomment this to find backprop errors
         # torch.autograd.set_detect_anomaly(True)
 
         # Initialize the rnn model
         # self.rnn_model = nussl.ml.SeparationModel(self.rnn_config, verbose=verbose)
-        self.rnn_model = RnnSeparator(self.rnn_config)
-        self.rnn_model_stable = RnnSeparator(self.rnn_config)  # Fixed Q network
+        self.rnn_model = RnnSeparator(self.rnn_config).to(self.device)
+        self.rnn_model_stable = RnnSeparator(self.rnn_config).to(self.device)  # Fixed Q network
 
         # Initialize dataset related parameters
         self.bs = dataset_config['batch_size']
@@ -68,13 +69,16 @@ class RnnAgent(agent.AgentBase):
         total_actions = self.env.action_space.n
         self.gamma = 1.0
         network_params = {'filter_length': filter_length, 'total_actions': total_actions, 'stft_diff': self.stft_diff}
-        self.q_net = DQN(network_params)
-        self.q_net_stable = DQN(network_params) # Fixed Q net
-        self.update_networks = 1
+        self.q_net = DQN(network_params).to(self.device)
+        self.q_net_stable = DQN(network_params).to(self.device)  # Fixed Q net
+
         params = list(self.rnn_model.parameters()) + list(self.q_net.parameters())
         self.optimizer = optim.Adam(params, lr=0.001)
 
-    def update(self, episode):
+        # Folder path where the model will be saved
+        self.SAVE_PATH = dataset_config['save_path']
+
+    def update(self):
         """
 
         Args:
@@ -94,16 +98,18 @@ class RnnAgent(agent.AgentBase):
         for index, data in enumerate(dataloader):
             if index > self.num_updates:
                 break
-            # print(data.keys())
             # print("Action ", data['action'].shape)
             # Get the total number of time steps
             total_time_steps = data['mix_audio_prev_state'].shape[-1]
             # print("Data shape: ", data['mix_audio_prev_state'].shape)
             # Reshape the mixture to pass through the separation model (Convert dual channels into one)
             # Also, rename the state to work on to mix_audio so that it can pass through remaining nussl architecture
-            data['mix_audio'] = data['mix_audio_prev_state'].float().view(-1, 1, total_time_steps)
-
+            # Move, everything to GPU
+            data['mix_audio'] = data['mix_audio_prev_state'].float().view(-1, 1, total_time_steps).to(self.device)
+            data['action'] = data['action'].to(self.device)
+            data['reward'] = data['reward'].to(self.device)
             # Get the separated sources by running through RNN separation model
+
             output = self.rnn_model(data)
             # Pass then through the DQN model to get q values
             q_values = self.q_net(output, total_time_steps).gather(1, data['action'])
@@ -115,7 +121,7 @@ class RnnAgent(agent.AgentBase):
                 total_time_steps = data['mix_audio_new_state'].shape[-1]
                 # print("Data shape: ", data['mix_audio_new_state'].shape)
                 # Reshape the mixture to pass through the separation model (Convert dual channels into one)
-                data['mix_audio'] = data['mix_audio_new_state'].float().view(-1, 1, total_time_steps)
+                data['mix_audio'] = data['mix_audio_new_state'].float().view(-1, 1, total_time_steps).to(self.device)
                 output = self.rnn_model_stable(data)
                 q_values_next = self.q_net_stable(output, total_time_steps).max(1)[0].unsqueeze(-1)
                 # print("Next state", q_values_next.shape)
@@ -129,12 +135,31 @@ class RnnAgent(agent.AgentBase):
             loss.backward()
             self.optimizer.step()
 
-        if episode % self.update_networks == 0:
-            self.rnn_model_stable.load_state_dict(self.rnn_model.state_dict())
-            self.q_net_stable.load_state_dict(self.q_net.state_dict())
-
     def choose_action(self):
-        return self.env.action_space.sample()
+        with torch.no_grad():
+            # Get the latest state from the buffer
+            data = self.dataset[self.dataset.last_ptr]
+            # Perform the forward pass
+            total_time_steps = data['mix_audio_new_state'].shape[-1]
+            data['mix_audio'] = data['mix_audio_new_state'].float().view(-1, 1, total_time_steps).to(self.device)
+            output = self.rnn_model(data)
+            q_value = self.q_net(output, total_time_steps).max(1)[0].unsqueeze(-1)
+
+            return int(q_value[0].item())
+
+    def update_stable_networks(self):
+        print("Target network updated!")
+        self.rnn_model_stable.load_state_dict(self.rnn_model.state_dict())
+        self.q_net_stable.load_state_dict(self.q_net.state_dict())
+
+    def save_model(self, name):
+        """
+        Args:
+            name (str): Name contains the episode information (To give saved models unique names)
+        """
+        # Save the parameters for rnn model and q net separately
+        torch.save(self.rnn_model.state_dict(), self.SAVE_PATH + 'rnn_' + name)
+        torch.save(self.q_net.state_dict(), self.SAVE_PATH + 'qnet_' + name)
 
 
 class RnnSeparator(nn.Module):

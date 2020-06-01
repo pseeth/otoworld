@@ -63,8 +63,9 @@ def run():
     dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=False, transform=tfm)
 
     # Define the relevant dictionaries
-    env_config = {'env': env, 'dataset': dataset, 'episodes': 5, 'max_steps': 100, 'plot_reward_vs_steps': False}
-    dataset_config = {'batch_size': 25, 'num_updates': 1}
+    env_config = {'env': env, 'dataset': dataset, 'episodes': 10, 'max_steps': 500, 'plot_reward_vs_steps': False,
+                  'stable_update_freq': 3, 'epsilon': 0.7, 'save_freq': 1}
+    dataset_config = {'batch_size': 25, 'num_updates': 2, 'save_path': '../models/'}
     rnn_agent = RnnAgent(env_config=env_config, dataset_config=dataset_config)
 
     rnn_agent.fit()
