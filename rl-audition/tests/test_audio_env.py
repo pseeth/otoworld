@@ -10,9 +10,6 @@ import utils
 import room_types
 
 def test_audio_env():
-    # paths of audio files
-    paths = utils.choose_random_files()
-
     # Shoebox Room
     room = room_types.ShoeBox(x_length=10, y_length=10)
 
@@ -26,15 +23,11 @@ def test_audio_env():
         corners=room.corners,
         max_order=10,
         step_size=1.0,
-        direct_sources=paths,
         acceptable_radius=0.5,
     )
 
     # store initial room obj
     init_room = env.room
-
-    # basic things of initial env
-    assert(len(env.direct_sources) == len(paths))
 
     # test step (taking actions)
     # remember: 0,0 is at the bottom left

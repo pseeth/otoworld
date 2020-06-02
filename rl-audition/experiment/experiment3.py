@@ -59,6 +59,16 @@ def run():
                               tf_keys=['mix_audio_prev_state', 'mix_audio_new_state'], time_dim=1),
     ])
 
+    # fixing lengths
+    # tfm = transforms.Compose([
+    #     transforms.GetAudio(mix_key=['prev_state', 'new_state']),
+    #     transforms.ToSeparationModel(),
+    #     transforms.GetExcerpt(excerpt_length=32000,
+    #                           tf_keys=['mix_audio_prev_state'], time_dim=1),
+    #     transforms.GetExcerpt(excerpt_length=32000,
+    #                           tf_keys=['mix_audio_new_state'], time_dim=1)                      
+    # ])
+
     # create dataset object (subclass of nussl.datasets.BaseDataset)
     dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=False, transform=tfm)
 

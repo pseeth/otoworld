@@ -23,9 +23,6 @@ def test_experiment_shoebox():
 
     TODO
     """
-    # paths of audio files
-    paths = utils.choose_random_files()
-
     # Shoebox Room
     room = room_types.ShoeBox(x_length=10, y_length=10)
 
@@ -39,7 +36,6 @@ def test_experiment_shoebox():
         corners=room.corners,
         max_order=10,
         step_size=1.0,
-        direct_sources=paths,
         acceptable_radius=0.8,
     )
 
