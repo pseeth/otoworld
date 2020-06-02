@@ -52,29 +52,29 @@ def run():
     #     nussl.datasets.transforms.GetExcerpt(excerpt_length=32000, tf_keys=['mix_audio'], time_dim=1),
     # ])
 
-    tfm = transforms.Compose([
-        transforms.GetAudio(mix_key=['prev_state', 'new_state']),
-        transforms.ToSeparationModel(),
-        transforms.GetExcerpt(excerpt_length=32000,
-                              tf_keys=['mix_audio_prev_state', 'mix_audio_new_state'], time_dim=1),
-    ])
-
-    # fixing lengths
     # tfm = transforms.Compose([
     #     transforms.GetAudio(mix_key=['prev_state', 'new_state']),
     #     transforms.ToSeparationModel(),
     #     transforms.GetExcerpt(excerpt_length=32000,
-    #                           tf_keys=['mix_audio_prev_state'], time_dim=1),
-    #     transforms.GetExcerpt(excerpt_length=32000,
-    #                           tf_keys=['mix_audio_new_state'], time_dim=1)                      
+    #                           tf_keys=['mix_audio_prev_state', 'mix_audio_new_state'], time_dim=1),
     # ])
+
+    # fixing lengths
+    tfm = transforms.Compose([
+        transforms.GetAudio(mix_key=['prev_state', 'new_state']),
+        transforms.ToSeparationModel(),
+        transforms.GetExcerpt(excerpt_length=32000,
+                              tf_keys=['mix_audio_prev_state'], time_dim=1),
+        transforms.GetExcerpt(excerpt_length=32000,
+                              tf_keys=['mix_audio_new_state'], time_dim=1)
+    ])
 
     # create dataset object (subclass of nussl.datasets.BaseDataset)
     dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=False, transform=tfm)
 
     # Define the relevant dictionaries
-    env_config = {'env': env, 'dataset': dataset, 'episodes': 3, 'max_steps': 250, 'plot_reward_vs_steps': False,
-                  'stable_update_freq': 3, 'epsilon': 0.7, 'save_freq': 1}
+    env_config = {'env': env, 'dataset': dataset, 'episodes': 10, 'max_steps': 250, 'plot_reward_vs_steps': False,
+                  'stable_update_freq': 2, 'epsilon': 0.8, 'save_freq': 1}
     dataset_config = {'batch_size': 25, 'num_updates': 2, 'save_path': '../models/'}
     rnn_agent = RnnAgent(env_config=env_config, dataset_config=dataset_config)
 

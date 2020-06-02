@@ -500,7 +500,7 @@ class GetExcerpt(object):
         self.excerpt_length = excerpt_length
         self.time_dim = time_dim
         self.time_frequency_keys = tf_keys if tf_keys else time_frequency_keys
-        print('time_freqency_keys:', self.time_frequency_keys)
+        # print('time_freqency_keys:', self.time_frequency_keys)
 
     @staticmethod
     def _validate(data, key):
@@ -521,9 +521,9 @@ class GetExcerpt(object):
             offset = 0
 
         pad_amount = max(0, self.excerpt_length - data_length)
-        print('key:', key)
-        print('data len:', data_length)
-        print('PAD:', pad_amount)
+        # print('key:', key)
+        # print('data len:', data_length)
+        # print('PAD:', pad_amount)
         return offset, pad_amount
 
     def _construct_pad_func_tuple(self, shape, pad_amount, is_tensor):
@@ -559,8 +559,9 @@ class GetExcerpt(object):
         for k, v in data.items():
             if k in self.time_frequency_keys:
                 lengths.append(v.size())
-                print(k, v.size())
-        assert(lengths[0] == lengths[1])
+                # print(k, v.size())
+        # print("Lengths: ", lengths)
+        # assert(lengths[0] == lengths[1])
         return data
 
 

@@ -76,8 +76,6 @@ def run():
     stft_diff = nussl.ml.networks.modules.STFT(hop_length=128, filter_length=512, direction='transform',
                                                num_filters=512)
 
-
-
     for i in range(2):
         for index, data in enumerate(dataloader):
             # print(data['mix_audio'].shape)

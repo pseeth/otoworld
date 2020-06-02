@@ -11,7 +11,7 @@ from datasets import BufferData, RLDataset
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-
+import math
 
 class RnnAgent(agent.AgentBase):
     def __init__(self, env_config, dataset_config, rnn_config=None, stft_config=None, verbose=False):
@@ -61,8 +61,8 @@ class RnnAgent(agent.AgentBase):
         # Initialize dataset related parameters
         self.bs = dataset_config['batch_size']
         self.num_updates = dataset_config['num_updates']
-        # self.dynamic_dataset = RLDataset(buffer=self.dataset, sample_size=self.bs)
-        # self.dataloader = torch.utils.data.DataLoader(self.dynamic_dataset, batch_size=self.bs)
+        self.dynamic_dataset = RLDataset(buffer=self.dataset, sample_size=self.bs)
+        self.dataloader = torch.utils.data.DataLoader(self.dynamic_dataset, batch_size=self.bs)
 
         # Initialize network layers for DQN network
         filter_length = stft_config['filter_length']+2 if stft_config is not None else 514
@@ -91,11 +91,11 @@ class RnnAgent(agent.AgentBase):
         # Run the update only if samples >= batch_size
         if len(self.dataset.items) < self.bs:
             return
+        #
+        # # Take the buffer data and make it into torch data loader object
+        # dataloader = torch.utils.data.DataLoader(self.dataset, batch_size=self.bs, shuffle=True)
 
-        # Take the buffer data and make it into torch data loader object
-        dataloader = torch.utils.data.DataLoader(self.dataset, batch_size=self.bs, shuffle=True)
-
-        for index, data in enumerate(dataloader):
+        for index, data in enumerate(self.dataloader):
             if index > self.num_updates:
                 break
             # print("Action ", data['action'].shape)
@@ -138,6 +138,8 @@ class RnnAgent(agent.AgentBase):
     def choose_action(self):
         with torch.no_grad():
             # Get the latest state from the buffer
+            # print("Last ptr: ", self.dataset.last_ptr, "len: ", len(self.dataset.items))
+            # print("Value at that ptr: ", self.dataset[self.dataset.last_ptr])
             data = self.dataset[self.dataset.last_ptr]
             # Perform the forward pass
             total_time_steps = data['mix_audio_new_state'].shape[-1]
@@ -145,7 +147,17 @@ class RnnAgent(agent.AgentBase):
             output = self.rnn_model(data)
             q_value = self.q_net(output, total_time_steps).max(1)[0].unsqueeze(-1)
 
-            return int(q_value[0].item())
+            q_value = q_value[0].item()
+
+            if math.isnan(q_value):
+                q_value = self.env.action_space.sample()
+                print("Data: {}".format(data))
+                print("Output RNN: {}".format(output))
+                print("Last ptr {}, Q value {}".format(self.dataset.last_ptr, q_value))
+            else:
+                q_value = int(q_value)
+
+            return q_value
 
     def update_stable_networks(self):
         print("Target network updated!")

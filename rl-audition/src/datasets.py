@@ -442,6 +442,11 @@ class BufferData(BaseDataset):
         output['action'] = np.array([output['action']], dtype='int64')
         return output
 
+    def random_sample(self, bs):
+        indices = np.random.choice(len(self.items), bs, replace=False)
+
+        return indices
+
     def append(self, item):
         """
         Override the default append function to work as circular buffer
@@ -546,6 +551,6 @@ class RLDataset(IterableDataset):
         self.sample_size = sample_size
 
     def __iter__(self):
-        for index, data in enumerate(self.buffer):
-            if index > self.sample_size:
-                yield data
+        batch_indices = self.buffer.random_sample(self.sample_size)
+        for index in batch_indices:
+            yield self.buffer[index]
