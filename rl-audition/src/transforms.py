@@ -554,14 +554,9 @@ class GetExcerpt(object):
                 data[key] = utils._slice_along_dim(
                     data[key], self.time_dim, offset, offset + self.excerpt_length)
 
-        # verify lengths of mixes for prev and new states are same
-        lengths = []
-        for k, v in data.items():
-            if k in self.time_frequency_keys:
-                lengths.append(v.size())
-                # print(k, v.size())
-        # print("Lengths: ", lengths)
-        # assert(lengths[0] == lengths[1])
+                # to verify mix lengths are the same
+                # print(key, data[key].size())
+
         return data
 
 

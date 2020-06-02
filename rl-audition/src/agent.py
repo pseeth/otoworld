@@ -27,9 +27,9 @@ class AgentBase:
         dataset,
         episodes=1,
         max_steps=100,
-        gamma=0.9,
+        gamma=0.98,
         alpha=0.001,
-        epsilon=1,
+        epsilon=.9,
         decay_rate=0.005,
         stable_update_freq=-1,
         save_freq=1,
@@ -116,8 +116,8 @@ class AgentBase:
                 )
 
                 if reward == constants.TURN_OFF_REWARD:
-                    print('In FIT. Received reward: {} at step {}'.format(reward, step))
-                    logger.info(f"In FIT. Received reward {reward} at step: {step}")
+                    print('In FIT. Received reward: {} at step {}\n'.format(reward, step))
+                    logger.info(f"In FIT. Received reward {reward} at step: {step}\n")
 
                 if self.plot_reward_vs_steps:
                     temp_rewards.append(reward)

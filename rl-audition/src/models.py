@@ -1,6 +1,7 @@
 import gym
 import numpy as np
 import torch
+import logging
 import agent
 import utils
 import constants
@@ -12,6 +13,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import math
+
+# setup logging (with different logger than the agent logger)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(message)s')
+file_handler = logging.FileHandler('model.log')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 class RnnAgent(agent.AgentBase):
     def __init__(self, env_config, dataset_config, rnn_config=None, stft_config=None, verbose=False):
@@ -31,7 +40,7 @@ class RnnAgent(agent.AgentBase):
 
         # Select device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+        print('DEVICE:', self.device)
         # Use default config if configs are not provided by user
         if rnn_config is None:
             self.rnn_config = nussl.ml.networks.builders.build_recurrent_end_to_end(
@@ -67,7 +76,6 @@ class RnnAgent(agent.AgentBase):
         # Initialize network layers for DQN network
         filter_length = stft_config['filter_length']+2 if stft_config is not None else 514
         total_actions = self.env.action_space.n
-        self.gamma = 1.0
         network_params = {'filter_length': filter_length, 'total_actions': total_actions, 'stft_diff': self.stft_diff}
         self.q_net = DQN(network_params).to(self.device)
         self.q_net_stable = DQN(network_params).to(self.device)  # Fixed Q net
@@ -151,9 +159,15 @@ class RnnAgent(agent.AgentBase):
 
             if math.isnan(q_value):
                 q_value = self.env.action_space.sample()
-                print("Data: {}".format(data))
-                print("Output RNN: {}".format(output))
-                print("Last ptr {}, Q value {}".format(self.dataset.last_ptr, q_value))
+                logging_str = (
+                        f"\n"
+                        f"Received NaN Q Value \n"
+                        f"- Data: {data}\n"
+                        f"- Output RNN: {output}\n"
+                        f"- Last ptr:   {self.dataset.last_ptr} \n"
+                        f"- Q Value: {q_value} \n\n"
+                    )
+                logger.info(logging_str)
             else:
                 q_value = int(q_value)
 
