@@ -137,7 +137,8 @@ class RnnAgent(agent.AgentBase):
             expected_q_values = data['reward'] + self.gamma*q_values_next
             # Calculate loss
             loss = F.mse_loss(q_values, expected_q_values)
-            print("Loss: ", loss)
+            print("Loss:", loss)
+            logger.info(f"Loss: {loss}")
             # Optimize the model
             self.optimizer.zero_grad()
             loss.backward()

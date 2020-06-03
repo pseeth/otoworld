@@ -18,7 +18,11 @@ formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(message)s')
 file_handler = logging.FileHandler('agent.log')
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
+logger.info('\n')
+logger.info('-'*50)
 logger.info('\nStarting to Fit with Agent\n')
+logger.info('-'*50)
+logger.info('\n')
 
 class AgentBase:
     def __init__(

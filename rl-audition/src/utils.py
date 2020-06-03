@@ -9,35 +9,26 @@ import constants
 
 def choose_random_files(num_sources=2):
     """
-    Function returns randomly chosen files as sources.
-
+    Function returns source random files using the directory constants. It chooses one file from the
+    female recordings and one from the male recordings
     Args:
         num_sources (int): number of sources to place in the room
-
     Returns:
         paths (List[str]): the paths to two wav files
     """
     paths = []
-    done = False
-    while not done:
+
+    for i in range(num_sources):
         # randomly choose male or female voice folder
-        # note its possible to have all one gender 
-        dir = np.random.choice([constants.DIR_MALE, constants.DIR_FEMALE])
+        dir = random.choice([constants.DIR_MALE, constants.DIR_FEMALE])
         files = os.listdir(dir)
 
-        file = np.random.choice(files)
-        path = os.path.join(dir, file)
+        file = ""
+        while constants.AUDIO_EXTENSION not in file:
+            idx = np.random.randint(len(files), size=1)[0]
+            file = files[idx]
 
-        # no duplicates and make sure its an audio file
-        if path not in paths and constants.AUDIO_EXTENSION in path:
-            paths.append(path)
-
-        # check done
-        if len(paths) == num_sources:
-            done = True
-
-    # no duplicate sources
-    assert(len(paths) == len(set(paths)))
+        paths.append(os.path.join(dir, file))
 
     return paths
 
