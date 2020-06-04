@@ -59,10 +59,10 @@ def run():
     ])
 
     # create dataset object (subclass of nussl.datasets.BaseDataset)
-    dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=False, transform=tfm)
+    dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=True, transform=tfm)
 
     # Define the relevant dictionaries
-    env_config = {'env': env, 'dataset': dataset, 'episodes': 10, 'max_steps': 10000, 'plot_reward_vs_steps': False,
+    env_config = {'env': env, 'dataset': dataset, 'episodes': 1, 'max_steps': 50000, 'plot_reward_vs_steps': False,
                   'stable_update_freq': 2, 'epsilon': 0.8, 'save_freq': 1}
     dataset_config = {'batch_size': 25, 'num_updates': 2, 'save_path': '../models/'}
     rnn_agent = RnnAgent(env_config=env_config, dataset_config=dataset_config)
