@@ -88,12 +88,10 @@ class RnnAgent(agent.AgentBase):
 
     def update(self):
         """
-
         Args:
             episode (int): Current episode number to keep update the stable Q networks every k episodes
 
         Returns:
-
         """
         # print("Size of dataset {}".format(len(self.dataset.items)) )#len(self.dynamic_dataset.buffer)))
         # Run the update only if samples >= batch_size
@@ -137,8 +135,10 @@ class RnnAgent(agent.AgentBase):
             expected_q_values = data['reward'] + self.gamma*q_values_next
             # Calculate loss
             loss = F.mse_loss(q_values, expected_q_values)
-            print("Loss:", loss)
+            self.losses.append(loss)
+            #print("Loss:", loss)
             logger.info(f"Loss: {loss}")
+            self.writer.add_scalar('Loss/train', loss, len(self.losses))
             # Optimize the model
             self.optimizer.zero_grad()
             loss.backward()

@@ -1,11 +1,13 @@
 import sys
 sys.path.append("../src/")
+from datetime import datetime
 
 import gym
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
 import logging 
+from torch.utils.tensorboard import SummaryWriter
 
 import room_types
 import agent
@@ -27,7 +29,7 @@ Train the agent on the actual model which includes separation model + Q Network 
 
 def run():
     # Shoebox Room
-    room = room_types.ShoeBox(x_length=8, y_length=8)
+    room = room_types.ShoeBox(x_length=7, y_length=7)
 
     # Uncomment for Polygon Room
     # room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
@@ -61,9 +63,14 @@ def run():
     # create dataset object (subclass of nussl.datasets.BaseDataset)
     dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=True, transform=tfm)
 
+    # define tensorboard writer, name the experiment
+    exp_name = 'test-exp-3'
+    exp_name = '{}_{}'.format(exp_name, datetime.now().strftime('%d_%m_%Y-%H_%M_%S'))
+    writer = SummaryWriter('runs/{}'.format(exp_name))
+
     # Define the relevant dictionaries
-    env_config = {'env': env, 'dataset': dataset, 'episodes': 1, 'max_steps': 50000, 'plot_reward_vs_steps': False,
-                  'stable_update_freq': 2, 'epsilon': 0.8, 'save_freq': 1}
+    env_config = {'env': env, 'dataset': dataset, 'episodes': 2, 'max_steps': 50000, 
+                  'stable_update_freq': 2, 'epsilon': 0.8, 'save_freq': 1, 'writer': writer}
     dataset_config = {'batch_size': 25, 'num_updates': 2, 'save_path': '../models/'}
     rnn_agent = RnnAgent(env_config=env_config, dataset_config=dataset_config)
 

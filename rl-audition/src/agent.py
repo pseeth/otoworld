@@ -39,8 +39,7 @@ class AgentBase:
         save_freq=1,
         play_audio=False,
         show_room=False,
-        track_dist_vs_steps=False,
-        plot_reward_vs_steps=False,
+        writer=None,
     ):
         """
         This class is a base agent class which will be inherited when creating various agents.
@@ -57,8 +56,7 @@ class AgentBase:
             stable_update_freq (int): Update frequency value for stable networks (Target networks)
             play_audio (bool): choose to play audio at each iteration
             show_room (bool): choose to display the configurations and movements within a room
-            track_dist_vs_steps (bool): choose to track dist vs. num steps for each episode, use utils to log and plot
-            plot_reward_vs_steps (bool): choose to track reward vs. num steps for each episode, use utils to log and plot
+            writer (torch.utils.tensorboard.SummaryWriter): for logging to tensorboard
         """
         self.env = env
         self.dataset = dataset
@@ -72,36 +70,20 @@ class AgentBase:
         self.save_freq = save_freq
         self.play_audio = play_audio
         self.show_room = show_room
-        self.track_dist_vs_steps = track_dist_vs_steps
-        self.plot_reward_vs_steps = plot_reward_vs_steps
+        self.writer = writer
+        self.losses = []
+        self.mean_episode_reward = []
 
     def fit(self):
-        if self.track_dist_vs_steps:
-            init_dist_to_target = []
-            steps_to_completion = []
-        
-        if self.plot_reward_vs_steps:
-            rewards_per_episode = []
-
         for episode in range(self.episodes):
             # Reset the self.environment and any other variables at beginning of each episode
             prev_state = None
 
-            # Measure distance with the all sources
-            if self.track_dist_vs_steps:
-                init_dist_to_target.append(
-                    sum([euclidean(self.env.agent_loc, source) for source in self.env.source_locs]))
-                steps_to_completion.append(0)
-            
-            # Keep track of rewards for this episode
-            if self.plot_reward_vs_steps:
-                temp_rewards = []
+            episode_rewards = []
             
             # Measure time to complete the episode
             start = time.time()
             for step in range(self.max_steps):
-                if self.track_dist_vs_steps:
-                    steps_to_completion[-1] += 1
 
                 # Perform random actions with prob < epsilon
                 if np.random.uniform(0, 1) < self.epsilon:
@@ -118,13 +100,11 @@ class AgentBase:
                 new_state, reward, done = self.env.step(
                     action, play_audio=self.play_audio, show_room=self.show_room
                 )
+                episode_rewards.append(reward)
 
                 if reward == constants.TURN_OFF_REWARD:
                     print('In FIT. Received reward: {} at step {}\n'.format(reward, step))
                     logger.info(f"In FIT. Received reward {reward} at step: {step}\n")
-
-                if self.plot_reward_vs_steps:
-                    temp_rewards.append(reward)
 
                 # Perform Update
                 self.update()
@@ -144,9 +124,14 @@ class AgentBase:
                         prev_state, action, reward, terminal_silent_state, episode, step
                     )
 
+                    # record mean reward for this episode
+                    self.mean_episode_reward = np.mean(episode_rewards)
+                    self.writer.add_scalar('Mean Episode Reward', self.mean_episode_reward, episode)
+
                     end = time.time()
                     total_time = end - start
 
+                    # log episode summary
                     logging_str = (
                         f"\n\n"
                         f"Episode Summary \n"
@@ -159,12 +144,9 @@ class AgentBase:
                     )
                     print(logging_str)
                     logger.info(logging_str)
-                    if self.plot_reward_vs_steps:
-                        rewards_per_episode.append(temp_rewards)
-                    break
 
-                if step == (self.max_steps - 1) and self.plot_reward_vs_steps:
-                    rewards_per_episode.append(temp_rewards)
+                    # break and go to new episode
+                    break
 
                 prev_state = new_state
 
@@ -180,14 +162,7 @@ class AgentBase:
                 constants.MAX_EPSILON - constants.MIN_EPSILON
             ) * np.exp(-self.decay_rate * episode)
 
-        if self.track_dist_vs_steps:
-            utils.log_dist_and_num_steps(init_dist_to_target, steps_to_completion)
-            # NOTE: plot will fail if agent doesn't find all sources within given number of steps
-            utils.plot_dist_and_steps()
-        
-        if self.plot_reward_vs_steps:
-            utils.log_reward_vs_steps(rewards_per_episode)
-            utils.plot_reward_vs_steps()
+
 
     def choose_action(self):
         """
