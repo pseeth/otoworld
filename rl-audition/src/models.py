@@ -135,6 +135,18 @@ class RnnAgent(agent.AgentBase):
             expected_q_values = data['reward'] + self.gamma*q_values_next
             # Calculate loss
             loss = F.mse_loss(q_values, expected_q_values)
+            if math.isnan(loss):
+                logging_str = (
+                        f"\n"
+                        f"Received NaN Loss Value \n"
+                        f"- Loss: {loss}\n"
+                        f"- Last ptr:   {self.dataset.last_ptr} \n\n"
+                        f"- q_values {q_values}\n"
+                        f"- q_values_next: {q_values_next} \n"
+                        f"- Data: {data}\n"
+                        f"- Output RNN Stable: {output}\n"
+                    )
+                logger.info(logging_str)
             self.losses.append(loss)
             #print("Loss:", loss)
             logger.info(f"Loss: {loss}")

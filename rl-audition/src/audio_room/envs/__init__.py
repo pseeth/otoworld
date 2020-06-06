@@ -1,1 +1,1 @@
-from audio_room.envs.audio_env import AudioEnv
+from .audio_env import AudioEnv

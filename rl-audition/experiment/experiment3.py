@@ -29,12 +29,12 @@ Train the agent on the actual model which includes separation model + Q Network 
 
 def run():
     # Shoebox Room
-    room = room_types.ShoeBox(x_length=7, y_length=7)
+    room = room_types.ShoeBox(x_length=7, y_length=6)
 
     # Uncomment for Polygon Room
     # room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
 
-    agent_loc = np.array([3, 5])
+    agent_loc = np.array([3, 4])
 
     # Set up the gym environment
     env = gym.make(
@@ -69,7 +69,7 @@ def run():
     writer = SummaryWriter('runs/{}'.format(exp_name))
 
     # Define the relevant dictionaries
-    env_config = {'env': env, 'dataset': dataset, 'episodes': 2, 'max_steps': 50000, 
+    env_config = {'env': env, 'dataset': dataset, 'episodes': 5, 'max_steps': 50000, 
                   'stable_update_freq': 2, 'epsilon': 0.8, 'save_freq': 1, 'writer': writer}
     dataset_config = {'batch_size': 25, 'num_updates': 2, 'save_path': '../models/'}
     rnn_agent = RnnAgent(env_config=env_config, dataset_config=dataset_config)
