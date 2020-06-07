@@ -128,8 +128,8 @@ class RnnAgent(agent.AgentBase):
                 # print("Data shape: ", data['mix_audio_new_state'].shape)
                 # Reshape the mixture to pass through the separation model (Convert dual channels into one)
                 data['mix_audio'] = data['mix_audio_new_state'].float().view(-1, 1, total_time_steps).to(self.device)
-                output = self.rnn_model_stable(data)
-                q_values_next = self.q_net_stable(output, total_time_steps).max(1)[0].unsqueeze(-1)
+                stable_output = self.rnn_model_stable(data)
+                q_values_next = self.q_net_stable(stable_output, total_time_steps).max(1)[0].unsqueeze(-1)
                 # print("Next state", q_values_next.shape)
 
             expected_q_values = data['reward'] + self.gamma*q_values_next
@@ -141,10 +141,11 @@ class RnnAgent(agent.AgentBase):
                         f"Received NaN Loss Value \n"
                         f"- Loss: {loss}\n"
                         f"- Last ptr:   {self.dataset.last_ptr} \n\n"
-                        f"- q_values {q_values}\n"
+                        f"- RNN Output: {output}\n"
+                        f"- Output RNN Stable: {stable_output}\n"
+                        f"- q_values: {q_values}\n"
                         f"- q_values_next: {q_values_next} \n"
                         f"- Data: {data}\n"
-                        f"- Output RNN Stable: {output}\n"
                     )
                 logger.info(logging_str)
             self.losses.append(loss)
