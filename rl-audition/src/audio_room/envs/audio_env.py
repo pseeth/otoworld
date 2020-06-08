@@ -40,7 +40,7 @@ class AudioEnv(gym.Env):
         absorption=0.0,
         max_order=2,
         step_size=1,
-        acceptable_radius=0.1,
+        acceptable_radius=.5,
         num_sources=2,
         degrees=0.2618,
         reset_sources=True,
@@ -100,6 +100,14 @@ class AudioEnv(gym.Env):
         # create the room and add sources
         self._create_room()
         self._add_sources()
+
+        # The step size must be smaller than radius in order to make sure we don't
+        # overstep a audio source
+        if self.acceptable_radius < self.step_size / 2:
+            raise ValueError(
+                """The threshold radius (acceptable_radius) must be at least step_size / 2. Else, the agent may overstep 
+                an audio source."""
+            )
 
 
     def _create_room(self):
