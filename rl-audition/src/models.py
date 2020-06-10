@@ -269,7 +269,7 @@ class DQN(nn.Module):
         X = torch.cat((ipd, ild), dim=2)  # Concatenate the features dimension
 
         # Sum over the time frame axis
-        X = torch.sum(X, dim=1)
+        X = torch.mean(X, dim=1)
 
         # Flatten the features
         num_features = self.flatten_features(X)
@@ -278,7 +278,7 @@ class DQN(nn.Module):
         # Run through simple feedforward network
         X = F.relu(self.fc1(X))
         X = self.fc2(X)
-        print(X)
+        print(X.shape)
         q_values = F.softmax(X, dim=1)
         print(q_values)
 
