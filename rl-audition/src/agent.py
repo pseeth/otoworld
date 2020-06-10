@@ -84,7 +84,6 @@ class AgentBase:
             # Measure time to complete the episode
             start = time.time()
             for step in range(self.max_steps):
-
                 # Perform random actions with prob < epsilon
                 if np.random.uniform(0, 1) < self.epsilon:
                     action = self.env.action_space.sample()

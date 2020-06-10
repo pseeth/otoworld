@@ -29,6 +29,7 @@ Train the agent on the actual model which includes separation model + Q Network 
 
 def run():
     # Shoebox Room
+    nussl.utils.seed(0)
     room = room_types.ShoeBox(x_length=7, y_length=6)
 
     # Uncomment for Polygon Room
@@ -44,7 +45,7 @@ def run():
         corners=room.corners,
         max_order=10,
         step_size=1.0,
-        acceptable_radius=0.8,
+        acceptable_radius=0.5,
     )
 
     # create buffer data folders
@@ -61,7 +62,11 @@ def run():
     ])
 
     # create dataset object (subclass of nussl.datasets.BaseDataset)
-    dataset = BufferData(folder=constants.DIR_DATASET_ITEMS, to_disk=True, transform=tfm)
+    dataset = BufferData(
+        folder=constants.DIR_DATASET_ITEMS, 
+        to_disk=True, 
+        transform=tfm
+    )
 
     # define tensorboard writer, name the experiment
     exp_name = 'test-exp-3'
@@ -69,11 +74,58 @@ def run():
     writer = SummaryWriter('runs/{}'.format(exp_name))
 
     # Define the relevant dictionaries
-    env_config = {'env': env, 'dataset': dataset, 'episodes': 5, 'max_steps': 50000, 
-                  'stable_update_freq': 2, 'epsilon': 0.8, 'save_freq': 1, 'writer': writer}
-    dataset_config = {'batch_size': 25, 'num_updates': 2, 'save_path': '../models/'}
-    rnn_agent = RnnAgent(env_config=env_config, dataset_config=dataset_config)
+    env_config = {
+        'env': env, 
+        'dataset': dataset, 
+        'episodes': 5, 
+        'max_steps': 50000, 
+        'stable_update_freq': 2, 
+        'epsilon': 0.8, 
+        'save_freq': 1, 
+        'writer': writer,
+        'show_room': False,
+        'play_audio': False,
+    }
 
+    dataset_config = {
+        'batch_size': 10, 
+        'num_updates': 2, 
+        'save_path': '../models/'
+    }
+
+    rnn_config = {
+        'bidirectional': True,
+        'dropout': 0.3,
+        'filter_length': 256,
+        'hidden_size': 10,
+        'hop_length': 64,
+        'mask_activation': ['sigmoid'],
+        'mask_complex': False,
+        'mix_key': 'mix_audio',
+        'normalization_class': 'BatchNorm',
+        'num_audio_channels': 1,
+        'num_filters': 256,
+        'num_layers': 1,
+        'num_sources': 2,
+        'rnn_type': 'lstm',
+        'window_type': 'sqrt_hann',
+    }
+
+    stft_config = {
+        'hop_length': 64,
+        'num_filters': 256,
+        'direction': 'transform',
+        'window_type': 'sqrt_hann'
+    }
+
+    rnn_agent = RnnAgent(
+        env_config=env_config, 
+        dataset_config=dataset_config,
+        rnn_config=rnn_config,
+        stft_config=stft_config,
+        verbose=True
+    )
+    torch.autograd.set_detect_anomaly(True)
     rnn_agent.fit()
 
 

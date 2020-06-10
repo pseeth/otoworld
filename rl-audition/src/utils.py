@@ -4,8 +4,29 @@ import matplotlib.pyplot as plt
 import numpy as np
 import shutil
 import random
+import torch
 
 import constants
+
+def autoclip(model, percentile, grad_norms=None):
+    if grad_norms is None:
+        grad_norms = []
+    
+    def _get_grad_norm(model):
+        total_norm = 0
+        for p in model.parameters():
+            if p.requires_grad and p.grad is not None:
+                param_norm = p.grad.data.norm(2)
+                total_norm += param_norm.item() ** 2
+        total_norm = total_norm ** (1. / 2)
+        return total_norm
+    
+    grad_norms.append(_get_grad_norm(model))
+    clip_value = np.percentile(grad_norms, percentile)
+
+    torch.nn.utils.clip_grad_norm_(
+        model.parameters(), clip_value)
+    return grad_norms
 
 
 def choose_random_files(num_sources=2):
