@@ -29,7 +29,7 @@ Train the agent on the actual model which includes separation model + Q Network 
 
 def run():
     # Shoebox Room
-    nussl.utils.seed(13)
+    nussl.utils.seed(0)
     room = room_types.ShoeBox(x_length=7, y_length=6)
 
     # Uncomment for Polygon Room

@@ -265,7 +265,6 @@ class DQN(nn.Module):
         # Flatten the features
         num_features = self.flatten_features(X)
         X = X.view(-1, num_features)  # Shape = [Batch_size, filter_length*2]
-
         # Run through simple feedforward network
         X = F.relu(self.fc1(X))
         X = self.fc2(X)

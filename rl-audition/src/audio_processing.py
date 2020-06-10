@@ -33,7 +33,7 @@ def ipd_ild_features(stft_data, sampling_rate=8000):
     phase_ch_two = stft_ch_one[..., -mag_phase_dim:, :]
     phase_ch_one = stft_ch_two[..., -mag_phase_dim:, :]
 
-    ipd = (phase_ch_two - phase_ch_one) % np.pi
+    ipd = torch.fmod(phase_ch_two - phase_ch_one, np.pi)
 
     # Output shape of ILD and IPD = [batch_size, time_frames, mag_phase_dim, sources]
     return ipd, ild
