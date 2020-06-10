@@ -145,3 +145,5 @@ refactor-test.ipynb
 data/
 sounds/
 experiment/runs/
+
+*tfevents*
