@@ -244,6 +244,7 @@ class DQN(nn.Module):
         self.stft_diff = network_params['stft_diff']
         self.fc1 = nn.Linear(network_params['filter_length'] * 2, 64)
         self.fc2 = nn.Linear(64, network_params['total_actions'])
+        self.bn = nn.BatchNorm1d(network_params['filter_length'])
 
     def forward(self, output, total_time_steps):
         # Reshape the output again to get dual channels
@@ -261,6 +262,7 @@ class DQN(nn.Module):
 
         # Sum over the time frame axis
         X = torch.mean(X, dim=1)
+        X = self.bn(X)
 
         # Flatten the features
         num_features = self.flatten_features(X)

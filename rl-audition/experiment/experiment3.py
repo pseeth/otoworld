@@ -45,7 +45,7 @@ def run():
         corners=room.corners,
         max_order=10,
         step_size=1.0,
-        acceptable_radius=0.8,
+        acceptable_radius=0.5,
     )
 
     # create buffer data folders
@@ -82,7 +82,9 @@ def run():
         'stable_update_freq': 2, 
         'epsilon': 0.8, 
         'save_freq': 1, 
-        'writer': writer
+        'writer': writer,
+        'show_room': False,
+        'play_audio': False,
     }
 
     dataset_config = {
