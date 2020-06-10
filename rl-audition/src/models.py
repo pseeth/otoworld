@@ -120,7 +120,6 @@ class RnnAgent(agent.AgentBase):
             # Move, everything to GPU
             data['mix_audio'] = data['mix_audio_prev_state'].float().view(
                 -1, 1, total_time_steps).to(self.device)
-            print('input', data['mix_audio'].mean())
             
             data['action'] = data['action'].to(self.device)
             data['reward'] = data['reward'].to(self.device)
@@ -143,9 +142,7 @@ class RnnAgent(agent.AgentBase):
             #     e.play()
             # Pass then through the DQN model to get q values
             q_values = self.q_net(output, total_time_steps)
-            print('bfeore gather', q_values)
             q_values = q_values.gather(1, data['action'])
-            print('after gather', q_values)
             # print("Q values", q_values.shape)
 
             with torch.no_grad():
@@ -162,7 +159,6 @@ class RnnAgent(agent.AgentBase):
 
             expected_q_values = data['reward'] + self.gamma * q_values_next
             # Calculate loss
-            print(q_values, expected_q_values, q_values_next)
             loss = F.l1_loss(q_values, expected_q_values)
             if torch.isnan(loss):
                 logging_str = (
@@ -176,11 +172,10 @@ class RnnAgent(agent.AgentBase):
                         f"- q_values_next: {q_values_next} \n"
                         f"- Data: {data}\n"
                     )
-                print(logging_str)
+                logger.info(logging_str)
             self.losses.append(loss)
             #print("Loss:", loss)
             logger.info(f"Loss: {loss}")
-            print(loss)
             self.writer.add_scalar('Loss/train', loss, len(self.losses))
             # Optimize the model
             self.optimizer.zero_grad()
@@ -253,15 +248,11 @@ class DQN(nn.Module):
     def forward(self, output, total_time_steps):
         # Reshape the output again to get dual channels
         output['audio'] = output['audio'].view(-1, 2, total_time_steps, 2)
-        print('audio', output['audio'].mean())
-
         # Perform short time fourier transform of this output
         stft_data = self.stft_diff(output['audio'], direction='transform')
 
         # Get the IPD and ILD features from the stft data
         ipd, ild = audio_processing.ipd_ild_features(stft_data)
-
-        print(ipd.shape, ild.shape, ipd.mean(), ild.mean())
 
         # print("IPD: {}, ILD {}".format(ipd.shape, ild.shape))
 
@@ -278,10 +269,7 @@ class DQN(nn.Module):
         # Run through simple feedforward network
         X = F.relu(self.fc1(X))
         X = self.fc2(X)
-        print(X.shape)
         q_values = F.softmax(X, dim=1)
-        print(q_values)
-
 
         return q_values
 
