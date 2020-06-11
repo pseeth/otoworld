@@ -42,12 +42,13 @@ def choose_random_files(num_sources=2):
     """
     paths = []
 
-    for folder in [constants.DIR_CAR, constants.DIR_PHONE]:
+    for folder in [constants.DIR_MALE, constants.DIR_FEMALE]:
         files = os.listdir(folder)
 
         file = ""
         while constants.AUDIO_EXTENSION not in file:
             idx = np.random.randint(len(files), size=1)[0]
+            idx = 0
             file = files[idx]
 
         paths.append(os.path.join(folder, file))

@@ -4,7 +4,7 @@ import os
 DIR_MALE = "../sounds/dry_recordings/dev/051/"
 DIR_FEMALE = "../sounds/dry_recordings/dev/050/"
 DIR_CAR = '../sounds/car/'
-DIR_PHONE = '../sounds/phone/'
+DIR_PHONE = '../sounds/siren/'
 AUDIO_EXTENSION = ".wav"
 
 # saved data during experiment
@@ -20,14 +20,14 @@ REWARD_URL = "rewards_per_episode.p"
 RESAMPLE_RATE = 8000
 
 # env stuff
-DIST_BTWN_EARS = 0.2
+DIST_BTWN_EARS = 0.15
 
 # max and min values of exploration rate
-MAX_EPSILON = 0.9
+MAX_EPSILON = 0.8
 MIN_EPSILON = 0.01
 
 # reward structure
-STEP_PENALTY = -0.1
+STEP_PENALTY = -0.5
 TURN_OFF_REWARD = 10.0  # Keep this a float, otherwise Pytorch dataloader will throw errors
 
 # dataset (reminder: do 20000 for experiments)

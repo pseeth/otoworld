@@ -30,10 +30,10 @@ Train the agent on the actual model which includes separation model + Q Network 
 def run():
     # Shoebox Room
     nussl.utils.seed(0)
-    room = room_types.ShoeBox(x_length=5, y_length=5)
+    room = room_types.ShoeBox(x_length=3, y_length=3)
 
     # Uncomment for Polygon Room
-    # room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
+    #room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
 
     agent_loc = np.array([1, 1])
 
@@ -44,9 +44,9 @@ def run():
         agent_loc=agent_loc,
         corners=room.corners,
         max_order=10,
-        step_size=.5,
+        step_size=1.0,
         acceptable_radius=1.0,
-        absorption=0.0,
+        absorption=1.0,
     )
     env.seed(0)
 
@@ -89,7 +89,7 @@ def run():
     }
 
     dataset_config = {
-        'batch_size': 10, 
+        'batch_size': 25, 
         'num_updates': 2, 
         'save_path': '../models/'
     }
@@ -98,7 +98,7 @@ def run():
         'bidirectional': True,
         'dropout': 0.3,
         'filter_length': 256,
-        'hidden_size': 300,
+        'hidden_size': 50,
         'hop_length': 64,
         'mask_activation': ['softmax'],
         'mask_complex': False,
@@ -106,7 +106,7 @@ def run():
         'normalization_class': 'BatchNorm',
         'num_audio_channels': 1,
         'num_filters': 256,
-        'num_layers': 2,
+        'num_layers': 1,
         'num_sources': 2,
         'rnn_type': 'lstm',
         'window_type': 'sqrt_hann',
@@ -124,6 +124,7 @@ def run():
         dataset_config=dataset_config,
         rnn_config=rnn_config,
         stft_config=stft_config,
+        learning_rate=.001,
     )
     torch.autograd.set_detect_anomaly(True)
     rnn_agent.fit()

@@ -24,7 +24,7 @@ logger.addHandler(file_handler)
 
 class RnnAgent(agent.AgentBase):
     def __init__(self, env_config, dataset_config, rnn_config=None, stft_config=None, 
-                 verbose=False, autoclip_percentile=10,):
+                 verbose=False, autoclip_percentile=10, learning_rate=.001):
         """
         Args:
             env_config (dict): Dictionary containing the audio environment config
@@ -82,7 +82,7 @@ class RnnAgent(agent.AgentBase):
         self.q_net_stable = DQN(network_params).to(self.device)  # Fixed Q net
 
         params = list(self.rnn_model.parameters()) + list(self.q_net.parameters())
-        self.optimizer = optim.Adam(params, lr=0.001)
+        self.optimizer = optim.Adam(params, lr=learning_rate)
         self.separator = nussl.separation.deep.DeepAudioEstimation(
             nussl.AudioSignal(), model_path=None
         )
@@ -126,6 +126,7 @@ class RnnAgent(agent.AgentBase):
             # Get the separated sources by running through RNN separation model
 
             output = self.rnn_model(data)
+            output['mix_audio'] = data['mix_audio']
 
             # audio_signal = nussl.AudioSignal(
             #     audio_data_array=data['mix_audio'][0].data.cpu().numpy(),
@@ -154,6 +155,7 @@ class RnnAgent(agent.AgentBase):
                 data['mix_audio'] = data['mix_audio_new_state'].float().view(
                     -1, 1, total_time_steps).to(self.device)
                 stable_output = self.rnn_model_stable(data)
+                stable_output['mix_audio'] = data['mix_audio']
                 q_values_next = self.q_net_stable(stable_output, total_time_steps).max(1)[0].unsqueeze(-1)
                 # print("Next state", q_values_next.shape)
 
@@ -197,6 +199,8 @@ class RnnAgent(agent.AgentBase):
             data['mix_audio'] = data['mix_audio_new_state'].float().view(
                 -1, 1, total_time_steps).to(self.device)
             output = self.rnn_model(data)
+            output['mix_audio'] = data['mix_audio']
+
             q_value = self.q_net(output, total_time_steps).max(1)[0].unsqueeze(-1)
 
             q_value = q_value[0].item()
@@ -246,39 +250,34 @@ class DQN(nn.Module):
         super(DQN, self).__init__()
 
         self.stft_diff = network_params['stft_diff']
-        self.fc1 = nn.Linear(network_params['filter_length'] * 2, 64)
-        self.fc2 = nn.Linear(64, network_params['total_actions'])
-        self.bn = nn.BatchNorm1d(network_params['filter_length'])
+        self.fc = nn.Linear(6, network_params['total_actions'])
         self.prelu = nn.PReLU()
 
     def forward(self, output, total_time_steps):
         # Reshape the output again to get dual channels
-        output['audio'] = output['audio'].view(-1, 2, total_time_steps, 2)
         # Perform short time fourier transform of this output
-        with torch.no_grad():
-            output['audio'][output['audio'].abs() < 1e-4] = 1e-4
-        stft_data = self.stft_diff(output['audio'], direction='transform')
+        _, _, nt = output['mix_audio'].shape
+        output['mix_audio'] = output['mix_audio'].reshape(-1, 2, nt)
+        stft_data = self.stft_diff(output['mix_audio'], direction='transform')
 
         # Get the IPD and ILD features from the stft data
-        ipd, ild = audio_processing.ipd_ild_features(stft_data)
+        _, nt, nf, _, ns = output['mask'].shape
+        output['mask'] = output['mask'].view(-1, 2, nt, nf, ns)
+        output['mask'] = output['mask'].max(dim=1)[0]
+        ipd, ild, vol = audio_processing.ipd_ild_features(stft_data)
+
+        ipd = ipd.unsqueeze(-1)
+        ild = ild.unsqueeze(-1)
+        vol = vol.unsqueeze(-1)
 
         # print("IPD: {}, ILD {}".format(ipd.shape, ild.shape))
+        ipd_means = (output['mask'] * ipd).mean(dim=[1, 2]).unsqueeze(1)
+        ild_means = (output['mask'] * ild).mean(dim=[1, 2]).unsqueeze(1)
+        vol_means = (output['mask'] * vol).mean(dim=[1, 2]).unsqueeze(1)
 
-        # Concatenate IPD And ILD features
-        X = torch.cat((ipd, ild), dim=2)  # Concatenate the features dimension
-
-        # Sum over the time frame axis
-        X = torch.mean(X, dim=1)
-        with torch.no_grad():
-            X[X.abs() < 1e-4] = 1e-4
-        X = self.bn(X)
-
-        # Flatten the features
-        num_features = self.flatten_features(X)
-        X = X.view(-1, num_features)  # Shape = [Batch_size, filter_length*2]
-        # Run through simple feedforward network
-        X = self.prelu(self.fc1(X))
-        X = self.fc2(X)
+        X = torch.cat([ipd_means, ild_means, vol_means], dim=1)
+        X = X.reshape(X.shape[0], -1)
+        X = self.prelu(self.fc(X))
         q_values = F.softmax(X, dim=1)
 
         return q_values

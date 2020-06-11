@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from gym import spaces
 from scipy.spatial.distance import euclidean
+from sklearn.metrics.pairwise import euclidean_distances
 from copy import deepcopy
 import nussl
 import logging
@@ -42,7 +43,7 @@ class AudioEnv(gym.Env):
         step_size=1,
         acceptable_radius=.5,
         num_sources=2,
-        degrees=0.2618,
+        degrees=np.deg2rad(30),
         reset_sources=True,
     ):
         """
@@ -70,15 +71,13 @@ class AudioEnv(gym.Env):
         self.audio = []
         self.num_channels = num_channels
         self.bytes_per_sample = bytes_per_sample
-        self.num_actions = 6
+        self.num_actions = 4
         self.action_space = spaces.Discrete(self.num_actions)
         self.action_to_string = {
-            0: "Left",
-            1: "Right",
-            2: "Up",
-            3: "Down",
-            4: "Rotate Left",
-            5: "Rotate right",
+            0: "Forward",
+            1: "Backward",
+            3: "Rotate Left",
+            4: "Rotate right",
         }
         self.corners = corners
         self.room_config = room_config
@@ -108,6 +107,13 @@ class AudioEnv(gym.Env):
                 """The threshold radius (acceptable_radius) must be at least step_size / 2. Else, the agent may overstep 
                 an audio source."""
             )
+
+        # reward dict
+        self.reward = {
+            'step_penalty': constants.STEP_PENALTY, 
+            'turn_off': constants.TURN_OFF_REWARD,
+            'min_distance': 0
+        }
 
 
     def _create_room(self):
@@ -158,6 +164,7 @@ class AudioEnv(gym.Env):
                 logger.info(f'Placing agent at {loc}')
                 self.initial_agent_loc = loc
                 self.agent_loc = loc
+                self.cur_angle = np.random.uniform(-np.pi, np.pi)
             else:
                 raise ValueError(
                     """new_agent_loc must be None (instead of new_agent_loc={}) if initial_placing is True. With initial placement, 
@@ -167,7 +174,6 @@ class AudioEnv(gym.Env):
         else:
             # Set the new agent location (where to move)
             self.agent_loc = new_agent_loc
-        print(self.agent_loc, self.cur_angle, self.source_locs)
         # Delete the array at previous time step
         self.room.mic_array = None
 
@@ -199,42 +205,81 @@ class AudioEnv(gym.Env):
         assert(sources != agent)
         sampled_points = []
 
-        while len(sampled_points) < num_points:
-            random_point = [
-                np.random.uniform(self.x_min, self.x_max),
-                np.random.uniform(self.y_min, self.y_max),
-            ]
-            try:
-                out_of_range = True
-                for point in sampled_points:
-                    # ensures sources are not too close to each other or the agent
-                    if sources:
-                        if (
-                            euclidean(random_point, point) < self.acceptable_radius
-                            or euclidean(random_point, self.agent_loc) < self.acceptable_radius
-                        ):
-                            out_of_range = False
-                    # ensures agent is not too close to sources
-                    elif agent:
-                        for source_loc in self.source_locs:
-                            if (
-                                euclidean(random_point,
-                                          point) < self.acceptable_radius
-                                or euclidean(random_point, source_loc) < self.acceptable_radius
-                            ):
-                                out_of_range = False
+        if sources:
+            angles = np.arange(0, 2 * np.pi, self.degrees).tolist()
+            while len(sampled_points) < num_points:
+                chosen_angles = np.random.choice(angles, num_points)
+                for angle in chosen_angles:
+                    direction = np.random.choice([-1, 1])
+                    distance = np.random.uniform(2 * self.step_size, 5 * self.step_size)
+                    x = (self.x_min + self.x_max) / 2
+                    y = (self.y_min + self.y_max) / 2
+                    x = x + direction * np.cos(angle) * distance
+                    y = y + direction + np.sin(angle) * distance
+                    point = [x, y]
+                    if self.room.is_inside(point, include_borders=False):
+                        accepted = True
+                        if len(sampled_points) > 0:
+                            dist_to_existing = euclidean_distances(
+                                np.array(point).reshape(1, -1), sampled_points)
+                            accepted = dist_to_existing.min() > 2 * self.step_size
+                        if accepted:
+                            sampled_points.append(point)
+            return sampled_points
+        elif agent:
+            x = (self.x_min + self.x_max) / 2
+            y = (self.y_min + self.y_max) / 2
+            self.cur_angle = np.random.uniform(-np.pi, np.pi)
+            return [x, y]
 
-                if self.room.is_inside(random_point, include_borders=False) and out_of_range:
-                    if sources:
-                        sampled_points.append(random_point)
-                    elif agent:
-                        # keep agent loc formatting ([x, y] instead of [[x, y]])
-                        return random_point
-            except:
-                # in case is_inside func fails, randomly sample again
-                continue
 
-        return sampled_points
+        #     for source_loc in self.source_locs:
+        #         if (
+        #             euclidean(random_point,
+        #                         point) < self.acceptable_radius
+        #             or euclidean(random_point, source_loc) < self.acceptable_radius
+        #         ):
+        #             out_of_range = False
+                
+
+
+
+        # while len(sampled_points) < num_points:
+        #     random_point = [
+        #         np.random.uniform(self.x_min, self.x_max),
+        #         np.random.uniform(self.y_min, self.y_max),
+        #     ]
+        #     try:
+        #         out_of_range = True
+        #         for point in sampled_points:
+        #             # ensures sources are not too close to each other or the agent
+        #             if sources:
+        #                 if (
+        #                     euclidean(random_point, point) < 4.0 * self.acceptable_radius
+        #                     or euclidean(random_point, self.agent_loc) < 4.0 * self.acceptable_radius
+        #                 ):
+        #                     out_of_range = False
+        #             # ensures agent is not too close to sources
+        #             elif agent:
+        #                 for source_loc in self.source_locs:
+        #                     if (
+        #                         euclidean(random_point,
+        #                                   point) < self.acceptable_radius
+        #                         or euclidean(random_point, source_loc) < self.acceptable_radius
+        #                     ):
+        #                         out_of_range = False
+
+        #         if self.room.is_inside(random_point, include_borders=False) and out_of_range:
+        #             if sources:
+        #                 sampled_points.append(random_point)
+        #             elif agent:
+        #                 # keep agent loc formatting ([x, y] instead of [[x, y]])
+        #                 return random_point
+        #     except:
+        #         # in case is_inside func fails, randomly sample again
+        #         continue
+
+        # return sampled_points
 
     def _add_sources(self, new_source_locs=None, reset_env=False, removing_source=None):
         """
@@ -270,16 +315,13 @@ class AudioEnv(gym.Env):
             logger.info(f'Adding src {idx} ({audio_file}) to pyroom.')
             # Audio will be automatically re-sampled to the given rate (default sr=8000).
             a = nussl.AudioSignal(audio_file, sample_rate=self.resample_rate)
-
-            # If sound is recorded on stereo microphone, it is 2d
-            if a.is_stereo:
-                a.to_mono()
+            a.to_mono()
 
             # normalize audio so both sources have similar volume at beginning before mixing
             loudness = a.loudness()
 
             # mix to reference db
-            ref_db = -20
+            ref_db = -40
             db_diff = ref_db - loudness
             gain = 10 ** (db_diff / 20)
             a = a * gain
@@ -314,12 +356,10 @@ class AudioEnv(gym.Env):
     def step(self, action, play_audio=False, show_room=False):
         """
         This function simulates the agent taking one step in the environment (and room) given an action:
-            0 = Left
-            1 = Right
-            2 = Up
-            3 = Down
-            4 = Turn left x degrees
-            5 = Turn right x degrees
+            0 = Move forward
+            1 = Move backward
+            2 = Turn left x degrees
+            3 = Turn right x degrees
 
         It calls _move_agent, checks to see if the agent has reached a source, and if not, computes the RIR.
 
@@ -334,20 +374,18 @@ class AudioEnv(gym.Env):
         # NOTE: unlikely case that agent finds source on step 0, data doesn't get recorded
         """
         x, y = self.agent_loc[0], self.agent_loc[1]
-        # Separate out the action and orientation
-        # action, angle = actions[0], actions[1]
         done = False
-        if action == 0:
-            x -= self.step_size
-        elif action == 1:
-            x += self.step_size
-        elif action == 2:
-            y += self.step_size
+
+        if action in [0, 1]:
+            if action == 0:
+                sign = 1
+            if action == 1:
+                sign = -1
+            x = x + sign * np.cos(self.cur_angle) * self.step_size
+            y = y + sign * np.sin(self.cur_angle) * self.step_size
         elif action == 3:
-            y -= self.step_size
-        elif action == 4:
             self.cur_angle += self.degrees
-        elif action == 5:
+        elif action == 4:
             self.cur_angle -= self.degrees
         # Check if the new points lie within the room
         try:
@@ -412,6 +450,10 @@ class AudioEnv(gym.Env):
 
             # penalize time it takes to reach a source (penalty for each step)
             reward = constants.STEP_PENALTY
+            min_dist = euclidean_distances(
+                np.array(self.agent_loc).reshape(1, -1), self.source_locs).min()
+            reward += min(1 / (min_dist + 1e-4), constants.TURN_OFF_REWARD)
+            print(self.agent_loc, self.cur_angle, self.source_locs, reward)
 
             # Return the room rir and convolved signals as the new state
             return data, reward, done
