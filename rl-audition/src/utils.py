@@ -37,22 +37,25 @@ def choose_random_files(num_sources=2):
         num_sources (int): number of sources to place in the room
     Returns:
         paths (List[str]): the paths to two wav files
+
+    TODO: functionality for > 2 sources
     """
     paths = []
 
-    for i in range(num_sources):
-        # randomly choose male or female voice folder
-        dir = random.choice([constants.DIR_MALE, constants.DIR_FEMALE])
-        files = os.listdir(dir)
+    for folder in [constants.DIR_CAR, constants.DIR_PHONE]:
+        files = os.listdir(folder)
 
         file = ""
         while constants.AUDIO_EXTENSION not in file:
             idx = np.random.randint(len(files), size=1)[0]
             file = files[idx]
 
-        paths.append(os.path.join(dir, file))
+        paths.append(os.path.join(folder, file))
+
+    print('FILES:', paths)
 
     return paths
+
 
 def log_dist_and_num_steps(init_dist_to_target, steps_to_completion):
     """

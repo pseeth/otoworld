@@ -219,6 +219,10 @@ class RnnAgent(agent.AgentBase):
             name (str): Name contains the episode information (To give saved models unique names)
         """
         # Save the parameters for rnn model and q net separately
+        metadata = {
+            'sample_rate': 8000
+        }
+        self.rnn_model.rnn_model.save(self.SAVE_PATH + 'sp_' + name, metadata)
         torch.save(self.rnn_model.state_dict(), self.SAVE_PATH + 'rnn_' + name)
         torch.save(self.q_net.state_dict(), self.SAVE_PATH + 'qnet_' + name)
 
@@ -245,11 +249,14 @@ class DQN(nn.Module):
         self.fc1 = nn.Linear(network_params['filter_length'] * 2, 64)
         self.fc2 = nn.Linear(64, network_params['total_actions'])
         self.bn = nn.BatchNorm1d(network_params['filter_length'])
+        self.prelu = nn.PReLU()
 
     def forward(self, output, total_time_steps):
         # Reshape the output again to get dual channels
         output['audio'] = output['audio'].view(-1, 2, total_time_steps, 2)
         # Perform short time fourier transform of this output
+        with torch.no_grad():
+            output['audio'][output['audio'].abs() < 1e-4] = 1e-4
         stft_data = self.stft_diff(output['audio'], direction='transform')
 
         # Get the IPD and ILD features from the stft data
@@ -262,13 +269,15 @@ class DQN(nn.Module):
 
         # Sum over the time frame axis
         X = torch.mean(X, dim=1)
+        with torch.no_grad():
+            X[X.abs() < 1e-4] = 1e-4
         X = self.bn(X)
 
         # Flatten the features
         num_features = self.flatten_features(X)
         X = X.view(-1, num_features)  # Shape = [Batch_size, filter_length*2]
         # Run through simple feedforward network
-        X = F.relu(self.fc1(X))
+        X = self.prelu(self.fc1(X))
         X = self.fc2(X)
         q_values = F.softmax(X, dim=1)
 

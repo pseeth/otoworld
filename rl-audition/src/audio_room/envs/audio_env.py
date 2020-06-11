@@ -143,7 +143,8 @@ class AudioEnv(gym.Env):
         This function moves the agent to a new location (given by new_agent_loc). It effectively removes the
         agent (mic array) from the room and then adds it back in the new location.
 
-        If initial_placing == True, the agent is placed in the room for the first time.
+        TODO: 
+        If initial_placing == True, the agent is placed in the room for the first time. This needs work.
 
         Args:
             new_agent_loc (List[int] or np.array or None): [x,y] coordinates of the agent's new location. Should be
@@ -159,14 +160,14 @@ class AudioEnv(gym.Env):
                 self.agent_loc = loc
             else:
                 raise ValueError(
-                    """new_agent_loc must be None (new_agent_loc={}) if initial_placing is True. With initial placement, 
+                    """new_agent_loc must be None (instead of new_agent_loc={}) if initial_placing is True. With initial placement, 
                     the agent is randomly placed in the room and there is no need for a new 
                     location to be provided.""".format(new_agent_loc)
                 )
         else:
             # Set the new agent location (where to move)
             self.agent_loc = new_agent_loc
-
+        print(self.agent_loc, self.cur_angle, self.source_locs)
         # Delete the array at previous time step
         self.room.mic_array = None
 
@@ -183,7 +184,7 @@ class AudioEnv(gym.Env):
 
     def _sample_points(self, num_points, sources=True, agent=False):
         """
-        This function generates randomly sampled points for the sources to be placed
+        This function generates randomly sampled points for the sources (or agent) to be placed
 
         Args:
             num_points (int): Number of [x, y] random points to generate
@@ -209,8 +210,7 @@ class AudioEnv(gym.Env):
                     # ensures sources are not too close to each other or the agent
                     if sources:
                         if (
-                            euclidean(random_point,
-                                      point) < self.acceptable_radius
+                            euclidean(random_point, point) < self.acceptable_radius
                             or euclidean(random_point, self.agent_loc) < self.acceptable_radius
                         ):
                             out_of_range = False
@@ -276,7 +276,13 @@ class AudioEnv(gym.Env):
                 a.to_mono()
 
             # normalize audio so both sources have similar volume at beginning before mixing
-            a.peak_normalize()
+            loudness = a.loudness()
+
+            # mix to reference db
+            ref_db = -20
+            db_diff = ref_db - loudness
+            gain = 10 ** (db_diff / 20)
+            a = a * gain
 
             # Find min sized source to ensure something is playing at all times
             if len(a) < self.min_size_audio:
@@ -359,7 +365,7 @@ class AudioEnv(gym.Env):
         # Check if goal state is reached
         for index, source in enumerate(self.source_locs):
             # Agent has found the source
-            if euclidean(self.agent_loc, source) < self.acceptable_radius:
+            if euclidean(self.agent_loc, source) <= self.acceptable_radius:
                 logger.info(f'Agent has found source. Agent loc: {self.agent_loc}, Source loc: {source}')
                 # If there is more than one source, then we want to remove this source
                 if len(self.source_locs) > 1:

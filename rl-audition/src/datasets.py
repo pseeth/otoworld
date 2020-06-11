@@ -348,7 +348,8 @@ class BufferData(BaseDataset):
 
         Args:
             folder (string): File path to store the data. Put any string when not saving to disk.
-            to_disk (bool): When true, buffer will be saved to disk, else data will be stored directly in memory.
+            to_disk (bool): When true, data will be saved to disk for inspection, data will also be stored in memory
+                regardless of whether this is True or False
             transform (transforms.* object): A transforms to apply to the output of
               ``self.process_item``. If using transforms.Compose, each transform will be
               applied in sequence. Defaults to None.
@@ -363,12 +364,13 @@ class BufferData(BaseDataset):
         self.last_ptr = -1   # To keep track of the latest item in the buffer
 
         # Make sure the relevant directories exist
-        if not os.path.exists(constants.DIR_PREV_STATES):
-            os.mkdir(constants.DIR_PREV_STATES)
-        if not os.path.exists(constants.DIR_NEW_STATES):
-            os.mkdir(constants.DIR_NEW_STATES)
-        if not os.path.exists(constants.DIR_DATASET_ITEMS):
-            os.mkdir(constants.DIR_DATASET_ITEMS)
+        if self.to_disk:
+            if not os.path.exists(constants.DIR_PREV_STATES):
+                os.mkdir(constants.DIR_PREV_STATES)
+            if not os.path.exists(constants.DIR_NEW_STATES):
+                os.mkdir(constants.DIR_NEW_STATES)
+            if not os.path.exists(constants.DIR_DATASET_ITEMS):
+                os.mkdir(constants.DIR_DATASET_ITEMS)
 
         super().__init__(folder=folder, transform=transform)
 
@@ -419,21 +421,11 @@ class BufferData(BaseDataset):
         Returns:
             This should return a dictionary that gets processed by the transforms.
         """
-        if self.to_disk:
-            cur_path = os.path.join(constants.DIR_DATASET_ITEMS, str(item) + '.json')
-
-            with open(os.path.join(cur_path), 'r') as json_file:
-                output = json.load(json_file)
-
-            # convert wav files to AudioSignal objects
-            prev_state = nussl.AudioSignal(output['prev_state'])
-            new_state = nussl.AudioSignal(output['new_state'])
-
-        else:
-            # If we are directly getting the item from memory, it will be a dictionary
-            output = item.copy()
-            # print("Ouput: ", output.keys())
-            prev_state, new_state = output['prev_state'], output['new_state']
+        
+        # load data from memory
+        output = item.copy()
+        # print("Ouput: ", output.keys())
+        prev_state, new_state = output['prev_state'], output['new_state']
 
         # convert to output dict format
         del output['prev_state'], output['new_state']
@@ -495,15 +487,17 @@ class BufferData(BaseDataset):
         else:
             self.metadata[episode] += 1
 
-        if not self.to_disk:
-            buffer_dict = {
-                'prev_state': prev_state,
-                'action': action,
-                'reward': reward,
-                'new_state': new_state
-            }
-            self.append(buffer_dict)
-        else:
+        # create buffer dictionary 
+        buffer_dict = {
+            'prev_state': prev_state,
+            'action': action,
+            'reward': reward,
+            'new_state': new_state
+        }
+        self.append(buffer_dict)
+
+        # just write data to disk at beginning of episode for inspection
+        if self.to_disk and step == 1:
             # Unique file names for each state
             cur_file = str(episode) + '-' + str(step)
             prev_state_file_path = os.path.join(
@@ -520,26 +514,26 @@ class BufferData(BaseDataset):
             new_state.write_audio_to_file(new_state_file_path)
 
             # write to json
-            buffer_dict = {
+            buffer_dict_json = {
                 'prev_state': prev_state_file_path,
                 'action': action,
                 'reward': reward,
                 'new_state': new_state_file_path
             }
 
-            # If buffer is full, delete old files from disk
-            if self.full_buffer:
+            # #If buffer is full, delete old files from disk
+            # if self.full_buffer:
 
-                file_to_delete = self.items[self.ptr]
-                os.remove(os.path.join(constants.DIR_PREV_STATES, 'prev' + file_to_delete + '.wav'))
-                os.remove(os.path.join(constants.DIR_NEW_STATES, 'new' + file_to_delete + '.wav'))
-                os.remove(os.path.join(constants.DIR_DATASET_ITEMS, file_to_delete + '.json'))
+            #     file_to_delete = self.items[self.ptr]
+            #     os.remove(os.path.join(constants.DIR_PREV_STATES, 'prev' + file_to_delete + '.wav'))
+            #     os.remove(os.path.join(constants.DIR_NEW_STATES, 'new' + file_to_delete + '.wav'))
+            #     os.remove(os.path.join(constants.DIR_DATASET_ITEMS, file_to_delete + '.json'))
 
             with open(dataset_json_file_path, 'w') as json_file:
-                json.dump(buffer_dict, json_file)
+                json.dump(buffer_dict_json, json_file)
 
                 # KEY PART: append to items list of dataset object (our buffer)
-                self.append(cur_file)
+                #self.append(cur_file)
 
 
 class RLDataset(IterableDataset):

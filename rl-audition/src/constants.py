@@ -3,6 +3,8 @@ import os
 # source data
 DIR_MALE = "../sounds/dry_recordings/dev/051/"
 DIR_FEMALE = "../sounds/dry_recordings/dev/050/"
+DIR_CAR = '../sounds/car/'
+DIR_PHONE = '../sounds/phone/'
 AUDIO_EXTENSION = ".wav"
 
 # saved data during experiment
@@ -21,7 +23,7 @@ RESAMPLE_RATE = 8000
 DIST_BTWN_EARS = 0.2
 
 # max and min values of exploration rate
-MAX_EPSILON = 1.0
+MAX_EPSILON = 0.9
 MIN_EPSILON = 0.01
 
 # reward structure

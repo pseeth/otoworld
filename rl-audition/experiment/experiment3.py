@@ -30,12 +30,12 @@ Train the agent on the actual model which includes separation model + Q Network 
 def run():
     # Shoebox Room
     nussl.utils.seed(0)
-    room = room_types.ShoeBox(x_length=7, y_length=6)
+    room = room_types.ShoeBox(x_length=5, y_length=5)
 
     # Uncomment for Polygon Room
     # room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
 
-    agent_loc = np.array([3, 4])
+    agent_loc = np.array([1, 1])
 
     # Set up the gym environment
     env = gym.make(
@@ -44,9 +44,11 @@ def run():
         agent_loc=agent_loc,
         corners=room.corners,
         max_order=10,
-        step_size=1.0,
-        acceptable_radius=0.5,
+        step_size=.5,
+        acceptable_radius=1.0,
+        absorption=0.0,
     )
+    env.seed(0)
 
     # create buffer data folders
     utils.create_buffer_data_folders()
@@ -77,10 +79,9 @@ def run():
     env_config = {
         'env': env, 
         'dataset': dataset, 
-        'episodes': 5, 
+        'episodes': 50, 
         'max_steps': 50000, 
         'stable_update_freq': 2, 
-        'epsilon': 0.8, 
         'save_freq': 1, 
         'writer': writer,
         'show_room': False,
@@ -97,15 +98,15 @@ def run():
         'bidirectional': True,
         'dropout': 0.3,
         'filter_length': 256,
-        'hidden_size': 10,
+        'hidden_size': 300,
         'hop_length': 64,
-        'mask_activation': ['sigmoid'],
+        'mask_activation': ['softmax'],
         'mask_complex': False,
         'mix_key': 'mix_audio',
         'normalization_class': 'BatchNorm',
         'num_audio_channels': 1,
         'num_filters': 256,
-        'num_layers': 1,
+        'num_layers': 2,
         'num_sources': 2,
         'rnn_type': 'lstm',
         'window_type': 'sqrt_hann',
@@ -123,7 +124,6 @@ def run():
         dataset_config=dataset_config,
         rnn_config=rnn_config,
         stft_config=stft_config,
-        verbose=True
     )
     torch.autograd.set_detect_anomaly(True)
     rnn_agent.fit()
