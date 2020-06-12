@@ -1,16 +1,16 @@
 # Reinforcement learning for computer audition
+Applying reinforcement learning to perform source separation.
 
 Authors: Grant Gasser, David Terpay, Omkar Ranadive
-Advisor: Prem Seetharaman
 
-Applying reinforcement learning to perform source separation.
+Advisor: Prem Seetharaman
 
 ### Requirements:
 
 #### Environment
-We recommend using a conda environment for this project:
-* `conda create -n myenv python=3.7`
-* Then activate the environment: `conda activate myenv`
+We recommend using a conda environment for this project. Run this to install the correct packages:
+* `conda create -f conda-env.yml`
+* Then activate the environment: `conda activate rl-audition`
 
 #### Installing the Pyroomacoustics Package
 Since we use a newer version than what is available through traditional install methods, it is necessary
@@ -25,16 +25,6 @@ to to clone the Pyroomacoustics library from the `master` branch on github and u
 named `room_isinside_max_iter` that is set to 20 (previously 5, too low). For training, we set this to 
 `room_isinside_max_iter = 50` to be even more cautious. 
 
-#### Using Poetry (For us)
-- For for package and dependency management, we use Poetry
-- [How to install Poetry](https://python-poetry.org/docs/#installation)
-- Run `poetry install` to install dependencies for the project (listed in `pyproject.toml`)
-- Run `poetry export -f requirements.txt` to create/update requirements based on `pyproject.toml`
-
-#### Otherwise
-Assuming `requirements.txt` is up do date and you've successfully installed 
-pyroomacoustics as directed above, run `pip install -r requirements.txt`
-
 ### Run
 CD into `experiments/` and run a file like so: `python experiment1.py`
 
@@ -47,22 +37,6 @@ CD into `tests/` and run `pytest`
 `black {source_file_or_directory}`
 
 To set the max line length to 99: `black -l 99 {source_file_or_directory}`
-
-### Model?
-- Old way: mask in (0, 1); element-wise multiply and get the original source
-- Train anchor points and "red" points 
-- Steps:
-    1. Project L and R channels to separate embedding spaces (features)
-    2. Create anchors
-    3. Track size (loudness) of clusters/sources in matrix (embedding spaces); go to louder side (L or R)
-    4. Element-wise multiple anchors embedding to get mask
-    5. Mask * respective channel, then sum that
-    4. Embedding -> 
-        - loudness of source0 in L ear
-        - loudness of source1 in R ear
-        - loudness of source0 in L ear
-        - loudness of source1 in R ear
-    5. Take these with linear layer and map to action space 
 
 ### To Do (Winter Quarter)
 - [X] Split up Pyroom initiliazation and convolution calculation (in `basic_room.py`)
@@ -126,13 +100,29 @@ are sampling the same amount of items in `items` from each episode (i.e. if `bat
 choosing 5 samples from each episode, regardless of the size of the episode)
 - [X] Run on gpubox
 - [In progress] Write smoke/unit tests
-- [ ] Output of separation model `[25, 2, 32000, 2]` => [`ipd_ild_features()`](https://github.com/nussl/nussl/blob/551d5e46c23dadea328e0473e3038d99cd0c1ce6/nussl/core/audio_signal.py#L1096) => sum ipd and ild across all time steps for each spectogram
+- [X] Output of separation model `[25, 2, 32000, 2]` => [`ipd_ild_features()`](https://github.com/nussl/nussl/blob/551d5e46c23dadea328e0473e3038d99cd0c1ce6/nussl/core/audio_signal.py#L1096) => sum ipd and ild across all time steps for each spectogram
     - What would be the output dim of that function? (for just one spectrogram, the result would be `[f, 1, 2]` like `[freq, time bin, ipd and ild]`)
-    - [Video](https://northwestern.zoom.us/rec/play/u5QucuH8-zs3Ht2Q5ASDBqQvW465KK2shyFK__QJnRy1UnMGY1qlNecQY7HpTSf8zvbjcqTAP0wpqMuX?continueMode=true)
+    - [Video](https://northwestern.zoom.us/re c/play/u5QucuH8-zs3Ht2Q5ASDBqQvW465KK2shyFK__QJnRy1UnMGY1qlNecQY7HpTSf8zvbjcqTAP0wpqMuX?continueMode=true)
     - Then reshape [f * ipd | f * ild] (one spectrogram's ipd/ild after being summed across time) and 
     map that to 6-dim action space w/ softmax using `torch.nn.Linear(2f, 6)`
     - nussl [`SpatialClustering`](https://github.com/nussl/nussl/blob/master/nussl/separation/spatial/spatial_clustering.py) class 
     - nussl [STFT](https://github.com/nussl/nussl/blob/master/nussl/ml/networks/modules/filter_bank.py#L240)
+- [X] Adjust reward setup (dictionary and dense vs. sparse rewards option)
+- [X] Refactor agent & source placement using [this func](https://pyroomacoustics.readthedocs.io/en/pypi-release/pyroomacoustics.beamforming.html#pyroomacoustics.beamforming.circular_2D_array)
+    - Ensure agent doesn't spawn on source (ideally want it to not find on 1st step)
+    - Ensure first state written to buffer has both sources in the mix
+    - keep eye out for pop sources bug
+- [X] Add paths as arguments to `choose_random_files` func for sources
+- [X] Decay epsilon within episodes (based on step #)
+- [ ] Abstract out `train_config`
+- [ ] Update Q-network more often?
+- [X] Handle case where agent doesn't find both sources within `max_steps` (currently set to really high number)
+- [ ] Better way to identify sources for TB logging 
+- [ ] Tutorial/walk through notebook with perfect agent
+- [ ] Polygon room bug 
+    - Assertion error when computing RIR
+- [ ] support > 2 sources 
+    - Should be close here, but may need to refactor some things
 
 ### Timeline
 * Realistic: June 15 [ICML Workshop](https://icml-sas.gitlab.io/)

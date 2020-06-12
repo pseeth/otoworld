@@ -30,23 +30,26 @@ Train the agent on the actual model which includes separation model + Q Network 
 def run():
     # Shoebox Room
     nussl.utils.seed(0)
-    room = room_types.ShoeBox(x_length=3, y_length=3)
+    room = room_types.ShoeBox(x_length=5, y_length=5)
 
     # Uncomment for Polygon Room
     #room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
 
     agent_loc = np.array([1, 1])
 
+    source_folders_dict = {'../sounds/dry_recordings/dev/051/': 1,
+                           '../sounds/dry_recordings/dev/050/': 1}
+
     # Set up the gym environment
     env = gym.make(
         "audio-room-v0",
         room_config=room.generate(),
-        agent_loc=agent_loc,
+        source_folders_dict=source_folders_dict,
         corners=room.corners,
         max_order=10,
-        step_size=1.0,
+        step_size=.5,
         acceptable_radius=1.0,
-        absorption=1.0,
+        absorption=0.0,
     )
     env.seed(0)
 
@@ -80,16 +83,18 @@ def run():
         'env': env, 
         'dataset': dataset, 
         'episodes': 50, 
-        'max_steps': 50000, 
-        'stable_update_freq': 2, 
+        'max_steps': 1000,
+        'stable_update_freq': 150,
         'save_freq': 1, 
         'writer': writer,
         'show_room': False,
         'play_audio': False,
+        'decay_rate': 0.0005,
+        'decay_per_ep': True,
     }
 
     dataset_config = {
-        'batch_size': 25, 
+        'batch_size': 10, 
         'num_updates': 2, 
         'save_path': '../models/'
     }
@@ -124,7 +129,7 @@ def run():
         dataset_config=dataset_config,
         rnn_config=rnn_config,
         stft_config=stft_config,
-        learning_rate=.001,
+        learning_rate=.01,
     )
     torch.autograd.set_detect_anomaly(True)
     rnn_agent.fit()

@@ -29,32 +29,39 @@ def autoclip(model, percentile, grad_norms=None):
     return grad_norms
 
 
-def choose_random_files(num_sources=2):
+def choose_random_files(source_folders_dict):
     """
-    Function returns source random files using the directory constants. It chooses one file from the
-    female recordings and one from the male recordings
+    Function returns random source files from provided folders.
+    
     Args:
-        num_sources (int): number of sources to place in the room
+        source_folders_dict (Dict[str, int]): specify how many source files to choose from each folder
+            e.g.
+                {
+                    'car_horn_source_folder': 1,
+                    'phone_ringing_source_folder': 1
+                }
+            
+            This would choose 1 source file from each folder
     Returns:
         paths (List[str]): the paths to two wav files
-
-    TODO: functionality for > 2 sources
     """
     paths = []
 
-    for folder in [constants.DIR_MALE, constants.DIR_FEMALE]:
+    for folder, num_sources in source_folders_dict.items():
         files = os.listdir(folder)
 
-        file = ""
-        while constants.AUDIO_EXTENSION not in file:
-            idx = np.random.randint(len(files), size=1)[0]
-            idx = 0
-            file = files[idx]
+        source_files = []
+        random_indices = np.random.permutation(len(files))
+        for i in random_indices:
+            if files[i].endswith(constants.AUDIO_EXTENSION):
+                source_files.append(os.path.join(folder, files[i]))
 
-        paths.append(os.path.join(folder, file))
-
-    print('FILES:', paths)
-
+            if len(source_files) == num_sources:
+                break
+        
+        paths.extend(source_files)
+            
+    print('SOURCE FILE PATHS:', paths)
     return paths
 
 

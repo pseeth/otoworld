@@ -24,6 +24,7 @@ logger.info('\nStarting to Fit with Agent\n')
 logger.info('-'*50)
 logger.info('\n')
 
+
 class AgentBase:
     def __init__(
         self,
@@ -33,12 +34,15 @@ class AgentBase:
         max_steps=100,
         gamma=0.98,
         alpha=0.001,
-        decay_rate=0.005,
+        decay_rate=0.0005,
         stable_update_freq=-1,
         save_freq=1,
         play_audio=False,
         show_room=False,
         writer=None,
+        dense=True,
+        decay_per_ep=False,
+        decay_steps=150
     ):
         """
         This class is a base agent class which will be inherited when creating various agents.
@@ -55,6 +59,8 @@ class AgentBase:
             play_audio (bool): choose to play audio at each iteration
             show_room (bool): choose to display the configurations and movements within a room
             writer (torch.utils.tensorboard.SummaryWriter): for logging to tensorboard
+            dense (bool): makes the rewards more dense, less sparse
+                gives reward for distance to closest source
         """
         self.env = env
         self.dataset = dataset
@@ -69,10 +75,13 @@ class AgentBase:
         self.play_audio = play_audio
         self.show_room = show_room
         self.writer = writer
+        self.dense = dense
         self.losses = []
         self.cumulative_reward = 0
         self.total_experiment_steps = 0
         self.mean_episode_reward = []
+        self.decay_per_ep = decay_per_ep
+        self.decay_steps = decay_steps
 
     def fit(self):
         for episode in range(self.episodes):
@@ -80,7 +89,7 @@ class AgentBase:
             prev_state = None
 
             episode_rewards = []
-            
+
             # Measure time to complete the episode
             start = time.time()
             for step in range(self.max_steps):
@@ -96,7 +105,7 @@ class AgentBase:
                     # currently don't know which source is remaining, 0 or 1 (there's just a source in the list without an identity)
                     remaining_source_path = self.env.direct_sources[0]
                     remaining_source = self.env.source_locs[0]
-                    if constants.DIR_CAR in remaining_source_path:  # 1st source
+                    if constants.DIR_MALE in remaining_source_path:  # 1st source
                         self.writer.add_scalar('Distance/dist_to_source0', euclidean(remaining_source, self.env.agent_loc), self.total_experiment_steps)
                         self.writer.add_scalar('Distance/dist_to_source1', 0, self.total_experiment_steps)
                     else:
@@ -105,7 +114,7 @@ class AgentBase:
                         self.writer.add_scalar('Distance/dist_to_source1', euclidean(remaining_source, self.env.agent_loc), self.total_experiment_steps)
 
                 # Perform random actions with prob < epsilon
-                print('epsilon', self.epsilon)
+                #print('epsilon', self.epsilon)
                 if np.random.uniform(0, 1) < self.epsilon:
                     action = self.env.action_space.sample()
                 else:
@@ -116,16 +125,25 @@ class AgentBase:
                         # This is where agent will actually do something
                         action = self.choose_action()
 
-                # Perform the chosen action
+                # Perform the chosen action (NOTE: reward is a dictionary)
                 new_state, reward, done = self.env.step(
                     action, play_audio=self.play_audio, show_room=self.show_room
                 )
-                self.cumulative_reward += reward
-                episode_rewards.append(reward)
 
-                if reward == constants.TURN_OFF_REWARD:
-                    print('In FIT. Received reward: {} at step {}\n'.format(reward, step))
-                    logger.info(f"In FIT. Received reward {reward} at step: {step}\n")
+                # dense vs sparse 
+                total_step_reward = 0
+                if self.dense:
+                    total_step_reward += sum(reward.values())
+                else:
+                    total_step_reward += (reward['step_penalty'] + reward['turn_off_reward'])
+                        
+                # record reward stats
+                self.cumulative_reward += total_step_reward
+                episode_rewards.append(total_step_reward)
+
+                if reward['turn_off_reward'] == constants.TURN_OFF_REWARD:
+                    print('In FIT. Received reward: {} at step {}\n'.format(total_step_reward, step))
+                    logger.info(f"In FIT. Received reward {total_step_reward} at step: {step}\n")
 
                 # Perform Update
                 self.update()
@@ -133,8 +151,18 @@ class AgentBase:
                 # store SARS in buffer
                 if prev_state is not None and new_state is not None and not done:
                     self.dataset.write_buffer_data(
-                        prev_state, action, reward, new_state, episode, step
+                        prev_state, action, total_step_reward, new_state, episode, step
                     )
+
+                # Decay epsilon based on steps for faster decay
+                if not self.decay_per_ep:
+                    self.epsilon = constants.MIN_EPSILON + (
+                        constants.MAX_EPSILON - constants.MIN_EPSILON
+                    ) * np.exp(-self.decay_rate * step)
+
+                # Update stable networks based on number of steps
+                if step % self.stable_update_freq == 0:
+                    self.update_stable_networks()
 
                 # Terminate the episode if done
                 if done:
@@ -142,7 +170,7 @@ class AgentBase:
                     silence_array = np.zeros_like(prev_state.audio_data)
                     terminal_silent_state = prev_state.make_copy_with_audio_data(audio_data=silence_array)
                     self.dataset.write_buffer_data(
-                        prev_state, action, reward, terminal_silent_state, episode, step
+                        prev_state, action, total_step_reward, terminal_silent_state, episode, step
                     )
 
                     # record mean reward for this episode
@@ -170,19 +198,25 @@ class AgentBase:
                     # break and go to new episode if done
                     break
 
+
+
                 prev_state = new_state
 
-            if episode % self.stable_update_freq == 0:
-                self.update_stable_networks()
+            # if episode % self.stable_update_freq == 0:
+            #     self.update_stable_networks()
 
             if episode % self.save_freq == 0:
                 name = 'ep{}.pt'.format(episode)
                 self.save_model(name)
 
             # Decay the epsilon
-            self.epsilon = constants.MIN_EPSILON + (
-                constants.MAX_EPSILON - constants.MIN_EPSILON
-            ) * np.exp(-self.decay_rate * (episode + 1))
+            if self.decay_per_ep:
+                self.epsilon = constants.MIN_EPSILON + (
+                    constants.MAX_EPSILON - constants.MIN_EPSILON
+                ) * np.exp(-self.decay_rate * (episode + 1))
+
+            # Reset the environment
+            self.env.reset()
 
     def choose_action(self):
         """
@@ -210,23 +244,6 @@ class AgentBase:
 
     def save_model(self, name):
         raise NotImplementedError()
-
-
-class RLAgent(AgentBase):
-    def choose_action(self):
-        """
-        TODO
-
-        Input => NN => Softmax => P(action) over all actions
-            - sample from action probabilities or choose argmax
-        """
-        pass
-
-    def update(self):
-        """
-        TODO
-        """
-        pass
 
 
 class RandomAgent(AgentBase):

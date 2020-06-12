@@ -496,7 +496,7 @@ class BufferData(BaseDataset):
         self.append(buffer_dict)
 
         # just write data to disk at beginning of episode for inspection
-        if self.to_disk or step == 1:
+        if self.to_disk and step == 1:
             # Unique file names for each state
             cur_file = str(episode) + '-' + str(step)
             prev_state_file_path = os.path.join(
