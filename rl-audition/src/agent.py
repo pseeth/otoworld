@@ -114,7 +114,7 @@ class AgentBase:
                         self.writer.add_scalar('Distance/dist_to_source1', euclidean(remaining_source, self.env.agent_loc), self.total_experiment_steps)
 
                 # Perform random actions with prob < epsilon
-                #print('epsilon', self.epsilon)
+                print('epsilon', self.epsilon)
                 if np.random.uniform(0, 1) < self.epsilon:
                     action = self.env.action_space.sample()
                 else:

@@ -1,3 +1,4 @@
+import os
 import gym
 import numpy as np
 import torch
@@ -226,9 +227,9 @@ class RnnAgent(agent.AgentBase):
         metadata = {
             'sample_rate': 8000
         }
-        self.rnn_model.rnn_model.save(self.SAVE_PATH + 'sp_' + name, metadata)
-        torch.save(self.rnn_model.state_dict(), self.SAVE_PATH + 'rnn_' + name)
-        torch.save(self.q_net.state_dict(), self.SAVE_PATH + 'qnet_' + name)
+        self.rnn_model.rnn_model.save(os.path.join(self.SAVE_PATH, 'sp_' + name), metadata)
+        torch.save(self.rnn_model.state_dict(), os.path.join(self.SAVE_PATH, 'rnn_' + name))
+        torch.save(self.q_net.state_dict(), os.path.join(self.SAVE_PATH, 'qnet_' + name))
 
 
 class RnnSeparator(nn.Module):

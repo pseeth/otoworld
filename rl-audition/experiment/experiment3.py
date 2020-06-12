@@ -1,6 +1,7 @@
 import sys
 sys.path.append("../src/")
 from datetime import datetime
+import os
 
 import gym
 import numpy as np
@@ -37,8 +38,8 @@ def run():
 
     agent_loc = np.array([1, 1])
 
-    source_folders_dict = {'../sounds/dry_recordings/dev/051/': 1,
-                           '../sounds/dry_recordings/dev/050/': 1}
+    source_folders_dict = {'../sounds/phone/': 1,
+                           '../sounds/siren/': 1}
 
     # Set up the gym environment
     env = gym.make(
@@ -73,10 +74,11 @@ def run():
         transform=tfm
     )
 
-    # define tensorboard writer, name the experiment
+    # define tensorboard writer, name the experiment!
     exp_name = 'test-exp-3'
-    exp_name = '{}_{}'.format(exp_name, datetime.now().strftime('%d_%m_%Y-%H_%M_%S'))
-    writer = SummaryWriter('runs/{}'.format(exp_name))
+    exp_id = '{}_{}'.format(exp_name, datetime.now().strftime('%d_%m_%Y-%H_%M_%S'))
+    writer = SummaryWriter('runs/{}'.format(exp_id))
+
 
     # Define the relevant dictionaries
     env_config = {
@@ -93,11 +95,15 @@ def run():
         'decay_per_ep': True,
     }
 
+    save_path = os.path.join(constants.MODEL_SAVE_PATH, exp_name)
     dataset_config = {
         'batch_size': 10, 
         'num_updates': 2, 
-        'save_path': '../models/'
+        'save_path': save_path
     }
+
+    # clear save_path folder for each experiment
+    utils.clear_models_folder(save_path)
 
     rnn_config = {
         'bidirectional': True,

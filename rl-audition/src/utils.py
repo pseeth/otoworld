@@ -162,7 +162,7 @@ def plot_dist_and_steps():
 
 
 def create_buffer_data_folders():
-    # empty and re-create the folders
+    """Empty and re-create the buffer data folders"""
     if os.path.exists(constants.DIR_PREV_STATES):
         shutil.rmtree(constants.DIR_PREV_STATES)
     os.makedirs(constants.DIR_PREV_STATES)
@@ -172,3 +172,16 @@ def create_buffer_data_folders():
     if os.path.exists(constants.DIR_DATASET_ITEMS):
         shutil.rmtree(constants.DIR_DATASET_ITEMS)
     os.makedirs(constants.DIR_DATASET_ITEMS)
+
+
+def clear_models_folder(save_path):
+    """Empty/clear and re-create save_path folder to save models.
+    
+    Args:
+        save_path (str): path to folder where models will be stored
+    """
+    if os.path.exists(save_path):
+        shutil.rmtree(save_path)
+    os.makedirs(save_path)
+
+
