@@ -24,7 +24,7 @@ RESAMPLE_RATE = 8000
 DIST_BTWN_EARS = 0.15
 
 # max and min values of exploration rate
-MAX_EPSILON = 0.8
+MAX_EPSILON = 0.9
 MIN_EPSILON = 0.01
 
 # reward structure

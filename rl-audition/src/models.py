@@ -96,106 +96,81 @@ class RnnAgent(agent.AgentBase):
 
     def update(self):
         """
-        Args:
-            episode (int): Current episode number to keep update the stable Q networks every k episodes
-
-        Returns:
+        Runs the main training pipeline. Sends mix to RNN separator, then to the DQN. 
+        Calculates the q-values and the expected q-values, comparing them to get the loss and then
+        computes the gradient w.r.t to the entire differentiable pipeline.
         """
-        # print("Size of dataset {}".format(len(self.dataset.items)) )#len(self.dynamic_dataset.buffer)))
         # Run the update only if samples >= batch_size
         if len(self.dataset.items) < self.bs:
             return
-        #
-        # # Take the buffer data and make it into torch data loader object
-        # dataloader = torch.utils.data.DataLoader(self.dataset, batch_size=self.bs, shuffle=True)
 
         for index, data in enumerate(self.dataloader):
             if index > self.num_updates:
                 break
-            # print("Action ", data['action'].shape)
+
             # Get the total number of time steps
             total_time_steps = data['mix_audio_prev_state'].shape[-1]
-            # print("Data shape: ", data['mix_audio_prev_state'].shape)
+
             # Reshape the mixture to pass through the separation model (Convert dual channels into one)
             # Also, rename the state to work on to mix_audio so that it can pass through remaining nussl architecture
-            # Move, everything to GPU
+            # Move to GPU
             data['mix_audio'] = data['mix_audio_prev_state'].float().view(
                 -1, 1, total_time_steps).to(self.device)
-            
             data['action'] = data['action'].to(self.device)
             data['reward'] = data['reward'].to(self.device)
-            # Get the separated sources by running through RNN separation model
 
+            # Get the separated sources by running through RNN separation model
             output = self.rnn_model(data)
             output['mix_audio'] = data['mix_audio']
 
-            # audio_signal = nussl.AudioSignal(
-            #     audio_data_array=data['mix_audio'][0].data.cpu().numpy(),
-            #     sample_rate=8000
-            # )
-            # audio_signal.play()
-            # estimates = [
-            #     nussl.AudioSignal(
-            #         audio_data_array=output['audio'][0, ..., i].data.cpu().numpy(),
-            #         sample_rate=8000
-            #     ) for i in range(output['audio'].shape[-1])
-            # ]
-            # for e in estimates:
-            #     e.play()
-            # Pass then through the DQN model to get q values
+            # Pass then through the DQN model to get q-values
             q_values = self.q_net(output, total_time_steps)
             q_values = q_values.gather(1, data['action'])
-            # print("Q values", q_values.shape)
 
             with torch.no_grad():
-                # Now, get Q-values for the next-state
+                # Now, get q-values for the next-state
                 # Get the total number of time steps
                 total_time_steps = data['mix_audio_new_state'].shape[-1]
-                # print("Data shape: ", data['mix_audio_new_state'].shape)
+
                 # Reshape the mixture to pass through the separation model (Convert dual channels into one)
                 data['mix_audio'] = data['mix_audio_new_state'].float().view(
                     -1, 1, total_time_steps).to(self.device)
                 stable_output = self.rnn_model_stable(data)
                 stable_output['mix_audio'] = data['mix_audio']
                 q_values_next = self.q_net_stable(stable_output, total_time_steps).max(1)[0].unsqueeze(-1)
-                # print("Next state", q_values_next.shape)
 
             expected_q_values = data['reward'] + self.gamma * q_values_next
+
             # Calculate loss
             loss = F.l1_loss(q_values, expected_q_values)
-            if torch.isnan(loss):
-                logging_str = (
-                        f"\n"
-                        f"Received NaN Loss Value \n"
-                        f"- Loss: {loss}\n"
-                        f"- Last ptr:   {self.dataset.last_ptr} \n\n"
-                        f"- RNN Output: {[v.mean() for _, v in output.items()]}\n"
-                        f"- Output RNN Stable: {[v.mean() for _, v in stable_output.items()]}\n"
-                        f"- q_values: {q_values}\n"
-                        f"- q_values_next: {q_values_next} \n"
-                        f"- Data: {data}\n"
-                    )
-                logger.info(logging_str)
             self.losses.append(loss)
             #print("Loss:", loss)
-            logger.info(f"Loss: {loss}")
             self.writer.add_scalar('Loss/train', loss, len(self.losses))
-            # Optimize the model
+
+            # Optimize the model with backprop
             self.optimizer.zero_grad()
             loss.backward()
+
             # Applying AutoClip
-            self.grad_norms = utils.autoclip(
-                self.rnn_model, self.percentile, self.grad_norms)
+            self.grad_norms = utils.autoclip(self.rnn_model, self.percentile, self.grad_norms)
+
             # Stepping optimizer
             self.optimizer.step()
 
     def choose_action(self):
+        """
+        Runs a forward pass though the RNN separator and then the Q-network. An action is choosen 
+        by taking the argmax of the output vector of the network, where the output is a 
+        probability distribution over the action space (via softmax).
+
+        Returns:
+            action (int): the argmax of the q-values vector 
+        """
         with torch.no_grad():
             # Get the latest state from the buffer
-            # print("Last ptr: ", self.dataset.last_ptr, "len: ", len(self.dataset.items))
-            # print("Value at that ptr: ", self.dataset[self.dataset.last_ptr])
             data = self.dataset[self.dataset.last_ptr]
-            # Perform the forward pass
+
+            # Perform the forward pass (RNN separator => DQN)
             total_time_steps = data['mix_audio_new_state'].shape[-1]
             data['mix_audio'] = data['mix_audio_new_state'].float().view(
                 -1, 1, total_time_steps).to(self.device)
@@ -204,14 +179,14 @@ class RnnAgent(agent.AgentBase):
 
             q_value = self.q_net(output, total_time_steps).max(1)[0].unsqueeze(-1)
 
-            q_value = q_value[0].item()
+            action = q_value[0].item()
 
-            if math.isnan(q_value):
-                q_value = self.env.action_space.sample()
+            if math.isnan(action):
+                action = self.env.action_space.sample()
             else:
-                q_value = int(q_value)
+                action = int(action)
 
-            return q_value
+            return action
 
     def update_stable_networks(self):
         print("Target network updated!")
@@ -244,9 +219,14 @@ class RnnSeparator(nn.Module):
 class DQN(nn.Module):
     def __init__(self, network_params):
         """
+        The main DQN class, which takes the output of the RNN separator and input and
+        returns q-values (prob dist of the action space)
 
         Args:
             network_params (dict): Dict of network parameters
+
+        Returns:
+            q_values (torch.Tensor): q-values 
         """
         super(DQN, self).__init__()
 
@@ -271,7 +251,6 @@ class DQN(nn.Module):
         ild = ild.unsqueeze(-1)
         vol = vol.unsqueeze(-1)
 
-        # print("IPD: {}, ILD {}".format(ipd.shape, ild.shape))
         ipd_means = (output['mask'] * ipd).mean(dim=[1, 2]).unsqueeze(1)
         ild_means = (output['mask'] * ild).mean(dim=[1, 2]).unsqueeze(1)
         vol_means = (output['mask'] * vol).mean(dim=[1, 2]).unsqueeze(1)
@@ -284,7 +263,8 @@ class DQN(nn.Module):
         return q_values
 
     def flatten_features(self, x):
-        size = x.size()[1:]  # Flatten all dimensions except the batch
+        # Flatten all dimensions except the batch
+        size = x.size()[1:]
         num_features = 1
         for dimension in size:
             num_features *= dimension

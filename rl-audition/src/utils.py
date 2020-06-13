@@ -61,7 +61,6 @@ def choose_random_files(source_folders_dict):
         
         paths.extend(source_files)
             
-    print('SOURCE FILE PATHS:', paths)
     return paths
 
 

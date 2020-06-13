@@ -424,7 +424,6 @@ class BufferData(BaseDataset):
         
         # load data from memory
         output = item.copy()
-        # print("Ouput: ", output.keys())
         prev_state, new_state = output['prev_state'], output['new_state']
 
         # convert to output dict format
@@ -495,7 +494,7 @@ class BufferData(BaseDataset):
         }
         self.append(buffer_dict)
 
-        # just write data to disk at beginning of episode for inspection
+        # write data for inspection
         if self.to_disk and step == 1:
             # Unique file names for each state
             cur_file = str(episode) + '-' + str(step)
@@ -520,19 +519,8 @@ class BufferData(BaseDataset):
                 'new_state': new_state_file_path
             }
 
-            # #If buffer is full, delete old files from disk
-            # if self.full_buffer:
-
-            #     file_to_delete = self.items[self.ptr]
-            #     os.remove(os.path.join(constants.DIR_PREV_STATES, 'prev' + file_to_delete + '.wav'))
-            #     os.remove(os.path.join(constants.DIR_NEW_STATES, 'new' + file_to_delete + '.wav'))
-            #     os.remove(os.path.join(constants.DIR_DATASET_ITEMS, file_to_delete + '.json'))
-
             with open(dataset_json_file_path, 'w') as json_file:
                 json.dump(buffer_dict_json, json_file)
-
-                # KEY PART: append to items list of dataset object (our buffer)
-                #self.append(cur_file)
 
 
 class RLDataset(IterableDataset):

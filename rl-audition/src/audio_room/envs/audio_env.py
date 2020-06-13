@@ -384,7 +384,7 @@ class AudioEnv(gym.Env):
             'closest_reward': 0
         }
 
-        print('Action:', self.action_to_string[action])
+        #print('Action:', self.action_to_string[action])
 
         # movement
         x, y = self.agent_loc[0], self.agent_loc[1]
@@ -466,9 +466,9 @@ class AudioEnv(gym.Env):
             min_dist = euclidean_distances(
                 np.array(self.agent_loc).reshape(1, -1), self.source_locs).min()
             reward['closest_reward'] = (1 / (min_dist + 1e-4))
-            print('agent_loc:', self.agent_loc, 'source_locs:', self.source_locs) 
-            print('cur angle:', self.cur_angle)
-            print('reward:', reward)
+            #print('agent_loc:', self.agent_loc, 'source_locs:', self.source_locs) 
+            #print('cur angle:', self.cur_angle)
+            #print('reward:', reward)
 
             # Return the room rir and convolved signals as the new state
             return data, reward, done

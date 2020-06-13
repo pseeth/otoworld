@@ -114,7 +114,7 @@ class AgentBase:
                         self.writer.add_scalar('Distance/dist_to_source1', euclidean(remaining_source, self.env.agent_loc), self.total_experiment_steps)
 
                 # Perform random actions with prob < epsilon
-                print('epsilon', self.epsilon)
+                #print('epsilon', self.epsilon)
                 if np.random.uniform(0, 1) < self.epsilon:
                     action = self.env.action_space.sample()
                 else:
@@ -154,11 +154,13 @@ class AgentBase:
                         prev_state, action, total_step_reward, new_state, episode, step
                     )
 
-                # Decay epsilon based on steps for faster decay
+                # Decay epsilon based on total steps (across all episodes, not within an episode)
                 if not self.decay_per_ep:
                     self.epsilon = constants.MIN_EPSILON + (
                         constants.MAX_EPSILON - constants.MIN_EPSILON
-                    ) * np.exp(-self.decay_rate * step)
+                    ) * np.exp(-self.decay_rate * self.total_experiment_steps)
+                    if self.total_experiment_steps % 200 == 0:
+                        print("Epsilon decayed to {} at step {} ".format(self.epsilon, self.total_experiment_steps))
 
                 # Update stable networks based on number of steps
                 if step % self.stable_update_freq == 0:
@@ -197,8 +199,6 @@ class AgentBase:
 
                     # break and go to new episode if done
                     break
-
-
 
                 prev_state = new_state
 

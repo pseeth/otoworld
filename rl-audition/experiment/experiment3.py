@@ -31,7 +31,7 @@ Train the agent on the actual model which includes separation model + Q Network 
 def run():
     # Shoebox Room
     nussl.utils.seed(0)
-    room = room_types.ShoeBox(x_length=5, y_length=5)
+    room = room_types.ShoeBox(x_length=8, y_length=8)
 
     # Uncomment for Polygon Room
     #room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
@@ -75,7 +75,7 @@ def run():
     )
 
     # define tensorboard writer, name the experiment!
-    exp_name = 'test-exp-3'
+    exp_name = 'test-exp-3-50eps'
     exp_id = '{}_{}'.format(exp_name, datetime.now().strftime('%d_%m_%Y-%H_%M_%S'))
     writer = SummaryWriter('runs/{}'.format(exp_id))
 
@@ -88,10 +88,11 @@ def run():
         'max_steps': 1000,
         'stable_update_freq': 150,
         'save_freq': 1, 
-        'writer': writer,
-        'show_room': False,
         'play_audio': False,
-        'decay_rate': 0.0005,
+        'show_room': False,
+        'writer': writer,
+        'dense': True,
+        'decay_rate': 0.0002,  # trial and error
         'decay_per_ep': True,
     }
 
