@@ -434,7 +434,8 @@ class BufferData(BaseDataset):
         return output
 
     def random_sample(self, bs):
-        indices = np.random.choice(len(self.items), bs, replace=False)
+        indices = np.random.choice(len(self.items), bs-1, replace=False)
+        indices = np.append(indices, self.last_ptr)
         return indices
 
     def append(self, item):

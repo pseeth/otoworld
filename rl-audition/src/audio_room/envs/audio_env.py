@@ -45,6 +45,7 @@ class AudioEnv(gym.Env):
         num_sources=2,
         degrees=np.deg2rad(30),
         reset_sources=True,
+        same_config=False
     ):
         """
         This class inherits from OpenAI Gym Env and is used to simulate the agent moving in PyRoom.
@@ -69,6 +70,8 @@ class AudioEnv(gym.Env):
                         'car_horn_source_folder': 1,
                         'phone_ringing_source_folder': 1
                     }
+            same_config (bool): If set to true, difficulty of env becomes easier - agent initial loc, source placement,
+                                and audio files don't change over episodes
         """
         self.resample_rate = resample_rate
         self.absorption = absorption
@@ -95,8 +98,9 @@ class AudioEnv(gym.Env):
         self.cur_angle = 0
         self.reset_sources = reset_sources
         self.source_folders_dict = source_folders_dict
+        self.same_config = same_config
 
-        # randomly choose sources
+        # choose audio files as sources
         self.direct_sources = choose_random_files(self.source_folders_dict)
         self.direct_sources_copy = deepcopy(self.direct_sources)
 
@@ -104,6 +108,10 @@ class AudioEnv(gym.Env):
         self._create_room()
         self._add_sources()
         self._move_agent(new_agent_loc=None, initial_placing=True)
+
+        # If same_config = True, keep track of the generated locations
+        self.fixed_source_locs = self.source_locs.copy()
+        self.fixed_agent_locs = self.agent_loc.copy()
 
         # The step size must be smaller than radius in order to make sure we don't
         # overstep a audio source
@@ -149,8 +157,7 @@ class AudioEnv(gym.Env):
         If initial_placing == True, the agent is placed in the room for the first time.
 
         Args:
-            new_agent_loc (List[int] or np.array or None): [x,y] coordinates of the agent's new location. Should be
-                None if initial_placing is True.
+            new_agent_loc (List[int] or np.array or None): [x,y] coordinates of the agent's new location.
             initial_placing (bool): True if initially placing the agent in the room at the beginning of the episode
         """
         # Placing agent in room for the first time (likely at the beginning of a new episode, after a reset)
@@ -158,14 +165,14 @@ class AudioEnv(gym.Env):
             if new_agent_loc is None:
                 loc = self._sample_points(1, sources=False, agent=True)
                 logger.info(f'Placing agent at {loc}')
+                print("Placing agent at {}".format(loc))
                 self.agent_loc = loc
                 self.cur_angle = 0  # Reset the orientation of agent back to zero at start of an ep 
             else:
-                raise ValueError(
-                    """new_agent_loc must be None (instead of new_agent_loc={}) if initial_placing is True. With initial placement, 
-                    the agent is randomly placed in the room and there is no need for a new 
-                    location to be provided.""".format(new_agent_loc)
-                )
+                logger.info(f'Placing agent at {new_agent_loc}')
+                self.agent_loc = new_agent_loc.copy()
+                print("Placing agent at {}".format(self.agent_loc))
+                self.cur_angle = 0
         else:
             # Set the new agent location (where to move)
             self.agent_loc = new_agent_loc
@@ -238,55 +245,6 @@ class AudioEnv(gym.Env):
             
             return point
 
-
-        #     for source_loc in self.source_locs:
-        #         if (
-        #             euclidean(random_point,
-        #                         point) < self.acceptable_radius
-        #             or euclidean(random_point, source_loc) < self.acceptable_radius
-        #         ):
-        #             out_of_range = False
-                
-
-
-
-        # while len(sampled_points) < num_points:
-        #     random_point = [
-        #         np.random.uniform(self.x_min, self.x_max),
-        #         np.random.uniform(self.y_min, self.y_max),
-        #     ]
-        #     try:
-        #         out_of_range = True
-        #         for point in sampled_points:
-        #             # ensures sources are not too close to each other or the agent
-        #             if sources:
-        #                 if (
-        #                     euclidean(random_point, point) < 4.0 * self.acceptable_radius
-        #                     or euclidean(random_point, self.agent_loc) < 4.0 * self.acceptable_radius
-        #                 ):
-        #                     out_of_range = False
-        #             # ensures agent is not too close to sources
-        #             elif agent:
-        #                 for source_loc in self.source_locs:
-        #                     if (
-        #                         euclidean(random_point,
-        #                                   point) < self.acceptable_radius
-        #                         or euclidean(random_point, source_loc) < self.acceptable_radius
-        #                     ):
-        #                         out_of_range = False
-
-        #         if self.room.is_inside(random_point, include_borders=False) and out_of_range:
-        #             if sources:
-        #                 sampled_points.append(random_point)
-        #             elif agent:
-        #                 # keep agent loc formatting ([x, y] instead of [[x, y]])
-        #                 return random_point
-        #     except:
-        #         # in case is_inside func fails, randomly sample again
-        #         continue
-
-        # return sampled_points
-
     def _add_sources(self, new_source_locs=None, reset_env=False, removing_source=None):
         """
         This function adds the sources to the environment.
@@ -308,11 +266,12 @@ class AudioEnv(gym.Env):
         if new_source_locs is None:
             self.source_locs = self._sample_points(num_points=self.num_sources)
         else:
-            self.source_locs = new_source_locs
+            self.source_locs = new_source_locs.copy()
 
         logger.info('Adding sources')
         logger.info(f'Direct Sources: {self.direct_sources}')
         logger.info(f'Source locs: {self.source_locs}')
+        print("Source locs {}".format(self.source_locs))
 
         self.audio = []
         self.min_size_audio = np.inf
@@ -381,7 +340,8 @@ class AudioEnv(gym.Env):
         reward = {
             'step_penalty': constants.STEP_PENALTY,
             'turn_off_reward': 0,
-            'closest_reward': 0
+            'closest_reward': 0,
+            'orient_penalty': 0
         }
 
         #print('Action:', self.action_to_string[action])
@@ -399,8 +359,10 @@ class AudioEnv(gym.Env):
             y = y + sign * np.sin(self.cur_angle) * self.step_size
         elif action == 2:
             self.cur_angle += self.degrees
+            reward['orient_penalty'] = constants.ORIENT_PENALTY
         elif action == 3:
             self.cur_angle -= self.degrees
+            reward['orient_penalty'] = constants.ORIENT_PENALTY
         # Check if the new points lie within the room
         try:
             if self.room.is_inside([x, y], include_borders=False):
@@ -487,11 +449,15 @@ class AudioEnv(gym.Env):
         # re-create room
         self._create_room()
 
-        # randomly add sources to the room
-        self._add_sources()
-
-        # randomly place agent in room at beginning of next episode
-        self._move_agent(new_agent_loc=None, initial_placing=True)
+        if not self.same_config:
+            # randomly add sources to the room
+            self._add_sources()
+            # randomly place agent in room at beginning of next episode
+            self._move_agent(new_agent_loc=None, initial_placing=True)
+        else:
+            # place sources and agent at same locations to start every episode
+            self._add_sources(new_source_locs=self.fixed_source_locs)
+            self._move_agent(new_agent_loc=self.fixed_agent_locs, initial_placing=True)
 
     def render(self, data, play_audio, show_room):
         """

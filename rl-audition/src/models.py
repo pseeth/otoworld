@@ -23,6 +23,7 @@ file_handler = logging.FileHandler('model.log')
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
+
 class RnnAgent(agent.AgentBase):
     def __init__(self, env_config, dataset_config, rnn_config=None, stft_config=None, 
                  verbose=False, autoclip_percentile=10, learning_rate=.001):
@@ -67,7 +68,7 @@ class RnnAgent(agent.AgentBase):
         # Initialize the rnn model
         # self.rnn_model = nussl.ml.SeparationModel(self.rnn_config, verbose=verbose)
         self.rnn_model = RnnSeparator(self.rnn_config).to(self.device)
-        self.rnn_model_stable = RnnSeparator(self.rnn_config).to(self.device)  # Fixed Q network
+        self.rnn_model_stable = RnnSeparator(self.rnn_config).to(self.device)
 
         # Initialize dataset related parameters
         self.bs = dataset_config['batch_size']
@@ -84,10 +85,10 @@ class RnnAgent(agent.AgentBase):
 
         params = list(self.rnn_model.parameters()) + list(self.q_net.parameters())
         self.optimizer = optim.Adam(params, lr=learning_rate)
-        self.separator = nussl.separation.deep.DeepAudioEstimation(
-            nussl.AudioSignal(), model_path=None
-        )
-        self.separator.model = self.rnn_model
+        # self.separator = nussl.separation.deep.DeepAudioEstimation(
+        #     nussl.AudioSignal(), model_path=None
+        # )
+        # self.separator.model = self.rnn_model
 
         # Folder path where the model will be saved
         self.SAVE_PATH = dataset_config['save_path']

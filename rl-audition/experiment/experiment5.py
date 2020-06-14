@@ -22,6 +22,9 @@ import audio_processing
 from models import RnnAgent
 import transforms
 
+import warnings
+warnings.filterwarnings("ignore")
+
 """
 Experiment 3 details: 
 Train the agent on the actual model which includes separation model + Q Network (The RNNQNet model) 
@@ -31,12 +34,10 @@ Train the agent on the actual model which includes separation model + Q Network 
 def run():
     # Shoebox Room
     nussl.utils.seed(0)
-    room = room_types.ShoeBox(x_length=8, y_length=8)
+    room = room_types.ShoeBox(x_length=6, y_length=6)
 
     # Uncomment for Polygon Room
     #room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
-
-    agent_loc = np.array([1, 1])
 
     source_folders_dict = {'../sounds/phone/': 1,
                            '../sounds/siren/': 1}
@@ -51,6 +52,8 @@ def run():
         step_size=.5,
         acceptable_radius=1.0,
         absorption=0.0,
+        reset_sources=False,
+        same_config=True,
     )
     env.seed(0)
 
@@ -75,7 +78,7 @@ def run():
     )
 
     # define tensorboard writer, name the experiment!
-    exp_name = 'test-exp-5-50eps_1'
+    exp_name = 'test-exp-5-50eps_test_simp_env_validation'
     exp_id = '{}_{}'.format(exp_name, datetime.now().strftime('%d_%m_%Y-%H_%M_%S'))
     writer = SummaryWriter('runs/{}'.format(exp_id))
 
@@ -85,14 +88,15 @@ def run():
         'dataset': dataset,
         'episodes': 50,
         'max_steps': 1000,
-        'stable_update_freq': 150,
-        'save_freq': 5,
+        'stable_update_freq': 200,
+        'save_freq': 3,
         'play_audio': False,
         'show_room': False,
         'writer': writer,
         'dense': True,
-        'decay_rate': 0.0005,  # trial and error
-        'decay_per_ep': False,
+        'decay_rate': 0.005,  # trial and error
+        'decay_per_ep': True,
+        'validation_freq': 5
     }
 
     save_path = os.path.join(constants.MODEL_SAVE_PATH, exp_name)

@@ -42,7 +42,7 @@ class AgentBase:
         writer=None,
         dense=True,
         decay_per_ep=False,
-        decay_steps=150
+        validation_freq=None
     ):
         """
         This class is a base agent class which will be inherited when creating various agents.
@@ -60,7 +60,10 @@ class AgentBase:
             show_room (bool): choose to display the configurations and movements within a room
             writer (torch.utils.tensorboard.SummaryWriter): for logging to tensorboard
             dense (bool): makes the rewards more dense, less sparse
-                gives reward for distance to closest source
+                gives reward for distance to closest source every step
+            decay_per_ep (bool): If set to true, epsilon is decayed per episode, else decayed per step
+            validation_freq (None or int): if not None, then do a validation run every validation_freq # of episodes
+                validation run means epsilon=0 (no random actions) and no model update/training
         """
         self.env = env
         self.dataset = dataset
@@ -81,7 +84,11 @@ class AgentBase:
         self.total_experiment_steps = 0
         self.mean_episode_reward = []
         self.decay_per_ep = decay_per_ep
-        self.decay_steps = decay_steps
+        self.validation_freq = validation_freq
+
+        # for saving model at best validation episode (as determined by mean reward in the episode)
+        if self.validation_freq is not None:
+            self.max_validation_reward = -np.inf
 
     def fit(self):
         for episode in range(self.episodes):
@@ -89,6 +96,12 @@ class AgentBase:
             prev_state = None
 
             episode_rewards = []
+
+            # validation episode?
+            validation_episode = False
+            if self.validation_freq is not None:
+                validation_episode = True if (episode + 1) % self.validation_freq == 0 else False
+            print('\nValidation Episode:', validation_episode)
 
             # Measure time to complete the episode
             start = time.time()
@@ -105,7 +118,7 @@ class AgentBase:
                     # currently don't know which source is remaining, 0 or 1 (there's just a source in the list without an identity)
                     remaining_source_path = self.env.direct_sources[0]
                     remaining_source = self.env.source_locs[0]
-                    if constants.DIR_MALE in remaining_source_path:  # 1st source
+                    if constants.DIR_CAR in remaining_source_path:  # 1st source
                         self.writer.add_scalar('Distance/dist_to_source0', euclidean(remaining_source, self.env.agent_loc), self.total_experiment_steps)
                         self.writer.add_scalar('Distance/dist_to_source1', 0, self.total_experiment_steps)
                     else:
@@ -115,9 +128,17 @@ class AgentBase:
 
                 # Perform random actions with prob < epsilon
                 #print('epsilon', self.epsilon)
-                if np.random.uniform(0, 1) < self.epsilon:
+                model_action = False
+                if (np.random.uniform(0, 1) < self.epsilon):
                     action = self.env.action_space.sample()
                 else:
+                    model_action = True
+
+                # validation run: no random actions and no model update/training
+                if validation_episode:
+                    model_action = True
+
+                if model_action:
                     # For the first two steps (We don't have prev_state, new_state pair), then perform a random action
                     if step < 2:
                         action = self.env.action_space.sample()
@@ -126,7 +147,7 @@ class AgentBase:
                         action = self.choose_action()
 
                 # Perform the chosen action (NOTE: reward is a dictionary)
-                new_state, reward, done = self.env.step(
+                new_state, reward, won = self.env.step(
                     action, play_audio=self.play_audio, show_room=self.show_room
                 )
 
@@ -146,10 +167,11 @@ class AgentBase:
                     logger.info(f"In FIT. Received reward {total_step_reward} at step: {step}\n")
 
                 # Perform Update
-                self.update()
+                if not validation_episode:
+                    self.update()
 
                 # store SARS in buffer
-                if prev_state is not None and new_state is not None and not done:
+                if prev_state is not None and new_state is not None and not won:
                     self.dataset.write_buffer_data(
                         prev_state, action, total_step_reward, new_state, episode, step
                     )
@@ -166,8 +188,8 @@ class AgentBase:
                 if step % self.stable_update_freq == 0:
                     self.update_stable_networks()
 
-                # Terminate the episode if done
-                if done:
+                # Terminate the episode if episode is won or at max steps
+                if won or (step == self.max_steps - 1):
                     # terminal state is silence
                     silence_array = np.zeros_like(prev_state.audio_data)
                     terminal_silent_state = prev_state.make_copy_with_audio_data(audio_data=silence_array)
@@ -177,8 +199,20 @@ class AgentBase:
 
                     # record mean reward for this episode
                     self.mean_episode_reward = np.mean(episode_rewards)
+                    print('Mean ep Reward:', self.mean_episode_reward)
                     self.writer.add_scalar('Reward/mean_per_episode', self.mean_episode_reward, episode)
                     self.writer.add_scalar('Reward/cumulative', self.cumulative_reward, self.total_experiment_steps)
+
+                    if validation_episode:
+                        # new best validation reward
+                        if self.mean_episode_reward > self.max_validation_reward:
+                            self.max_validation_reward = self.mean_episode_reward
+                            print('Updated Max Valid Reward:', self.max_validation_reward)
+
+                            # save best validation model
+                            self.save_model('best_valid_reward.pt')
+                        
+                        self.writer.add_scalar('Reward/validation_mean_per_episode', self.mean_episode_reward, episode)
 
                     end = time.time()
                     total_time = end - start
@@ -189,7 +223,8 @@ class AgentBase:
                         f"Episode Summary \n"
                         f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n"
                         f"- Episode: {episode+1}\n"
-                        f"- Done a step: {step+1}\n"
+                        f"- Won?: {won}\n"
+                        f"- Finished at step: {step+1}\n"
                         f"- Time taken:   {total_time:04f} \n"
                         f"- Steps/Second: {float(step+1)/total_time:04f} \n"
                         f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n"
@@ -197,23 +232,21 @@ class AgentBase:
                     print(logging_str)
                     logger.info(logging_str)
 
-                    # break and go to new episode if done
+                    # break and go to new episode
                     break
 
                 prev_state = new_state
-
-            # if episode % self.stable_update_freq == 0:
-            #     self.update_stable_networks()
 
             if episode % self.save_freq == 0:
                 name = 'ep{}.pt'.format(episode)
                 self.save_model(name)
 
-            # Decay the epsilon
+            # Decay epsilon per episode
             if self.decay_per_ep:
                 self.epsilon = constants.MIN_EPSILON + (
                     constants.MAX_EPSILON - constants.MIN_EPSILON
                 ) * np.exp(-self.decay_rate * (episode + 1))
+                print("Decayed epsilon value: {}".format(self.epsilon))
 
             # Reset the environment
             self.env.reset()
@@ -237,9 +270,9 @@ class AgentBase:
 
     def update_stable_networks(self):
         """
-            This function must be implemented by subclass.
-            It will perform an update to the stable networks. I.E Copy values from current network to target network
-            """
+        This function must be implemented by subclass.
+        It will perform an update to the stable networks. I.E Copy values from current network to target network
+        """
         raise NotImplementedError()
 
     def save_model(self, name):

@@ -93,7 +93,7 @@ def run():
         'writer': writer,
         'dense': True,
         'decay_rate': 0.0002,  # trial and error
-        'decay_per_ep': True,
+        'decay_per_ep': True
     }
 
     save_path = os.path.join(constants.MODEL_SAVE_PATH, exp_name)
