@@ -119,13 +119,14 @@ class RnnAgent(agent.AgentBase):
                 -1, 1, total_time_steps).to(self.device)
             data['action'] = data['action'].to(self.device)
             data['reward'] = data['reward'].to(self.device)
+            agent_info = data['agent_info'].to(self.device)
 
             # Get the separated sources by running through RNN separation model
             output = self.rnn_model(data)
             output['mix_audio'] = data['mix_audio']
 
             # Pass then through the DQN model to get q-values
-            q_values = self.q_net(output, total_time_steps)
+            q_values = self.q_net(output, agent_info, total_time_steps)
             q_values = q_values.gather(1, data['action'])
 
             with torch.no_grad():
@@ -138,7 +139,7 @@ class RnnAgent(agent.AgentBase):
                     -1, 1, total_time_steps).to(self.device)
                 stable_output = self.rnn_model_stable(data)
                 stable_output['mix_audio'] = data['mix_audio']
-                q_values_next = self.q_net_stable(stable_output, total_time_steps).max(1)[0].unsqueeze(-1)
+                q_values_next = self.q_net_stable(stable_output, agent_info, total_time_steps).max(1)[0].unsqueeze(-1)
 
             expected_q_values = data['reward'] + self.gamma * q_values_next
 
@@ -177,8 +178,8 @@ class RnnAgent(agent.AgentBase):
                 -1, 1, total_time_steps).to(self.device)
             output = self.rnn_model(data)
             output['mix_audio'] = data['mix_audio']
-
-            q_value = self.q_net(output, total_time_steps).max(1)[0].unsqueeze(-1)
+            agent_info = data['agent_info'].to(self.device)
+            q_value = self.q_net(output, agent_info, total_time_steps).max(1)[0].unsqueeze(-1)
 
             action = q_value[0].item()
 
@@ -232,10 +233,10 @@ class DQN(nn.Module):
         super(DQN, self).__init__()
 
         self.stft_diff = network_params['stft_diff']
-        self.fc = nn.Linear(6, network_params['total_actions'])
+        self.fc = nn.Linear(9, network_params['total_actions'])
         self.prelu = nn.PReLU()
 
-    def forward(self, output, total_time_steps):
+    def forward(self, output, agent_info, total_time_steps):
         # Reshape the output again to get dual channels
         # Perform short time fourier transform of this output
         _, _, nt = output['mix_audio'].shape
@@ -255,9 +256,10 @@ class DQN(nn.Module):
         ipd_means = (output['mask'] * ipd).mean(dim=[1, 2]).unsqueeze(1)
         ild_means = (output['mask'] * ild).mean(dim=[1, 2]).unsqueeze(1)
         vol_means = (output['mask'] * vol).mean(dim=[1, 2]).unsqueeze(1)
-
         X = torch.cat([ipd_means, ild_means, vol_means], dim=1)
         X = X.reshape(X.shape[0], -1)
+        agent_info = agent_info.view(-1, 3)
+        X = torch.cat((X, agent_info), dim=1)
         X = self.prelu(self.fc(X))
         q_values = F.softmax(X, dim=1)
 

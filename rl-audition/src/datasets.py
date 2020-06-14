@@ -431,6 +431,7 @@ class BufferData(BaseDataset):
         output['prev_state'], output['new_state'] = prev_state, new_state
         output['reward'] = np.array([output['reward']], dtype='float32')
         output['action'] = np.array([output['action']], dtype='int64')
+        output['agent_info'] = np.array(output['agent_info'], dtype='float32')
         return output
 
     def random_sample(self, bs):
@@ -458,7 +459,7 @@ class BufferData(BaseDataset):
                 self.last_ptr = 0
                 self.full_buffer = True
 
-    def write_buffer_data(self, prev_state, action, reward, new_state, episode, step):
+    def write_buffer_data(self, prev_state, action, reward, new_state, agent_info, episode, step):
         """
         Writes states (AudioSignal objects) to .wav files and stores this buffer data
         in json files with the states keys pointing to the .wav files. The json files
@@ -478,20 +479,25 @@ class BufferData(BaseDataset):
             action (int): action
             reward (int): reward
             new_state (nussl.AudioSignal): new state to be converted and saved as wav file
+            agent_info (list): Consists of agent location and current orientation of the agent
             episode (int): which episode we're on, used to create unique file name for state
             step (int): which step we're on within episode, used to create unique file name for state
+
         """
         if episode not in self.metadata:
             self.metadata[episode] = 1
         else:
             self.metadata[episode] += 1
 
-        # create buffer dictionary 
+        agent_loc, cur_angle = agent_info
+        agent_info = np.append(agent_loc, cur_angle)  # Jut make it a single list to keep things simple
+        # create buffer dictionary
         buffer_dict = {
             'prev_state': prev_state,
             'action': action,
             'reward': reward,
-            'new_state': new_state
+            'new_state': new_state,
+            'agent_info': agent_info
         }
         self.append(buffer_dict)
 
@@ -517,7 +523,7 @@ class BufferData(BaseDataset):
                 'prev_state': prev_state_file_path,
                 'action': action,
                 'reward': reward,
-                'new_state': new_state_file_path
+                'new_state': new_state_file_path,
             }
 
             with open(dataset_json_file_path, 'w') as json_file:

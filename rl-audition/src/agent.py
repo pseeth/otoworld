@@ -92,6 +92,7 @@ class AgentBase:
 
     def fit(self):
         for episode in range(self.episodes):
+            print('\nStarting a new Episode!\n')
             # Reset the self.environment and any other variables at beginning of each episode
             prev_state = None
 
@@ -147,7 +148,7 @@ class AgentBase:
                         action = self.choose_action()
 
                 # Perform the chosen action (NOTE: reward is a dictionary)
-                new_state, reward, won = self.env.step(
+                new_state, agent_info, reward, won = self.env.step(
                     action, play_audio=self.play_audio, show_room=self.show_room
                 )
 
@@ -173,7 +174,7 @@ class AgentBase:
                 # store SARS in buffer
                 if prev_state is not None and new_state is not None and not won:
                     self.dataset.write_buffer_data(
-                        prev_state, action, total_step_reward, new_state, episode, step
+                        prev_state, action, total_step_reward, new_state, agent_info, episode, step
                     )
 
                 # Decay epsilon based on total steps (across all episodes, not within an episode)
@@ -200,6 +201,7 @@ class AgentBase:
                     # record mean reward for this episode
                     self.mean_episode_reward = np.mean(episode_rewards)
                     print('Mean ep Reward:', self.mean_episode_reward)
+                    logger.info('Mean ep Reward:', self.mean_episode_reward)
                     self.writer.add_scalar('Reward/mean_per_episode', self.mean_episode_reward, episode)
                     self.writer.add_scalar('Reward/cumulative', self.cumulative_reward, self.total_experiment_steps)
 
@@ -222,7 +224,7 @@ class AgentBase:
                         f"\n\n"
                         f"Episode Summary \n"
                         f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n"
-                        f"- Episode: {episode+1}\n"
+                        f"- Episode: {episode}\n"
                         f"- Won?: {won}\n"
                         f"- Finished at step: {step+1}\n"
                         f"- Time taken:   {total_time:04f} \n"

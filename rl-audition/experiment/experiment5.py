@@ -49,9 +49,9 @@ def run():
         source_folders_dict=source_folders_dict,
         corners=room.corners,
         max_order=10,
-        step_size=.5,
+        step_size=1.0,
         acceptable_radius=1.0,
-        absorption=0.0,
+        absorption=1.0,
         reset_sources=False,
         same_config=True,
     )
@@ -78,7 +78,7 @@ def run():
     )
 
     # define tensorboard writer, name the experiment!
-    exp_name = 'test-exp-5-50eps_test_simp_env_validation'
+    exp_name = 'test-exp-5-50eps_test_simp_env_validation-2'
     exp_id = '{}_{}'.format(exp_name, datetime.now().strftime('%d_%m_%Y-%H_%M_%S'))
     writer = SummaryWriter('runs/{}'.format(exp_id))
 

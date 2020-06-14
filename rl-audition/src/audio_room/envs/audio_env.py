@@ -358,10 +358,10 @@ class AudioEnv(gym.Env):
             x = x + sign * np.cos(self.cur_angle) * self.step_size
             y = y + sign * np.sin(self.cur_angle) * self.step_size
         elif action == 2:
-            self.cur_angle += self.degrees
+            self.cur_angle = round((self.cur_angle + self.degrees) % (2 * np.pi), 4)
             reward['orient_penalty'] = constants.ORIENT_PENALTY
         elif action == 3:
-            self.cur_angle -= self.degrees
+            self.cur_angle = round((self.cur_angle - self.degrees) % (2 * np.pi), 4)
             reward['orient_penalty'] = constants.ORIENT_PENALTY
         # Check if the new points lie within the room
         try:
@@ -401,14 +401,14 @@ class AudioEnv(gym.Env):
                         self.render(data, play_audio, show_room)
 
                     done = False
-                    return data, reward, done
+                    return data, [self.agent_loc, self.cur_angle], reward, done
 
                 # This was the last source hence we can assume we are done
                 else:
                     logger.info(f'Last source found. Returning reward {constants.TURN_OFF_REWARD}')
                     done = True
                     self.reset()
-                    return None, reward, done
+                    return None, [self.agent_loc, self.cur_angle], reward, done
 
         if not done:
             # Calculate the impulse response
@@ -433,7 +433,7 @@ class AudioEnv(gym.Env):
             #print('reward:', reward)
 
             # Return the room rir and convolved signals as the new state
-            return data, reward, done
+            return data, [self.agent_loc, self.cur_angle], reward, done
 
     def reset(self, removing_source=None):
         """

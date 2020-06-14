@@ -50,7 +50,7 @@ def run():
         max_order=10,
         step_size=.5,
         acceptable_radius=1.0,
-        absorption=0.0,
+        absorption=1.0,
     )
     env.seed(0)
 
