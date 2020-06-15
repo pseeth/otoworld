@@ -8,7 +8,8 @@ from sklearn.metrics.pairwise import euclidean_distances
 from copy import deepcopy
 import nussl
 import logging
-
+from matplotlib.axes._axes import _log as matplotlib_axes_logger
+matplotlib_axes_logger.setLevel('ERROR')
 import sys
 sys.path.append("../../")
 
@@ -27,6 +28,7 @@ logger.info('-'*50)
 logger.info('\nCreating new Audio Environment!\n')
 logger.info('-'*50)
 logger.info('\n')
+
 
 
 class AudioEnv(gym.Env):
@@ -292,6 +294,7 @@ class AudioEnv(gym.Env):
 
             # Find min sized source to ensure something is playing at all times
             if len(a) < self.min_size_audio:
+                print('Min size audio:', self.min_size_audio)
                 self.min_size_audio = len(a)
             self.audio.append(a.audio_data.squeeze())
 
@@ -380,7 +383,8 @@ class AudioEnv(gym.Env):
         for index, source in enumerate(self.source_locs):
             # Agent has found the source
             if euclidean(self.agent_loc, source) <= self.acceptable_radius:
-                logger.info(f'Agent has found source. Agent loc: {self.agent_loc}, Source loc: {source}')
+                logger.info(f'Agent has found source {self.direct_sources[index]}. \nAgent loc: {self.agent_loc}, Source loc: {source}')
+                print(f'Agent has found source {self.direct_sources[index]}. \nAgent loc: {self.agent_loc}, Source loc: {source}')
                 reward['turn_off_reward'] = constants.TURN_OFF_REWARD
                 # If there is more than one source, then we want to remove this source
                 if len(self.source_locs) > 1:

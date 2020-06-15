@@ -179,19 +179,17 @@ class RnnAgent(agent.AgentBase):
             output = self.rnn_model(data)
             output['mix_audio'] = data['mix_audio']
             agent_info = data['agent_info'].to(self.device)
-            q_value = self.q_net(output, agent_info, total_time_steps).max(1)[0].unsqueeze(-1)
 
-            action = q_value[0].item()
+            # action = argmax(q-values)
+            q_values = self.q_net(output, agent_info, total_time_steps)
+            action = q_values.max(1)[1].unsqueeze(-1)
+            action = action[0].item()
 
-            if math.isnan(action):
-                action = self.env.action_space.sample()
-            else:
-                action = int(action)
+            action = int(action)
 
             return action
 
     def update_stable_networks(self):
-        print("Target network updated!")
         self.rnn_model_stable.load_state_dict(self.rnn_model.state_dict())
         self.q_net_stable.load_state_dict(self.q_net.state_dict())
 
