@@ -380,7 +380,8 @@ class AudioEnv(gym.Env):
         for index, source in enumerate(self.source_locs):
             # Agent has found the source
             if euclidean(self.agent_loc, source) <= self.acceptable_radius:
-                logger.info(f'Agent has found source. Agent loc: {self.agent_loc}, Source loc: {source}')
+                logger.info(f'Agent has found source {self.direct_sources[index]}. \nAgent loc: {self.agent_loc}, Source loc: {source}')
+                print(f'Agent has found source {self.direct_sources[index]}. \nAgent loc: {self.agent_loc}, Source loc: {source}')
                 reward['turn_off_reward'] = constants.TURN_OFF_REWARD
                 # If there is more than one source, then we want to remove this source
                 if len(self.source_locs) > 1:

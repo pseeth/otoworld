@@ -26,15 +26,15 @@ import warnings
 warnings.filterwarnings("ignore")
 
 """
-Experiment 3 details: 
+Experiment 5 details: 
 Train the agent on the actual model which includes separation model + Q Network (The RNNQNet model) 
 """
 
 
 def run():
     # Shoebox Room
-    nussl.utils.seed(0)
-    room = room_types.ShoeBox(x_length=6, y_length=6)
+    nussl.utils.seed(7)
+    room = room_types.ShoeBox(x_length=8, y_length=8)
 
     # Uncomment for Polygon Room
     #room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
@@ -55,7 +55,7 @@ def run():
         reset_sources=False,
         same_config=True
     )
-    env.seed(0)
+    env.seed(7)
 
     # create buffer data folders
     utils.create_buffer_data_folders()
@@ -78,7 +78,7 @@ def run():
     )
 
     # define tensorboard writer, name the experiment!
-    exp_name = 'test-exp-5-50eps_test_simp_env_validation-2'
+    exp_name = 'evaluate'
     exp_id = '{}_{}'.format(exp_name, datetime.now().strftime('%d_%m_%Y-%H_%M_%S'))
     writer = SummaryWriter('runs/{}'.format(exp_id))
 
@@ -86,15 +86,15 @@ def run():
     env_config = {
         'env': env,
         'dataset': dataset,
-        'episodes': 50,
+        'episodes': 200,
         'max_steps': 1000,
         'stable_update_freq': 200,
-        'save_freq': 3,
+        'save_freq': 2,
         'play_audio': False,
         'show_room': False,
         'writer': writer,
         'dense': True,
-        'decay_rate': 0.01,  # trial and error
+        'decay_rate': 0.005,  # trial and error
         'decay_per_ep': True,
         'validation_freq': 5
     }
@@ -151,13 +151,3 @@ def run():
 
 if __name__ == '__main__':
     run()
-
-
-"""
-Logo of exp 5: 
-Episodes: 50 
-Batch size: 50 
-Num Updates: 2 
-Results: 
-
-"""

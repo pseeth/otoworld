@@ -1,6 +1,7 @@
 import time
 import logging
 import warnings
+from collections import deque
 
 import numpy as np
 import gym
@@ -79,58 +80,44 @@ class AgentBase:
         self.show_room = show_room
         self.writer = writer
         self.dense = dense
+        self.decay_per_ep = decay_per_ep
+        self.validation_freq = validation_freq
         self.losses = []
         self.cumulative_reward = 0
         self.total_experiment_steps = 0
         self.mean_episode_reward = []
-        self.decay_per_ep = decay_per_ep
-        self.validation_freq = validation_freq
+        self.action_memory = deque(maxlen=4)
 
         # for saving model at best validation episode (as determined by mean reward in the episode)
         if self.validation_freq is not None:
             self.max_validation_reward = -np.inf
 
     def fit(self):
-        for episode in range(self.episodes):
+        for episode in range(1, self.episodes + 1):
             # Reset the self.environment and any other variables at beginning of each episode
             prev_state = None
 
             episode_rewards = []
+            found_sources = []
 
             # validation episode?
             validation_episode = False
             if self.validation_freq is not None:
-                validation_episode = True if (episode + 1) % self.validation_freq == 0 else False
+                validation_episode = True if (episode % self.validation_freq == 0) else False
             print('\nValidation Episode:', validation_episode)
 
             # Measure time to complete the episode
             start = time.time()
             for step in range(self.max_steps):
+                #print('Agent Loc:', self.env.agent_loc)
                 self.total_experiment_steps += 1
-
-                # log distance to sources to tensorboad
-                # TODO: handle > 2 sources
-                if len(self.env.source_locs) == 2:
-                    self.writer.add_scalar('Distance/dist_to_source0', euclidean(self.env.source_locs[0], self.env.agent_loc), self.total_experiment_steps)
-                    self.writer.add_scalar('Distance/dist_to_source1', euclidean(self.env.source_locs[1], self.env.agent_loc), self.total_experiment_steps)
-                elif len(self.env.source_locs) == 1:
-                    # TODO: refactor, super hacky right now
-                    # currently don't know which source is remaining, 0 or 1 (there's just a source in the list without an identity)
-                    remaining_source_path = self.env.direct_sources[0]
-                    remaining_source = self.env.source_locs[0]
-                    if constants.DIR_CAR in remaining_source_path:  # 1st source
-                        self.writer.add_scalar('Distance/dist_to_source0', euclidean(remaining_source, self.env.agent_loc), self.total_experiment_steps)
-                        self.writer.add_scalar('Distance/dist_to_source1', 0, self.total_experiment_steps)
-                    else:
-                        # 2nd source
-                        self.writer.add_scalar('Distance/dist_to_source0', 0, self.total_experiment_steps)
-                        self.writer.add_scalar('Distance/dist_to_source1', euclidean(remaining_source, self.env.agent_loc), self.total_experiment_steps)
 
                 # Perform random actions with prob < epsilon
                 #print('epsilon', self.epsilon)
                 model_action = False
                 if (np.random.uniform(0, 1) < self.epsilon):
                     action = self.env.action_space.sample()
+                    #print('Choosing Random Action:', action)
                 else:
                     model_action = True
 
@@ -141,10 +128,19 @@ class AgentBase:
                 if model_action:
                     # For the first two steps (We don't have prev_state, new_state pair), then perform a random action
                     if step < 2:
+                        #print('Choosing Random Action:', action)
                         action = self.env.action_space.sample()
                     else:
+                        #print('Choosing Model Action:', action)
                         # This is where agent will actually do something
                         action = self.choose_action()
+
+                # if same action 4x in a row (to avoid model infinite loop), choose an action randomly
+                self.action_memory.append(action)
+                if all(self.action_memory[0] == x for x in self.action_memory):
+                    print('4x Same Action. Randomly sampling action.')
+                    action = self.env.action_space.sample()
+                    self.action_memory.append(action)
 
                 # Perform the chosen action (NOTE: reward is a dictionary)
                 new_state, agent_info, reward, won = self.env.step(
@@ -200,8 +196,6 @@ class AgentBase:
                     # record mean reward for this episode
                     self.mean_episode_reward = np.mean(episode_rewards)
                     print('Mean ep Reward:', self.mean_episode_reward)
-                    self.writer.add_scalar('Reward/mean_per_episode', self.mean_episode_reward, episode)
-                    self.writer.add_scalar('Reward/cumulative', self.cumulative_reward, self.total_experiment_steps)
 
                     if validation_episode:
                         # new best validation reward
@@ -211,8 +205,11 @@ class AgentBase:
 
                             # save best validation model
                             self.save_model('best_valid_reward.pt')
-                        
+
                         self.writer.add_scalar('Reward/validation_mean_per_episode', self.mean_episode_reward, episode)
+                    else:
+                        self.writer.add_scalar('Reward/mean_per_episode', self.mean_episode_reward, episode)
+                        self.writer.add_scalar('Reward/cumulative', self.cumulative_reward, self.total_experiment_steps)
 
                     end = time.time()
                     total_time = end - start
@@ -222,7 +219,7 @@ class AgentBase:
                         f"\n\n"
                         f"Episode Summary \n"
                         f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n"
-                        f"- Episode: {episode+1}\n"
+                        f"- Episode: {episode}\n"
                         f"- Won?: {won}\n"
                         f"- Finished at step: {step+1}\n"
                         f"- Time taken:   {total_time:04f} \n"
@@ -245,7 +242,7 @@ class AgentBase:
             if self.decay_per_ep:
                 self.epsilon = constants.MIN_EPSILON + (
                     constants.MAX_EPSILON - constants.MIN_EPSILON
-                ) * np.exp(-self.decay_rate * (episode + 1))
+                ) * np.exp(-self.decay_rate * episode)
                 print("Decayed epsilon value: {}".format(self.epsilon))
 
             # Reset the environment
