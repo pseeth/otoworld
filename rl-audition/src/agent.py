@@ -111,10 +111,10 @@ class AgentBase:
 
                 # log distance to sources to tensorboad
                 # TODO: handle > 2 sources
-                if len(self.env.source_locs) == 2:
+                if len(self.env.source_locs) == 2 and self.writer is not None:
                     self.writer.add_scalar('Distance/dist_to_source0', euclidean(self.env.source_locs[0], self.env.agent_loc), self.total_experiment_steps)
                     self.writer.add_scalar('Distance/dist_to_source1', euclidean(self.env.source_locs[1], self.env.agent_loc), self.total_experiment_steps)
-                elif len(self.env.source_locs) == 1:
+                elif len(self.env.source_locs) == 1 and self.writer is not None:
                     # TODO: refactor, super hacky right now
                     # currently don't know which source is remaining, 0 or 1 (there's just a source in the list without an identity)
                     remaining_source_path = self.env.direct_sources[0]
@@ -146,6 +146,7 @@ class AgentBase:
                     else:
                         # This is where agent will actually do something
                         action = self.choose_action()
+                        print("My action is ", action)
 
                 # Perform the chosen action (NOTE: reward is a dictionary)
                 new_state, agent_info, reward, won = self.env.step(
@@ -194,16 +195,15 @@ class AgentBase:
                     # terminal state is silence
                     silence_array = np.zeros_like(prev_state.audio_data)
                     terminal_silent_state = prev_state.make_copy_with_audio_data(audio_data=silence_array)
-                    self.dataset.write_buffer_data(
-                        prev_state, action, total_step_reward, terminal_silent_state, episode, step
-                    )
+                    self.dataset.write_buffer_data(prev_state, action, total_step_reward, terminal_silent_state, agent_info, episode, step)
 
                     # record mean reward for this episode
                     self.mean_episode_reward = np.mean(episode_rewards)
                     print('Mean ep Reward:', self.mean_episode_reward)
                     logger.info('Mean ep Reward:', self.mean_episode_reward)
-                    self.writer.add_scalar('Reward/mean_per_episode', self.mean_episode_reward, episode)
-                    self.writer.add_scalar('Reward/cumulative', self.cumulative_reward, self.total_experiment_steps)
+                    if self.writer is not None:
+                        self.writer.add_scalar('Reward/mean_per_episode', self.mean_episode_reward, episode)
+                        self.writer.add_scalar('Reward/cumulative', self.cumulative_reward, self.total_experiment_steps)
 
                     if validation_episode:
                         # new best validation reward
@@ -214,7 +214,8 @@ class AgentBase:
                             # save best validation model
                             self.save_model('best_valid_reward.pt')
                         
-                        self.writer.add_scalar('Reward/validation_mean_per_episode', self.mean_episode_reward, episode)
+                        if self.writer is not None:
+                            self.writer.add_scalar('Reward/validation_mean_per_episode', self.mean_episode_reward, episode)
 
                     end = time.time()
                     total_time = end - start
@@ -301,3 +302,88 @@ class RandomAgent(AgentBase):
     def save_model(self, name):
         pass
 
+
+# Create a perfect agent that steps to each of the closest sources one at a time.
+class PerfectAgent(AgentBase):
+    """
+    This agent is a perfect agent. It knows where all of the sources are and
+    will iteratively go to the closest source at each time step.
+    """
+
+    def choose_action(self):
+        """
+        Since we know all information about the environment, the agent moves the following way.
+        1. Find the closest audio source using euclidean distance
+        2. Rotate to face the audio source if necessary
+        3. Step in the direction of the audio source
+        """
+        agent = self.env.agent_loc
+        radius = self.env.acceptable_radius
+        action = None
+
+        # find the closest audio source
+        source, minimum_distance = self.env.source_locs[0], np.linalg.norm(
+            agent - self.env.source_locs[0])
+        for s in self.env.source_locs[1:]:
+            dist = np.linalg.norm(agent - s)
+            if dist < minimum_distance:
+                minimum_distance = dist
+                source = s
+
+        # Determine our current angle
+        angle = abs(int(np.degrees(self.env.cur_angle))) % 360
+        # The agent is too far left or right of the source
+        if np.abs(source[0] - agent[0]) >= radius:
+            # First check if we need to turn
+            if angle not in [0, 1, 179, 180, 181]:
+                action = 2
+            # We are facing correct way need to move forward or backward
+            else:
+                if source[0] < agent[0]:
+                    if angle == 0:
+                        action = 1
+                    else:
+                        action = 0
+                else:
+                    if angle == 0:
+                        action = 0
+                    else:
+                        action = 1
+        # Agent is to the right of the source
+        elif np.abs(source[1] - agent[1]) >= radius:
+            # First check if we need to turn
+            if angle not in [89, 90, 91, 269, 270, 271]:
+                action = 2
+            # We are facing correct way need to move forward or backward
+            else:
+                if source[1] < agent[1]:
+                    if angle == 90:
+                        action = 1
+                    else:
+                        action = 0
+                else:
+                    if angle == 90:
+                        action = 0
+                    else:
+                        action = 1
+        else:
+            action = 0
+        return action
+
+    def update(self):
+        """
+        Since this is a perfect agent, we do not update any network nor save any models
+        """
+        pass
+
+    def update_stable_networks(self):
+        """
+        Since this is a perfect agent, we do not update any network nor save any models
+        """
+        pass
+
+    def save_model(self, name):
+        """
+        Since this is a perfect agent, we do not update any network nor save any models
+        """
+        pass
