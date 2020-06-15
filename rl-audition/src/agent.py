@@ -92,7 +92,6 @@ class AgentBase:
 
     def fit(self):
         for episode in range(self.episodes):
-            print('\nStarting a new Episode!\n')
             # Reset the self.environment and any other variables at beginning of each episode
             prev_state = None
 
@@ -195,13 +194,12 @@ class AgentBase:
                     silence_array = np.zeros_like(prev_state.audio_data)
                     terminal_silent_state = prev_state.make_copy_with_audio_data(audio_data=silence_array)
                     self.dataset.write_buffer_data(
-                        prev_state, action, total_step_reward, terminal_silent_state, episode, step
+                        prev_state, action, total_step_reward, terminal_silent_state, agent_info, episode, step
                     )
 
                     # record mean reward for this episode
                     self.mean_episode_reward = np.mean(episode_rewards)
                     print('Mean ep Reward:', self.mean_episode_reward)
-                    logger.info('Mean ep Reward:', self.mean_episode_reward)
                     self.writer.add_scalar('Reward/mean_per_episode', self.mean_episode_reward, episode)
                     self.writer.add_scalar('Reward/cumulative', self.cumulative_reward, self.total_experiment_steps)
 
@@ -224,7 +222,7 @@ class AgentBase:
                         f"\n\n"
                         f"Episode Summary \n"
                         f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n"
-                        f"- Episode: {episode}\n"
+                        f"- Episode: {episode+1}\n"
                         f"- Won?: {won}\n"
                         f"- Finished at step: {step+1}\n"
                         f"- Time taken:   {total_time:04f} \n"

@@ -191,7 +191,6 @@ class RnnAgent(agent.AgentBase):
             return action
 
     def update_stable_networks(self):
-        print("Target network updated!")
         self.rnn_model_stable.load_state_dict(self.rnn_model.state_dict())
         self.q_net_stable.load_state_dict(self.q_net.state_dict())
 

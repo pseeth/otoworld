@@ -53,7 +53,7 @@ def run():
         acceptable_radius=1.0,
         absorption=1.0,
         reset_sources=False,
-        same_config=True,
+        same_config=True
     )
     env.seed(0)
 
@@ -94,10 +94,14 @@ def run():
         'show_room': False,
         'writer': writer,
         'dense': True,
-        'decay_rate': 0.005,  # trial and error
+        'decay_rate': 0.01,  # trial and error
         'decay_per_ep': True,
         'validation_freq': 5
     }
+
+    if env_config['decay_per_ep']:
+        end_epsilon = constants.MIN_EPSILON + (constants.MAX_EPSILON - constants.MIN_EPSILON) * np.exp(-env_config['decay_rate'] * env_config['episodes'])
+        print('\nEpsilon value at last episode ({}): {}'.format(env_config['episodes'], end_epsilon))
 
     save_path = os.path.join(constants.MODEL_SAVE_PATH, exp_name)
     dataset_config = {
