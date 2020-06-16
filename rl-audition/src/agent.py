@@ -362,7 +362,7 @@ class PerfectAgent(AgentBase):
                     else:
                         action = 1
         else:
-            action = 0
+            action = np.random.randint(0, 4)
         return action
 
     def update(self):
