@@ -15,14 +15,6 @@ import torch.nn.functional as F
 import torch.optim as optim
 import math
 
-# setup logging (with different logger than the agent logger)
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(message)s')
-file_handler = logging.FileHandler('model.log')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-
 
 class RnnAgent(agent.AgentBase):
     def __init__(self, env_config, dataset_config, rnn_config=None, stft_config=None, 
@@ -85,10 +77,6 @@ class RnnAgent(agent.AgentBase):
 
         params = list(self.rnn_model.parameters()) + list(self.q_net.parameters())
         self.optimizer = optim.Adam(params, lr=learning_rate)
-        # self.separator = nussl.separation.deep.DeepAudioEstimation(
-        #     nussl.AudioSignal(), model_path=None
-        # )
-        # self.separator.model = self.rnn_model
 
         # Folder path where the model will be saved
         self.SAVE_PATH = dataset_config['save_path']

@@ -31,7 +31,7 @@ sudo apt-get install libsndfile1
 ```
 
 ## Tutorial 
-You can get familiar with this environment using our tutorial notebook: [Tutorial Notebook](https://github.com/pseeth/rl_for_audition/blob/master/rl-audition/notebooks/tutorial.ipynb)
+You can get familiar with this OtoWorld using our tutorial notebook: [Tutorial Notebook](https://github.com/pseeth/rl_for_audition/blob/master/rl-audition/notebooks/tutorial.ipynb)
 
 
 

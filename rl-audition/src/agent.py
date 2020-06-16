@@ -104,20 +104,16 @@ class AgentBase:
             validation_episode = False
             if self.validation_freq is not None:
                 validation_episode = True if (episode % self.validation_freq == 0) else False
-            print('\nValidation Episode:', validation_episode)
 
             # Measure time to complete the episode
             start = time.time()
             for step in range(self.max_steps):
-                #print('Agent Loc:', self.env.agent_loc)
                 self.total_experiment_steps += 1
 
                 # Perform random actions with prob < epsilon
-                #print('epsilon', self.epsilon)
                 model_action = False
                 if (np.random.uniform(0, 1) < self.epsilon):
                     action = self.env.action_space.sample()
-                    #print('Choosing Random Action:', action)
                 else:
                     model_action = True
 
@@ -128,17 +124,14 @@ class AgentBase:
                 if model_action:
                     # For the first two steps (We don't have prev_state, new_state pair), then perform a random action
                     if step < 2:
-                        #print('Choosing Random Action:', action)
                         action = self.env.action_space.sample()
                     else:
-                        #print('Choosing Model Action:', action)
                         # This is where agent will actually do something
                         action = self.choose_action()
 
                 # if same action 4x in a row (to avoid model infinite loop), choose an action randomly
                 self.action_memory.append(action)
                 if all(self.action_memory[0] == x for x in self.action_memory):
-                    print('4x Same Action. Randomly sampling action.')
                     action = self.env.action_space.sample()
                     self.action_memory.append(action)
 
@@ -195,13 +188,11 @@ class AgentBase:
 
                     # record mean reward for this episode
                     self.mean_episode_reward = np.mean(episode_rewards)
-                    print('Mean ep Reward:', self.mean_episode_reward)
 
                     if validation_episode:
                         # new best validation reward
                         if self.mean_episode_reward > self.max_validation_reward:
                             self.max_validation_reward = self.mean_episode_reward
-                            print('Updated Max Valid Reward:', self.max_validation_reward)
 
                             # save best validation model
                             self.save_model('best_valid_reward.pt')
@@ -299,7 +290,7 @@ class RandomAgent(AgentBase):
 
 
 # Create a perfect agent that steps to each of the closest sources one at a time.
-class PerfectAgent(AgentBase):
+class OracleAgent(AgentBase):
     """
     This agent is a perfect agent. It knows where all of the sources are and
     will iteratively go to the closest source at each time step.

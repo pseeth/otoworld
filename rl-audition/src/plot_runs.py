@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import requests
 import pandas as pd
 import seaborn as sns
+import re
+
 
 port_number = 6006
 path = '../models/evaluation_data/'
@@ -47,6 +49,7 @@ def create_plots_single(file_name):
     sns_plot.set(xlabel='Step', ylabel='Mean Reward')
     sns_plot.savefig(path+file_name+'_mean.png', dpi=dpi)
 
+
 def create_plots_multiple(file_names):
 
     combined_data_mean = pd.DataFrame(columns=['Wall time', 'Step', 'Value', 'Number'])
@@ -61,6 +64,8 @@ def create_plots_multiple(file_names):
 
     sns_plot = sns.relplot(x="Step", y="Value", data=combined_data_mean, kind="line", hue="Number")
     sns_plot.set(xlabel='Step', ylabel='Mean Reward')
+
+
     sns_plot.savefig(path + '_mean_combined.png', dpi=dpi)
 
     sns_plot = sns.relplot(x="Step", y="Value", data=combined_data_cumul, kind="line", hue="Number")
@@ -68,13 +73,46 @@ def create_plots_multiple(file_names):
     sns_plot.savefig(path+'_cumul-combined.png', dpi=dpi)
 
 
+def generate_data_from_log(file_name):
+    steps_second = []
+    finished_steps = []
+    with open(file_name, 'r') as f:
+        lines = f.readlines()
+        counter = 0
+        while counter < len(lines):
+            cur_line = lines[counter]
+            if 'Episode: ' in cur_line:
+                ep_num = int(re.findall(r'\d+', cur_line)[0])
+                # Skip validation episodes
+                if ep_num % 5 == 0:
+                    pass
+                else:
+                    # Grab the data
+                    counter += 2
+                    cur_line = lines[counter]
+                    finished_count = int(re.findall(r'\d+', cur_line)[0])
+                    finished_steps.append(finished_count)
+                    counter += 2
+                    cur_line = lines[counter]
+                    sps = float(re.findall(r'\d+\.\d+', cur_line)[0])
+                    steps_second.append(sps)
+            counter += 1
+
+    print(len(finished_steps), len(steps_second))
+    print(finished_steps)
+    print(steps_second)
+
+    return finished_steps, steps_second
+
 
 if __name__ == '__main__':
     file_names = ["test-exp-5-50eps_test_simp_env_validation-2_15_06_2020-02_33_50",
                   "exp5-200eps-final-run_15_06_2020-06_30_00"]
 
-    for file_name in file_names:
-        create_csv(file_name=file_name)
-        create_plots_single(file_name)
+    # for file_name in file_names:
+    #     create_csv(file_name=file_name)
+    #     create_plots_single(file_name)
+    #
+    # create_plots_multiple(file_names)
 
-    create_plots_multiple(file_names)
+    generate_data_from_log(file_name=path+'run.txt')
