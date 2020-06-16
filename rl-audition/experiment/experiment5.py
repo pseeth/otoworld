@@ -94,7 +94,7 @@ def run():
         'show_room': False,
         'writer': writer,
         'dense': True,
-        'decay_rate': 0.005,  # trial and error
+        'decay_rate': 0.01,  # trial and error
         'decay_per_ep': True,
         'validation_freq': 5
     }
