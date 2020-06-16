@@ -25,11 +25,11 @@ DIST_BTWN_EARS = 0.15
 
 # max and min values of exploration rate
 MAX_EPSILON = 0.9
-MIN_EPSILON = 0.01
+MIN_EPSILON = 0.1
 
-# reward structure
+# reward structure (keep as floats)
 STEP_PENALTY = -0.5
-TURN_OFF_REWARD = 100.0  # keep this a float, otherwise Pytorch dataloader will throw errors
+TURN_OFF_REWARD = 100.0
 ORIENT_PENALTY = -0.1 
 
 # dataset
