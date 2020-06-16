@@ -298,8 +298,7 @@ class RandomAgent(AgentBase):
         pass
 
 
-# Create a perfect agent that steps to each of the closest sources one at a time.
-class PerfectAgent(AgentBase):
+class Oracle(AgentBase):
     """
     This agent is a perfect agent. It knows where all of the sources are and
     will iteratively go to the closest source at each time step.
