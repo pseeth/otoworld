@@ -8,7 +8,8 @@ from sklearn.metrics.pairwise import euclidean_distances
 from copy import deepcopy
 import nussl
 import logging
-
+from matplotlib.axes._axes import _log as matplotlib_axes_logger
+matplotlib_axes_logger.setLevel('ERROR')
 import sys
 sys.path.append("../../")
 
@@ -27,6 +28,7 @@ logger.info('-'*50)
 logger.info('\nCreating new Audio Environment!\n')
 logger.info('-'*50)
 logger.info('\n')
+
 
 
 class AudioEnv(gym.Env):
@@ -292,6 +294,7 @@ class AudioEnv(gym.Env):
 
             # Find min sized source to ensure something is playing at all times
             if len(a) < self.min_size_audio:
+                print('Min size audio:', self.min_size_audio)
                 self.min_size_audio = len(a)
             self.audio.append(a.audio_data.squeeze())
 
