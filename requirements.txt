@@ -1,3 +1,6 @@
 pyroomacoustics
 gym
 ffprobe
+jupyter
+git+git://github.com/nussl/nussl
+numba==0.48.0
