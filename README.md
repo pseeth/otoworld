@@ -13,15 +13,19 @@ Otoworld is an interactive environment for training agents for the task of audio
 ```
 git clone https://github.com/pseeth/otoworld.git
 ```
-* Create a conda environment using our requirements: 
+* Create a conda environment: 
 ```
-conda env create -f conda-env.yml
+conda env create -n otoworld
 ``` 
 * Activate the environment:
 ```
 conda activate otoworld
 ```
-* Install ffmpeg from conda distribution [Note: Pypi distribution of ffmpeg is outdated]
+* Install requirements (which includes [nussl](https://github.com/nussl/nussl))
+```
+pip install -r requirements.txt
+```
+* Install ffmpeg from conda distribution (Note: Pypi distribution of ffmpeg is outdated)
 ```
 conda install ffmpeg
 ```
