@@ -1,9 +1,9 @@
 name: otoworld
 channels:
-  - python=3.7
   - pytorch
   - defaults
 dependencies:
+  - python=3.7
   - _libgcc_mutex=0.1=main
   - blas=1.0=mkl
   - bzip2=1.0.8=h7b6447c_0
@@ -44,7 +44,6 @@ dependencies:
   - openssl=1.1.1g=h7b6447c_0
   - pip=20.0.2=py37_3
   - pycparser=2.20=py_0
-  - python=3.7.7=hcff3b4d_5
   - readline=8.0=h7b6447c_0
   - rhash=1.3.8=h1ba5d50_0
   - setuptools=47.1.1=py37_0
