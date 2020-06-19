@@ -16,6 +16,10 @@ git clone https://github.com/pseeth/otoworld.git
 * Create a conda environment using our requirements: 
 ```
 conda env create -f conda-env.yml
+``` 
+* Activate the environment:
+```
+conda activate otoworld
 ```
 * Install ffmpeg from conda distribution [Note: Pypi distribution of ffmpeg is outdated]
 ```
