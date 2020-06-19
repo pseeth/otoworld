@@ -12,18 +12,15 @@ import utils
 import constants
 from datasets import BufferData
 
-# setup logging (with different logger than the agent logger)
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(message)s')
-file_handler = logging.FileHandler('agent.log')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-logger.info('\n')
-logger.info('-'*50)
-logger.info('\nStarting to Fit with Agent\n')
-logger.info('-'*50)
-logger.info('\n')
+# setup logging
+logging.basicConfig(level=logging.INFO)
+logging_str = (
+        f"\n\n"
+        f"------------------------------ \n"
+        f"- Starting to Fit Agent\n"
+        f"------------------------------- \n\n"
+)
+logging.info(logging_str)
 
 
 class AgentBase:
@@ -153,7 +150,7 @@ class AgentBase:
 
                 if reward['turn_off_reward'] == constants.TURN_OFF_REWARD:
                     print('In FIT. Received reward: {} at step {}\n'.format(total_step_reward, step))
-                    logger.info(f"In FIT. Received reward {total_step_reward} at step: {step}\n")
+                    logging.info(f"In FIT. Received reward {total_step_reward} at step: {step}\n")
 
                 # Perform Update
                 if not validation_episode:
@@ -219,7 +216,7 @@ class AgentBase:
                         f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n"
                     )
                     print(logging_str)
-                    logger.info(logging_str)
+                    logging.info(logging_str)
 
                     # break and go to new episode
                     break

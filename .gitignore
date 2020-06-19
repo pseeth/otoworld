@@ -143,8 +143,8 @@ refactor-test.ipynb
 
 # data
 data/
-sounds/
 experiment/runs/
 models/
+sounds/dry_recordings
 
 *tfevents*

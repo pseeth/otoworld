@@ -7,9 +7,6 @@ from scipy.spatial.distance import euclidean
 from sklearn.metrics.pairwise import euclidean_distances
 from copy import deepcopy
 import nussl
-import logging
-from matplotlib.axes._axes import _log as matplotlib_axes_logger
-matplotlib_axes_logger.setLevel('ERROR')
 import sys
 sys.path.append("../../")
 
@@ -113,7 +110,6 @@ class AudioEnv(gym.Env):
         """
         This function creates the Pyroomacoustics room with our environment class variables.
         """
-        logger.info('Create room.')
         # non-Shoebox config (corners of room are given)
         if self.corners:
             self.room = Room.from_corners(
@@ -419,9 +415,6 @@ class AudioEnv(gym.Env):
         Args:
             removing_source (int): Integer that tells us the index of sources that we will be removing
         """
-        logger.info('\n')
-        logger.info('-'*50)
-        logger.info('\nReset environment. Create room, place agent, add sources.')
         # re-create room
         self._create_room()
 

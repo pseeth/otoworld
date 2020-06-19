@@ -2,36 +2,45 @@
 
 Otoworld is an interactive environment for training agents for the task of audio separation. <br>
 
-**Paper Submission:** [TBD]
+
+![OtoWorld Environment](otoworld.png)
+
+
+[**Paper Submission**](https://openreview.net/forum?id=lzZGXUpV78X)
 
 ## Installation 
-
-* Initialize a conda environment with **Python 3.7** as follows: 
+* Clone the repository
 ```
-conda create -n rl-audio python=3.7 pip
+git clone https://github.com/pseeth/otoworld.git
 ```
-* Install the packages in requirements.txt as follows: 
+* Create a conda environment using our requirements: 
 ```
-pip install -r requirements.txt
+conda env create -f conda-env.yml
 ```
 * Install ffmpeg from conda distribution [Note: Pypi distribution of ffmpeg is outdated]
 ```
 conda install ffmpeg
 ```
-* Build nussl from the git repository as follows: 
-```
-pip install -U git+git://github.com/nussl/nussl
-```
 * Install Pytorch **1.3** or **1.4** from official source 
+```
+pip install torch==1.3.0+cu100 torchvision==0.4.1+cu100 -f https://download.pytorch.org/whl/torch_stable.html
+```
 
-## Additional installation notes 
+## Additional Intallation Notes - Linux
 * Linux users may need to install the sound file library if it is not present in the system. It can be done using the following command: 
 ```
 sudo apt-get install libsndfile1
 ```
 
-## Tutorial 
+This should take care of a common `musdb` error.
+
+## Demo and Tutorial 
 You can get familiar with this OtoWorld using our tutorial notebook: [Tutorial Notebook](https://github.com/pseeth/otoworld/blob/master/notebooks/tutorial.ipynb)
+
+To run for yourself, run `jupyter notebook` and navigate to the notebook in the `notebooks/` folder.
+
+### Experiments
+You can also view (and run) examples of experiments we ran in `experiments/`. 
 
 
 
