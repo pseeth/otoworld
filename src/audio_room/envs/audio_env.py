@@ -262,7 +262,7 @@ class AudioEnv(gym.Env):
             # normalize audio so both sources have similar volume at beginning before mixing
             loudness = a.loudness()
 
-            # mix to reference db
+            # # mix to reference db
             ref_db = -40
             db_diff = ref_db - loudness
             gain = 10 ** (db_diff / 20)
@@ -438,7 +438,7 @@ class AudioEnv(gym.Env):
             show_room (bool): If true, room will be displayed to user
         """
         if play_audio:
-            data.play()
+            data.embed_audio(display=True)
 
             # Show the room while the audio is playing
             if show_room:
