@@ -13,6 +13,10 @@ sys.path.append("../../")
 import constants
 from utils import choose_random_files
 
+# Suppress 'c' argument errors caused by room.plot()
+from matplotlib.axes._axes import _log as matplotlib_axes_logger
+matplotlib_axes_logger.setLevel('ERROR')
+
 
 class AudioEnv(gym.Env):
     def __init__(
