@@ -6,7 +6,7 @@ Otoworld is an interactive environment for training agents for the task of audio
 ![OtoWorld Environment](otoworld.png)
 
 
-[**Paper Submission**](https://openreview.net/forum?id=lzZGXUpV78X)
+Paper: https://arxiv.org/abs/2007.06123
 
 ## Installation 
 * Clone the repository
