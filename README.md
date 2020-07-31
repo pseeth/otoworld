@@ -34,7 +34,7 @@ conda install ffmpeg
 pip install torch==1.3.0+cu100 torchvision==0.4.1+cu100 -f https://download.pytorch.org/whl/torch_stable.html
 ```
 
-## Additional Intallation Notes - Linux
+## Additional Installation Notes - Linux
 * Linux users may need to install the sound file library if it is not present in the system. It can be done using the following command: 
 ```
 sudo apt-get install libsndfile1
