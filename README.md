@@ -22,7 +22,7 @@ git clone https://github.com/pseeth/otoworld.git
 ```
 Create a conda environment: 
 ```
-conda create -n otoworld
+conda create -n otoworld python==3.7
 ``` 
 Activate the environment:
 ```
@@ -36,7 +36,7 @@ Install ffmpeg from conda distribution (Note: Pypi distribution of ffmpeg is out
 ```
 conda install ffmpeg
 ```
-Install Pytorch `1.4` from official source if using a CUDA-enabled GPU**:  
+If using a **CUDA-enabled GPU (highly recommended)**, install Pytorch `1.4` from official source:  
 ```
 pip install torch==1.4.0+cu100 torchvision==0.5.0+cu100 -f https://download.pytorch.org/whl/torch_stable.html
 ```
@@ -71,6 +71,14 @@ python experiment1.py
 ```
 
 Please create your own experiments and see if you can win OtoWorld! You will need a GPU running CUDA to be able to perform any meaningful experiments. 
+
+## Is It Running Properly?
+You should a message indicating the experiment is running, such as this:
+```
+------------------------------ 
+- Starting to Fit Agent
+------------------------------- 
+```
 
 ## Citing
 ```

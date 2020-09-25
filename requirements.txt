@@ -1,7 +1,8 @@
-pyroomacoustics
+pyroomacoustics==0.4.1
 gym
 ffprobe
 jupyter
 git+git://github.com/nussl/nussl
 soxbindings
 numba==0.48.0
+jupyter
