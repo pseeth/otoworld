@@ -45,6 +45,9 @@ otherwise:
 pip install torch==1.4.0 torchvision==0.5.0
 ```
 
+You may ignore warnings if about certain dependencies for now.
+
+
 ## Additional Installation Notes - Linux
 * Linux users may need to install the sound file library if it is not present in the system. It can be done using the following command: 
 ```
@@ -79,6 +82,8 @@ You should a message indicating the experiment is running, such as this:
 - Starting to Fit Agent
 ------------------------------- 
 ```
+
+You may get a warning about `SoX`. Ignore this for now. You're good to go! 
 
 ## Citing
 ```

@@ -6,3 +6,4 @@ git+git://github.com/nussl/nussl
 soxbindings
 numba==0.48.0
 jupyter
+seaborn^XX^
