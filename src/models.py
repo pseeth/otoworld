@@ -248,7 +248,7 @@ class DQN(nn.Module):
         X = torch.cat((X, agent_info), dim=1)
         X = self.prelu(self.fc(X))
         q_values = F.softmax(X, dim=1)
-
+        
         return q_values
 
     def flatten_features(self, x):

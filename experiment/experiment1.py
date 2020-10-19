@@ -74,7 +74,7 @@ dataset = BufferData(
 )
 
 # define tensorboard writer, name the experiment!
-exp_name = 'test-exp-3-50eps'
+exp_name = 'new-exp-150eps'
 exp_id = '{}_{}'.format(exp_name, datetime.now().strftime('%d_%m_%Y-%H_%M_%S'))
 writer = SummaryWriter('runs/{}'.format(exp_id))
 
@@ -83,7 +83,7 @@ writer = SummaryWriter('runs/{}'.format(exp_id))
 env_config = {
     'env': env, 
     'dataset': dataset, 
-    'episodes': 50, 
+    'episodes': 150, 
     'max_steps': 1000,
     'stable_update_freq': 150,
     'save_freq': 1, 
@@ -135,7 +135,7 @@ rnn_agent = RnnAgent(
     dataset_config=dataset_config,
     rnn_config=rnn_config,
     stft_config=stft_config,
-    learning_rate=.01,
+    learning_rate=.001,
 )
 torch.autograd.set_detect_anomaly(True)
 rnn_agent.fit()
