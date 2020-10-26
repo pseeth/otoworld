@@ -26,12 +26,14 @@ import warnings
 warnings.filterwarnings("ignore")
 
 """
-One of our main experiments for OtoWorld introductory paper 
+FOR TESTING PURPOSES
+
+TODO: del this file
 """
 
 # Shoebox Room
 nussl.utils.seed(0)
-room = room_types.ShoeBox(x_length=8, y_length=8)
+room = room_types.ShoeBox(x_length=5, y_length=5)
 
 # Uncomment for Polygon Room
 #room = room_types.Polygon(n=6, r=2, x_center=5, y_center=5)
@@ -74,7 +76,7 @@ dataset = BufferData(
 )
 
 # define tensorboard writer, name the experiment!
-exp_name = 'new-exp-150eps'
+exp_name = 'docs-and-cleanup'
 exp_id = '{}_{}'.format(exp_name, datetime.now().strftime('%d_%m_%Y-%H_%M_%S'))
 writer = SummaryWriter('runs/{}'.format(exp_id))
 
@@ -83,8 +85,8 @@ writer = SummaryWriter('runs/{}'.format(exp_id))
 env_config = {
     'env': env, 
     'dataset': dataset, 
-    'episodes': 150, 
-    'max_steps': 1000,
+    'episodes': 3, 
+    'max_steps': 5,
     'stable_update_freq': 150,
     'save_freq': 1, 
     'play_audio': False,
@@ -135,7 +137,7 @@ rnn_agent = RnnAgent(
     dataset_config=dataset_config,
     rnn_config=rnn_config,
     stft_config=stft_config,
-    learning_rate=.001,
+    learning_rate=.01,
 )
 torch.autograd.set_detect_anomaly(True)
 rnn_agent.fit()
