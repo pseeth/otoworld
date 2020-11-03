@@ -388,7 +388,6 @@ class BufferData(BaseDataset):
         Returns:
             list: list of items (path to json files in our case) that should be processed
         """
-        # We are initializing the dataset without having any actual data, just return self.items
         return self.items
 
     def process_item(self, item):

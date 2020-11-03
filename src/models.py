@@ -39,15 +39,19 @@ class RnnAgent(agent.AgentBase):
         # Use default config if configs are not provided by user
         if rnn_config is None:
             self.rnn_config = nussl.ml.networks.builders.build_recurrent_end_to_end(
-        bidirectional=True, dropout=0.3, filter_length=256, hidden_size=300, hop_length=64, mask_activation=['sigmoid'],
-        mask_complex=False, mix_key='mix_audio', normalization_class='BatchNorm', num_audio_channels=1, num_filters=256,
-        num_layers=2, num_sources=2, rnn_type='lstm', trainable=False, window_type='sqrt_hann')
+                bidirectional=True, dropout=0.3, filter_length=256, hidden_size=300, 
+                hop_length=64, mask_activation=['sigmoid'], mask_complex=False, mix_key='mix_audio', 
+                normalization_class='BatchNorm', num_audio_channels=1, num_filters=256,
+                num_layers=2, num_sources=2, rnn_type='lstm', trainable=False, window_type='sqrt_hann'
+            )
         else:
             self.rnn_config = nussl.ml.networks.builders.build_recurrent_end_to_end(**rnn_config)
 
         if stft_config is None:
-            self.stft_diff = nussl.ml.networks.modules.STFT(hop_length=128, filter_length=512, direction='transform',
-                                           num_filters=512)
+            self.stft_diff = nussl.ml.networks.modules.STFT(
+                hop_length=128, filter_length=512, 
+                direction='transform', num_filters=512
+            )
         else:
             self.stft_diff = nussl.ml.networks.modules.STFT(**stft_config)
 
@@ -58,7 +62,6 @@ class RnnAgent(agent.AgentBase):
         # torch.autograd.set_detect_anomaly(True)
 
         # Initialize the rnn model
-        # self.rnn_model = nussl.ml.SeparationModel(self.rnn_config, verbose=verbose)
         self.rnn_model = RnnSeparator(self.rnn_config).to(self.device)
         self.rnn_model_stable = RnnSeparator(self.rnn_config).to(self.device)
 
