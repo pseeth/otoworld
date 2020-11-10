@@ -136,6 +136,7 @@ rnn_agent = RnnAgent(
     rnn_config=rnn_config,
     stft_config=stft_config,
     learning_rate=.001,
+    pretrained=True
 )
 torch.autograd.set_detect_anomaly(True)
 rnn_agent.fit()

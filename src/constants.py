@@ -16,6 +16,7 @@ MODEL_SAVE_PATH = '../models/'
 DIST_URL = "init_dist_to_target.p"
 STEPS_URL = "steps_to_completion.p"
 REWARD_URL = "rewards_per_episode.p"
+PRETRAIN_PATH = '../models/pretrained.pth'
 
 # audio stuff
 RESAMPLE_RATE = 8000

@@ -18,7 +18,7 @@ import math
 
 class RnnAgent(agent.AgentBase):
     def __init__(self, env_config, dataset_config, rnn_config=None, stft_config=None, 
-                 verbose=False, autoclip_percentile=10, learning_rate=.001):
+                 verbose=False, autoclip_percentile=10, learning_rate=.001, pretrained=False):
         """
         Args:
             env_config (dict): Dictionary containing the audio environment config
@@ -65,6 +65,11 @@ class RnnAgent(agent.AgentBase):
         self.rnn_model = RnnSeparator(self.rnn_config).to(self.device)
         self.rnn_model_stable = RnnSeparator(self.rnn_config).to(self.device)
 
+        # Load pretrained model
+        if pretrained:
+            model_dict = torch.load(constants.PRETRAIN_PATH)
+            self.rnn_model.rnn_model.load_state_dict(model_dict)
+
         # Initialize dataset related parameters
         self.bs = dataset_config['batch_size']
         self.num_updates = dataset_config['num_updates']
@@ -78,7 +83,12 @@ class RnnAgent(agent.AgentBase):
         self.q_net = DQN(network_params).to(self.device)
         self.q_net_stable = DQN(network_params).to(self.device)  # Fixed Q net
 
-        params = list(self.rnn_model.parameters()) + list(self.q_net.parameters())
+        # Tell optimizer which parameters to learn
+        if pretrained:
+            # Freezing the rnn model weights, only optimizing Q-net
+            params = self.q_net.parameters()
+        else:
+            params = list(self.rnn_model.parameters()) + list(self.q_net.parameters())
         self.optimizer = optim.Adam(params, lr=learning_rate)
 
         # Folder path where the model will be saved
@@ -137,7 +147,6 @@ class RnnAgent(agent.AgentBase):
             # Calculate loss
             loss = F.l1_loss(q_values, expected_q_values)
             self.losses.append(loss)
-            #print("Loss:", loss)
             self.writer.add_scalar('Loss/train', loss, len(self.losses))
 
             # Optimize the model with backprop
