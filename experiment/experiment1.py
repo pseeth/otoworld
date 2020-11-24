@@ -74,7 +74,7 @@ dataset = BufferData(
 )
 
 # define tensorboard writer, name the experiment!
-exp_name = 'new-exp-150eps'
+exp_name = 'pretrain-150eps'
 exp_id = '{}_{}'.format(exp_name, datetime.now().strftime('%d_%m_%Y-%H_%M_%S'))
 writer = SummaryWriter('runs/{}'.format(exp_id))
 
