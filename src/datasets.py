@@ -396,7 +396,7 @@ class BufferData(BaseDataset):
         if each file is a json file containing the paths to the mixture and sources,
         then this function should parse the json file and load the mixture and sources
         and return them.
-        Exact behavior of this functionality is determined by implementation by subclass."
+        Exact behavior of this functionality is determined by implementation by subclass.
 
         Implementation: read json of format:
             {'prev_state': '../data/prev_states/prev8-224.wav',
@@ -406,12 +406,11 @@ class BufferData(BaseDataset):
 
         convert the wav files to AudioSignals and return and output dict:
             {
-              'observations': {
-                 'prev_state': AudioSignal,
-                 'new_state': AudioSignal,
-              }
-              'reward': -0.1
-              'action': 0
+              'prev_state': AudioSignal,
+              'new_state': AudioSignal,
+              'reward': -0.1,
+              'action': 0,
+              'agent_info': ...
             }
 
         Args:
@@ -469,6 +468,7 @@ class BufferData(BaseDataset):
             'reward': [the reward obtained for reaching current state],
             'action': [the action taken to reach current state from previous state]
             'current_state': '/path/to/current/mix.wav',
+            'agent_info': (agent_loc, cur_angle)
         }
 
         The unique file names are structured as path/[prev or new]-[episode #]-[step #]
@@ -489,7 +489,7 @@ class BufferData(BaseDataset):
             self.metadata[episode] += 1
 
         agent_loc, cur_angle = agent_info
-        agent_info = np.append(agent_loc, cur_angle)  # Jut make it a single list to keep things simple
+        agent_info = np.append(agent_loc, cur_angle)
         # create buffer dictionary
         buffer_dict = {
             'prev_state': prev_state,

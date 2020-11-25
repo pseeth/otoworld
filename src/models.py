@@ -67,6 +67,7 @@ class RnnAgent(agent.AgentBase):
 
         # Load pretrained model
         if pretrained:
+            print('\nLoading pretrained model...\n')
             model_dict = torch.load(constants.PRETRAIN_PATH)
             self.rnn_model.rnn_model.load_state_dict(model_dict)
 
@@ -115,7 +116,6 @@ class RnnAgent(agent.AgentBase):
 
             # Reshape the mixture to pass through the separation model (Convert dual channels into one)
             # Also, rename the state to work on to mix_audio so that it can pass through remaining nussl architecture
-            # Move to GPU
             data['mix_audio'] = data['mix_audio_prev_state'].float().view(
                 -1, 1, total_time_steps).to(self.device)
             data['action'] = data['action'].to(self.device)
@@ -177,7 +177,7 @@ class RnnAgent(agent.AgentBase):
             data['mix_audio'] = data['mix_audio_new_state'].float().view(
                 -1, 1, total_time_steps).to(self.device)
             output = self.rnn_model(data)
-            output['mix_audio'] = data['mix_audio']
+            #output['mix_audio'] = data['mix_audio']
             agent_info = data['agent_info'].to(self.device)
 
             # action = argmax(q-values)
@@ -230,35 +230,50 @@ class DQN(nn.Module):
         """
         super(DQN, self).__init__()
 
+        # filter_length = 258
         self.stft_diff = network_params['stft_diff']
-        self.fc = nn.Linear(9, network_params['total_actions'])
+        self.fc1 = nn.Linear(network_params['filter_length'] * 2, 64)
+        self.fc2 = nn.Linear(64, network_params['total_actions'])
+        self.bn = nn.BatchNorm1d(network_params['filter_length'])
         self.prelu = nn.PReLU()
 
     def forward(self, output, agent_info, total_time_steps):
         # Reshape the output again to get dual channels
+        print('audio:', output['audio'].shape)
+        output['audio'] = output['audio'].view(-1, 2, total_time_steps, 2)
+        print('audio:', output['audio'].shape)
         # Perform short time fourier transform of this output
-        _, _, nt = output['mix_audio'].shape
-        output['mix_audio'] = output['mix_audio'].reshape(-1, 2, nt)
-        stft_data = self.stft_diff(output['mix_audio'], direction='transform')
+        # with torch.no_grad():
+        #     output['audio'][output['audio'].abs() < 1e-4] = 1e-4
+        stft_data = self.stft_diff(output['audio'], direction='transform')
 
         # Get the IPD and ILD features from the stft data
-        _, nt, nf, _, ns = output['mask'].shape
-        output['mask'] = output['mask'].view(-1, 2, nt, nf, ns)
-        output['mask'] = output['mask'].max(dim=1)[0]
         ipd, ild, vol = audio_processing.ipd_ild_features(stft_data)
+        # torch.Size([1, 501, 258, 2]) torch.Size([1, 501, 129, 2]) torch.Size([1, 501, 129, 2])
+        print('ipd, ild, vol:', ipd.shape, ild.shape, vol.shape)
 
-        ipd = ipd.unsqueeze(-1)
-        ild = ild.unsqueeze(-1)
-        vol = vol.unsqueeze(-1)
+        # Create feature matrix
+        X = torch.cat((ipd, ild), dim=2)
+        print('X:', X.shape)  # X: torch.Size([1, 501, 387, 2])
+        # agent_info = agent_info.view(-1, 3)
+        # X = torch.cat((X, agent_info), dim=1)
 
-        ipd_means = (output['mask'] * ipd).mean(dim=[1, 2]).unsqueeze(1)
-        ild_means = (output['mask'] * ild).mean(dim=[1, 2]).unsqueeze(1)
-        vol_means = (output['mask'] * vol).mean(dim=[1, 2]).unsqueeze(1)
-        X = torch.cat([ipd_means, ild_means, vol_means], dim=1)
-        X = X.reshape(X.shape[0], -1)
-        agent_info = agent_info.view(-1, 3)
-        X = torch.cat((X, agent_info), dim=1)
-        X = self.prelu(self.fc(X))
+        # Sum over the time frame axis
+        X = torch.mean(X, dim=1)
+        print('X:', X.shape)  # X: torch.Size([1, 387, 2])
+        # with torch.no_grad():
+        #     X[X.abs() < 1e-4] = 1e-4
+        X = self.bn(X)
+
+        # Flatten the features
+        num_features = self.flatten_features(X)
+        print('num_features:', num_features)
+        X = X.view(-1, num_features)  # Shape = [Batch_size, filter_length*2]
+        print('X:', X.shape)
+
+        # Forward network pass
+        X = self.prelu(self.fc1(X))
+        X = self.fc2(X)
         q_values = F.softmax(X, dim=1)
         
         return q_values
